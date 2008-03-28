@@ -1,0 +1,18 @@
+Neologism installation manual.
+
+= Introduction =
+
+In this manual you can find a detailed manual about how to install Neologism in your own server.
+
+= Before =
+
+Here a list of thing that you will need to install Neologism:
+  * [http://drupal.org/ Drupal] and all [http://drupal.org/requirements its requirements]:
+    * HTTP Server (such as Apache)
+    * PHP support
+    * DB support (such as MySQL)
+  * ...
+
+= Process =
+
+...
