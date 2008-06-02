@@ -37,4 +37,4 @@ When checking out the code from google svn, you need to change the permissions o
 
 $ chmod -R g-w demo/
 
-otherwise the server will throw a 500 error.
+otherwise the server will throw a 500 error...
