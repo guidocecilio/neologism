@@ -3,6 +3,6 @@ See the InstallationManual for information on how to install Neologism.
 You can find more details on how to use Neologism below.
 
 = CleanURLs =
-
+It is stronlgy recommended to enable the Clean URLs in order to have nice URLs in agreement with the best practices (link here). Clean
 ..
 ..
