@@ -3,3 +3,5 @@ See the InstallationManual for information on how to install Neologism.
 You can find more details on how to use Neologism below.
 
 = CleanURLs =
+
+..
