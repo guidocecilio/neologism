@@ -33,12 +33,10 @@ A Neologism module for Drupal is available. You need to download each library se
 
 
 = CleanURLs =
-It is stronlgy recommended to enable the Clean URLs in order to have nice URLs in agreement with the best practices (link here). Clean
+It is stronlgy recommended to enable the Clean URLs in order to have nice URLs in agreement with the best practices (link here). Clean URLs are not enabled by default because some servers do not support it. To see if your server supports if, browse to the admin section and click on Clean URLs (admin/settings/clean-urls). Run the test and if it works, enable the clean URLs.
 
 
 = FAQ =
-When checking out the code from google svn, you need to change the permissions on the neologism:
+When checking out the code from google svn, you might need to change the permissions on the neologism files if Apache throw an error:
 
 $ chmod -R g-w demo/
-
-otherwise the server will throw a 500 error...
