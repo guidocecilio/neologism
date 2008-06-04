@@ -29,7 +29,7 @@ See the [http://drupal.org/requirements Drupal requirements] for more details. I
 
 = Using Neologism on an existing Drupal site =
 
-A Neologism module for Drupal is available. You need to download each library separately.
+A Neologism module for Drupal will be available soon.
 
 
 = CleanURLs =
