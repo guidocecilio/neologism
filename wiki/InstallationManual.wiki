@@ -1,6 +1,5 @@
 Neologism installation manual.
 
-
 = Introduction =
 
 In this manual you can find information about how to install Neologism on your own server.
