@@ -18,11 +18,12 @@ The following ActionScript 3 libraries are used:
 
 To contribute to the NeosVis vocabulary visualization applet, the following steps are required:
 
-  * Check out the current version from svn, NeosVis is located in the */flex-src* folder
-  * Create a new project in FlexBuilder 3
-  * Copy the contents of the checked out */flex-src* to the newly created */src* folder in your local FlexBuilder 3 project
-  * In FlexBuider 3 go to _Project_ -> _Properties_, in the _Flex Applications_ tab add the *Neologism.mxml* application and set it as default
+  * Check out the current version from svn; NeosVis is located in the */flex-src* folder
+  * Create a new project in FlexBuilder 3.
+  * Copy the contents of the checked out */flex-src* folder to the newly created */src* folder in your local FlexBuilder 3 project.
+  * In FlexBuider 3 go to _Project_ -> _Properties_, in the _Flex Applications_ tab, add the *Neologism.mxml* application and set it as default.
  
-All should now run properly.
+By now everything should be running ok.
 
 In case you get the following Flex error: *SecurityError: Error #2148*, go to _Project_ -> _Properties_, in the _Flex Compiler_ tab add the following *-use-network=false* in the _Additional compiler arguments_ field.
+Please note that by adding the mentioned compiler argument, you disable networking in flex, when deploying the applet (_Neologism.swf_) remove the flag before compiling.
