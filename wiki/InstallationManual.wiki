@@ -11,7 +11,7 @@ Here a list of things that you will need to install Neologism:
 
   * Neologism is based on [http://drupal.org/ Drupal] which requires the following:
     * HTTP Server (such as Apache)
-    * PHP 5
+    * PHP 5+
     * Database support - MySQL recommended.
 
 See the [http://drupal.org/requirements Drupal requirements] for more details. If you already have a Drupal site, see the section below.
