@@ -11,7 +11,7 @@ Here a list of things that you will need to install Neologism:
 
   * Neologism is based on [http://drupal.org/ Drupal] which requires the following:
     * HTTP Server (such as Apache)
-    * PHP 4.3.5 or 5.2
+    * PHP 5
     * Database support - MySQL recommended.
 
 See the [http://drupal.org/requirements Drupal requirements] for more details. If you already have a Drupal site, see the section below.
@@ -27,7 +27,7 @@ See the [http://drupal.org/requirements Drupal requirements] for more details. I
 
 
 = CleanURLs =
-It is stronlgy recommended to enable the Clean URLs in order to have nice URLs in agreement with the best practices (link here). Clean URLs are not enabled by default because some servers do not support it. To see if your server supports if, browse to the admin section and click on Clean URLs (admin/settings/clean-urls). Run the test and if it works, enable the clean URLs.
+It is strongly recommended to enable the Clean URLs in order to have nice URLs in agreement with the best practices (link here). Clean URLs are not enabled by default because some servers do not support it. To see if your server supports if, browse to the admin section and click on Clean URLs (admin/settings/clean-urls). Run the test and if it works, enable the clean URLs.
 
 
 = Using Neologism on an existing Drupal site =
