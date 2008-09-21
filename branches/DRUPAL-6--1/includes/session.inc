@@ -1,5 +1,5 @@
 <?php
-// $Id: session.inc,v 1.37.2.2 2007/07/26 19:16:45 drumm Exp $
+// $Id: session.inc,v 1.44.2.2 2008/08/12 10:29:03 dries Exp $
 
 /**
  * @file
@@ -45,7 +45,7 @@ function sess_read($key) {
     }
   }
   // We didn't find the client's record (session has expired), or they are an anonymous user.
-  else  {
+  else {
     $session = isset($user->session) ? $user->session : '';
     $user = drupal_anonymous_user($session);
   }
@@ -62,22 +62,23 @@ function sess_write($key, $value) {
     return TRUE;
   }
 
-  $result = db_query("SELECT sid FROM {sessions} WHERE sid = '%s'", $key);
+  $result = db_result(db_query("SELECT COUNT(*) FROM {sessions} WHERE sid = '%s'", $key));
 
-  if (!db_num_rows($result)) {
+  if (!$result) {
     // Only save session data when when the browser sends a cookie. This keeps
     // crawlers out of session table. This reduces memory and server load,
     // and gives more useful statistics. We can't eliminate anonymous session
     // table rows without breaking throttle module and "Who's Online" block.
     if ($user->uid || $value || count($_COOKIE)) {
-      db_query("INSERT INTO {sessions} (sid, uid, cache, hostname, session, timestamp) VALUES ('%s', %d, %d, '%s', '%s', %d)", $key, $user->uid, $user->cache, $_SERVER["REMOTE_ADDR"], $value, time());
+      db_query("INSERT INTO {sessions} (sid, uid, cache, hostname, session, timestamp) VALUES ('%s', %d, %d, '%s', '%s', %d)", $key, $user->uid, isset($user->cache) ? $user->cache : '', ip_address(), $value, time());
     }
   }
   else {
-    db_query("UPDATE {sessions} SET uid = %d, cache = %d, hostname = '%s', session = '%s', timestamp = %d WHERE sid = '%s'", $user->uid, $user->cache, $_SERVER["REMOTE_ADDR"], $value, time(), $key);
+    db_query("UPDATE {sessions} SET uid = %d, cache = %d, hostname = '%s', session = '%s', timestamp = %d WHERE sid = '%s'", $user->uid, isset($user->cache) ? $user->cache : '', ip_address(), $value, time(), $key);
 
-    // TODO: this can be an expensive query. Perhaps only execute it every x minutes. Requires investigation into cache expiration.
-    if ($user->uid) {
+    // Last access time is updated no more frequently than once every 180 seconds.
+    // This reduces contention in the users table.
+    if ($user->uid && time() - $user->access > variable_get('session_write_interval', 180)) {
       db_query("UPDATE {users} SET access = %d WHERE uid = %d", time(), $user->uid);
     }
   }
@@ -106,15 +107,14 @@ function sess_regenerate() {
 }
 
 /**
- * Counts how many users have sessions. Can count either anonymous sessions, authenticated sessions, or both.
+ * Counts how many users have sessions. Can count either anonymous sessions or authenticated sessions.
  *
  * @param int $timestamp
  *   A Unix timestamp representing a point of time in the past.
  *   The default is 0, which counts all existing sessions.
- * @param int $anonymous
+ * @param boolean $anonymous
  *   TRUE counts only anonymous users.
  *   FALSE counts only authenticated users.
- *   Any other value will return the count of both authenticated and anonymous users.
  * @return  int
  *   The number of users with sessions.
  */
@@ -159,12 +159,12 @@ function sess_gc($lifetime) {
  *
  * This function allows the caller to temporarily disable writing of session data,
  * should the request end while performing potentially dangerous operations, such as
- * manipulating the global $user object.
+ * manipulating the global $user object.  See http://drupal.org/node/218104 for usage
  *
  * @param $status
  *   Disables writing of session data when FALSE, (re-)enables writing when TRUE.
- *
- * @return FALSE if writing session data has been disabled. Otherwise, TRUE.
+ * @return
+ *   FALSE if writing session data has been disabled. Otherwise, TRUE.
  */
 function session_save_session($status = NULL) {
   static $save_session = TRUE;

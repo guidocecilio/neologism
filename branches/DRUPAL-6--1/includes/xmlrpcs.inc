@@ -1,5 +1,5 @@
 <?php
-// $Id: xmlrpcs.inc,v 1.21 2006/07/05 11:45:51 dries Exp $
+// $Id: xmlrpcs.inc,v 1.24.2.1 2008/04/28 10:04:52 dries Exp $
 
 /**
  * The main entry point for XML-RPC requests.
@@ -55,7 +55,7 @@ function xmlrpc_server($callbacks) {
 
   $data = file_get_contents('php://input');
   if (!$data) {
-     die('XML-RPC server accepts POST requests only.');
+    die('XML-RPC server accepts POST requests only.');
   }
   $xmlrpc_server->message = xmlrpc_message($data);
   if (!xmlrpc_message_parse($xmlrpc_server->message)) {
@@ -109,7 +109,7 @@ function xmlrpc_server_output($xml) {
   header('Connection: close');
   header('Content-Length: '. strlen($xml));
   header('Content-Type: text/xml');
-  header('Date: '.date('r'));
+  header('Date: '. date('r'));
   echo $xml;
   exit;
 }
@@ -149,7 +149,7 @@ function xmlrpc_server_call($xmlrpc_server, $methodname, $args) {
   }
   // Has this method been mapped to a Drupal function by us or by modules?
   if (!isset($xmlrpc_server->callbacks[$methodname])) {
-    return xmlrpc_error(-32601, t('Server error. Requested method %methodname not specified.', array("%methodname" => $xmlrpc_server->message->methodname)));
+    return xmlrpc_error(-32601, t('Server error. Requested method @methodname not specified.', array("@methodname" => $xmlrpc_server->message->methodname)));
   }
   $method = $xmlrpc_server->callbacks[$methodname];
   $signature = $xmlrpc_server->signatures[$methodname];
@@ -201,14 +201,9 @@ function xmlrpc_server_call($xmlrpc_server, $methodname, $args) {
       }
     }
   }
-  /*
-  if (count($args) == 1) {
-    // If only one parameter just send that instead of the whole array
-    $args = $args[0];
-  }
-  */
+
   if (!function_exists($method)) {
-    return xmlrpc_error(-32601, t('Server error. Requested function %method does not exist.', array("%method" => $method)));
+    return xmlrpc_error(-32601, t('Server error. Requested function @method does not exist.', array("@method" => $method)));
   }
   // Call the mapped function
   return call_user_func_array($method, $args);
@@ -293,10 +288,10 @@ function xmlrpc_server_get_capabilities() {
 function xmlrpc_server_method_signature($methodname) {
   $xmlrpc_server = xmlrpc_server_get();
   if (!isset($xmlrpc_server->callbacks[$methodname])) {
-    return xmlrpc_error(-32601, t('Server error. Requested method %methodname not specified.', array("%methodname" => $methodname)));
+    return xmlrpc_error(-32601, t('Server error. Requested method @methodname not specified.', array("@methodname" => $methodname)));
   }
   if (!is_array($xmlrpc_server->signatures[$methodname])) {
-    return xmlrpc_error(-32601, t('Server error. Requested method %methodname signature not specified.', array("%methodname" => $methodname)));
+    return xmlrpc_error(-32601, t('Server error. Requested method @methodname signature not specified.', array("@methodname" => $methodname)));
   }
   // We array of types
   $return = array();
