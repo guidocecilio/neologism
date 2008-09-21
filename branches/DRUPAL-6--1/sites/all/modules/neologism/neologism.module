@@ -100,15 +100,16 @@ function neologism_menu() {
 	);
 
       // Display a tab 'Vocabulary' on the class and property nodes to allow users to switch easily to the vocabulary
-      if ($node->nid && ($node->type == NEOLOGISM_CT_CLASS || $node->type == NEOLOGISM_CT_PROPERTY) && isset($node->field_vocabulary[0]['nid'])) {
-        $vocabulary_nid = $node->field_vocabulary[0]['nid'];
-        $items['node/'. '%' .'/vocabulary'] = array(
-            'title' => 'Vocabulary',
-            'page callback' => 'drupal_goto',
-            'page arguments' => 'node/'.$vocabulary_nid,
-            'type' => MENU_LOCAL_TASK,
-        );
-      }
+// Not necessary since we redirect to the vocabuarly page
+//       if ($node->nid && ($node->type == NEOLOGISM_CT_CLASS || $node->type == NEOLOGISM_CT_PROPERTY) && isset($node->field_vocabulary[0]['nid'])) {
+//         $vocabulary_nid = $node->field_vocabulary[0]['nid'];
+//         $items['node/'. '%' .'/vocabulary'] = array(
+//             'title' => 'Vocabulary',
+//             'page callback' => 'drupal_goto',
+//             'page arguments' => 'node/'.$vocabulary_nid,
+//             'type' => MENU_LOCAL_TASK,
+//         );
+//       }
     }
 
   }
