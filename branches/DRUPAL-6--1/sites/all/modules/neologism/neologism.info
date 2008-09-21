@@ -5,8 +5,5 @@ dependencies[] = content
 dependencies[] = nodereference
 dependencies[] = text
 dependencies[] = optionwidgets
-dependencies[] = 
-dependencies[] = 
 package = RDF
-
 core = 6.x
