@@ -20,7 +20,8 @@ define("NEOLOGISM_CT_PROPERTY", "neo_property");
  * Implementation of hook_init().
  */
 function neologism_init() {
-  drupal_add_js(drupal_get_path('module', 'neologism') . "/neologism.js");
+  drupal_add_css(drupal_get_path('module', NEOLOGISM) .'/neologism.css');
+  drupal_add_js(drupal_get_path('module', 'neologism') . '/neologism.js');
 }
 
 /**
@@ -34,7 +35,7 @@ function neologism_perm() {
  * Implementation of hook_enable().
  */
 function neologism_enable () {
-  include_once drupal_get_path('module', 'neologism') .'/neologism.install';
+  module_load_include('install', ''neologism'', 'neologism');
   _neologism_install_create_content(_neologism_content_vocabulary());
   _neologism_install_create_content(_neologism_content_class());
   _neologism_install_create_content(_neologism_content_property());
@@ -43,86 +44,68 @@ function neologism_enable () {
 /**
  * Implementation of hook_menu().
  */
-function neologism_menu($may_cache) {
+function neologism_menu() {
   $items = array();
 
-  if ($may_cache) {
-    $items[] = array(
-      'path' => NEOLOGISM,
-      'title' => t('Neologism Vocabularies'),
-      'description' => t("Show a list of vocabularies."),
-      'callback' => 'neologism_view_index',
-      'access' => TRUE,
-      'type' => MENU_LOCAL_TASK,
-      );
-  }
-  else {
-    // Add the CSS for this module
-    // We put this in !$may_cache so it's only added once per request
-    drupal_add_css(drupal_get_path('module', NEOLOGISM) .'/neologism.css');
+	$items[NEOLOGISM] = array(
+		'title' => 'Neologism Vocabularies',
+		'description' => "Show a list of vocabularies.",
+		'page callback' => 'neologism_view_index',
+		'access arguments' => TRUE,
+		'type' => MENU_LOCAL_TASK,
+		);
 
-    if (arg(0) == 'node' && is_numeric(arg(1))) {
-      $node = node_load(arg(1));
-      // We only display the export tabs on the vocabulary node.
-      if ($node->nid && $node->type == NEOLOGISM_CT_VOCABULARY) {
-        $items[] = array(
-            'path' => 'node/'. arg(1) .'/' . HTML,
-            'title' => t('View HTML'),
-            'callback' => 'neologism_export_html',
-            'callback arguments' => array($node),
-            'type' => MENU_LOCAL_TASK,
-        );
-        $items[] = array(
-            'path' => 'node/'. arg(1) .'/' . RDF,
-            'title' => t('View RDF/XML'),
-            'callback' => 'neologism_export_rdf',
-            'callback arguments' => array($node),
-            'type' => MENU_LOCAL_TASK,
-        );
-        $items[] = array(
-            'path' => 'node/'. arg(1) .'/n3',
-            'title' => t('View N3'),
-            'callback' => 'neologism_export_n3',
-            'callback arguments' => array($node),
-            'type' => MENU_LOCAL_TASK,
-        );
-        $items[] = array(
-            'path' => 'node/'. arg(1) .'/' . XML,
-            'title' => t('View XML'),
-            'callback' => 'neologism_export_xml',
-            'callback arguments' => array($node),
-            'type' => MENU_CALLBACK,
-        );
-        $items[] = array(
-            'path' => 'node/'. arg(1) .'/layout',
-            'title' => t('Diagram Layout'),
-            'callback' => 'neologism_layout',
-            'callback arguments' => array($node),
-            'type' => MENU_CALLBACK,
-        );
-        $items[] = array(
-            'path' => 'node/'. arg(1) .'/image',
-            'title' => t('Diagram Image'),
-            'callback' => 'neologism_image',
-            'callback arguments' => array($node),
-            'type' => MENU_CALLBACK,
-        );
-        $items[] = array(
-            'path' => 'node/'. arg(1) .'/diagram',
-            'title' => t('Overview Diagram'),
-            'callback' => 'neologism_show_diagram',
-            'callback arguments' => array($node),
-            'type' => MENU_LOCAL_TASK,
-        );
-      }
+
+	$items['node/'. '%' .'/' . HTML] = array(
+			'title' => 'View HTML',
+			'page callback' => 'neologism_export_html',
+			'page arguments' => array($node),
+			'type' => MENU_LOCAL_TASK,
+	);
+	$items['node/'. '%' .'/' . RDF] = array(
+			'title' => 'View RDF/XML',
+			'page callback' => 'neologism_export_rdf',
+			'page arguments' => array($node),
+			'type' => MENU_LOCAL_TASK,
+	);
+	$items['node/'. '%' .'/n3'] = array(
+			'title' => 'View N3',
+			'page callback' => 'neologism_export_n3',
+			'page arguments' => array($node),
+			'type' => MENU_LOCAL_TASK,
+	);
+	$items['node/'. '%' .'/' . XML] = array(
+			'title' => 'View XML',
+			'page callback' => 'neologism_export_xml',
+			'page arguments' => array($node),
+			'type' => MENU_CALLBACK,
+	);
+	$items['node/'. '%' .'/layout'] = array(
+			'title' => 'Diagram Layout',
+			'page callback' => 'neologism_layout',
+			'page arguments' => array($node),
+			'type' => MENU_CALLBACK,
+	);
+	$items['node/'. '%' .'/image'] = array(
+			'title' => 'Diagram Image',
+			'page callback' => 'neologism_image',
+			'page arguments' => array($node),
+			'type' => MENU_CALLBACK,
+	);
+	$items['node/'. '%' .'/diagram'] = array(
+			'title' => 'Overview Diagram',
+			'page callback' => 'neologism_show_diagram',
+			'page arguments' => array($node),
+			'type' => MENU_LOCAL_TASK,
+	);
+
       // Display a tab 'Vocabulary' on the class and property nodes to allow users to switch easily to the vocabulary
       if ($node->nid && ($node->type == NEOLOGISM_CT_CLASS || $node->type == NEOLOGISM_CT_PROPERTY) && isset($node->field_vocabulary[0]['nid'])) {
         $vocabulary_nid = $node->field_vocabulary[0]['nid'];
-        $items[] = array(
-            'path' => 'node/'. arg(1) .'/vocabulary',
-            'title' => t('Vocabulary'),
-            'callback' => 'drupal_goto',
-            'callback arguments' => 'node/'.$vocabulary_nid,
+        $items['node/'. '%' .'/vocabulary'] = array(
+            'title' => 'Vocabulary',
+            'page callback' => 'drupal_goto',
+            'page arguments' => 'node/'.$vocabulary_nid,
             'type' => MENU_LOCAL_TASK,
         );
       }
@@ -172,7 +155,7 @@ function neologism_export_html($node) {
 
     // Links to add term to the vocabulary. TODO: manage the multi vocabulary situation, and create a /parent path
     if (user_access('edit neologism')) {
-      $output .= '<p id="add_terms_link" class="neologism">' . l('Add class', 'node/add/'.NEOLOGISM_CT_CLASS, array(), "v=$node->nid") .' '. l('Add property', 'node/add/'.NEOLOGISM_CT_PROPERTY, array(), "v=$node->nid") . ' </p>';
+      $output .= '<p id="add_terms_link" class="neologism">' . l('Add class', 'node/add/'.NEOLOGISM_CT_CLASS, array('query' => "v=$node->nid")) .' '. l('Add property', 'node/add/'.NEOLOGISM_CT_PROPERTY, array('query' => "v=$node->nid")) . ' </p>';
     }
     
     //Vocabulary at glance
@@ -223,7 +206,7 @@ function neologism_export_html($node) {
  */
 function neologism_get_rdf_model($node, $uri, $document) {
     
-    include(RDFAPI_INCLUDE_DIR . "RdfAPI.php");
+    include_once(RDFAPI_INCLUDE_DIR . "RdfAPI.php");
 
     $ns = array(
                 "rdf" => "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
@@ -297,8 +280,8 @@ function neologism_get_rdf_model($node, $uri, $document) {
  * Output the RDF/XML version of the vocabulary specified as input
  */
 function neologism_export_rdf($node) {
-    include(RDFAPI_INCLUDE_DIR . "RdfAPI.php");
-    include(RDFAPI_INCLUDE_DIR . "syntax/RdfSerializer.php");
+    module_load_include('php"', 'neologism', '"RdfAPI');
+    module_load_include('php"', 'neologism', '"syntax/RdfSerializer');
 
     $request_uri = "http://" . $_SERVER["HTTP_HOST"] . $_SERVER["REQUEST_URI"];
     $ontology = substr($request_uri, 0, strlen($request_uri)-4) . "#";
@@ -318,8 +301,8 @@ function neologism_export_rdf($node) {
  */
 function neologism_export_n3($node) {
     
-    include(RDFAPI_INCLUDE_DIR . "RdfAPI.php");
-    include(RDFAPI_INCLUDE_DIR . "syntax/N3Serializer.php");
+    module_load_include('php"', 'neologism', '"RdfAPI');
+    module_load_include('php"', 'neologism', '"syntax/N3Serializer');
 
     $request_uri = "http://" . $_SERVER["HTTP_HOST"] . $_SERVER["REQUEST_URI"];
     $ontology = substr($request_uri, 0, strlen($request_uri)-3) . "#";
@@ -445,8 +428,8 @@ function neologism_image($node) {
 function neologism_show_diagram($node) {
   $vocabulary = $node->title;
   $base = base_path();
-  $swf = $base . drupal_get_path('module','neologism').'/includes/Neologism.swf';
-  $img_legend = $base . drupal_get_path('module','neologism').'/includes/legend.png';
+  $swf = $base . drupal_get_path('module','neologism').'/module_load_include('wf', 'neologism', '');
+  $img_legend = $base . drupal_get_path('module','neologism').'/module_load_include('ng', 'neologism', '');
   $edit_mode = user_access('edit neologism') ? 1 : 0;
   $prefix = $base . NEOLOGISM .'/';
   $token = drupal_get_token();
@@ -556,7 +539,7 @@ function neologism_link($type, $node = NULL, $teaser = FALSE) {
 /**
  * Implementation of hook_form_alter().
  */
-function neologism_form_alter($form_id, &$form) {
+function neologism_form_alter(&$form, &$form_state, $form_id) {
   // Select the parent class if provided in the url of type node/add/class/parent/9
   if ($form_id == NEOLOGISM_CT_CLASS.'_node_form' && arg(3) == 'parent' && isset($form['field_subclassof']['nids'])) {
     $form['field_subclassof']['nids']['#default_value'] = arg(4);
@@ -736,7 +719,7 @@ function get_all_classes($node) {
  */
 function neologism_get_preferred_content($accept) {
     if (isset($accept)) {
-        include(CONTENT_NEGOTATION_DIR . "content_negotiation.inc.php");
+        module_load_include('inc.php"', 'neologism', '"content_negotiation');
         $best = content_negotiation::mime_best_negotiation();
         if ($best == "application/rdf+xml")
             return RDF;
