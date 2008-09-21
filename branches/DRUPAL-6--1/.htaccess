@@ -13,8 +13,13 @@ Options -Indexes
 # Follow symbolic links in this directory.
 Options +FollowSymLinks
 
-# Customized error messages.
+# Make Drupal handle any 404 errors.
 ErrorDocument 404 /index.php
+
+# Force simple error message for requests for non-existent favicon.ico.
+<Files favicon.ico>
+  ErrorDocument 404 "The requested file favicon.ico was not found.
+</Files>
 
 # Set the default handler.
 DirectoryIndex index.php
@@ -22,10 +27,11 @@ DirectoryIndex index.php
 # Override PHP settings. More in sites/default/settings.php
 # but the following cannot be changed at runtime.
 
-# Maximum execution time and memory limit 
+# The maximum execution time and memory limit 
 # sometimes need to be increased depending on the server.
-# Note that on some configurations this is not allowed. See
-# settings.php for an alternative.
+# Drupal 6 requires 16M memory limit.
+# Note that on some configurations this is not allowed,
+# see http://drupal.org/node/207036 for more information.
 # php_value max_execution_time 300
 # php_value memory_limit 32M
 
@@ -63,8 +69,10 @@ DirectoryIndex index.php
 <IfModule mod_expires.c>
   # Enable expirations.
   ExpiresActive On
+
   # Cache all files for 2 weeks after access (A).
   ExpiresDefault A1209600
+
   # Do not cache dynamically generated pages.
   ExpiresByType text/html A1
 </IfModule>
@@ -99,22 +107,11 @@ DirectoryIndex index.php
   # uncomment the following line:
   # RewriteBase /
 
-  # Rewrite old-style URLs of the form 'node.php?id=x'.
-  #RewriteCond %{REQUEST_FILENAME} !-f
-  #RewriteCond %{REQUEST_FILENAME} !-d
-  #RewriteCond %{QUERY_STRING} ^id=([^&]+)$
-  #RewriteRule node.php index.php?q=node/view/%1 [L]
-
-  # Rewrite old-style URLs of the form 'module.php?mod=x'.
-  #RewriteCond %{REQUEST_FILENAME} !-f
-  #RewriteCond %{REQUEST_FILENAME} !-d
-  #RewriteCond %{QUERY_STRING} ^mod=([^&]+)$
-  #RewriteRule module.php index.php?q=%1 [L]
-
-  # Rewrite current-style URLs of the form 'index.php?q=x'.
+  # Rewrite URLs of the form 'x' to the form 'index.php?q=x'.
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteCond %{REQUEST_URI} !=/favicon.ico
   RewriteRule ^(.*)$ index.php?q=$1 [L,QSA]
 </IfModule>
 
-# $Id: .htaccess,v 1.81.2.4 2008/01/22 09:01:39 drumm Exp $
+# $Id: .htaccess,v 1.90.2.1 2008/07/08 09:33:14 goba Exp $
