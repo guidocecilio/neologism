@@ -281,8 +281,8 @@ function neologism_get_rdf_model($node, $uri, $document) {
  * Output the RDF/XML version of the vocabulary specified as input
  */
 function neologism_export_rdf($node) {
-    module_load_include('php"', 'neologism', '"RdfAPI');
-    module_load_include('php"', 'neologism', '"syntax/RdfSerializer');
+    include(RDFAPI_INCLUDE_DIR . "RdfAPI.php");
+    include(RDFAPI_INCLUDE_DIR . "syntax/RdfSerializer.php");
 
     $request_uri = "http://" . $_SERVER["HTTP_HOST"] . $_SERVER["REQUEST_URI"];
     $ontology = substr($request_uri, 0, strlen($request_uri)-4) . "#";
@@ -302,8 +302,8 @@ function neologism_export_rdf($node) {
  */
 function neologism_export_n3($node) {
     
-    module_load_include('php"', 'neologism', '"RdfAPI');
-    module_load_include('php"', 'neologism', '"syntax/N3Serializer');
+    include(RDFAPI_INCLUDE_DIR . "RdfAPI.php");
+    include(RDFAPI_INCLUDE_DIR . "syntax/N3Serializer.php");
 
     $request_uri = "http://" . $_SERVER["HTTP_HOST"] . $_SERVER["REQUEST_URI"];
     $ontology = substr($request_uri, 0, strlen($request_uri)-3) . "#";
@@ -429,8 +429,8 @@ function neologism_image($node) {
 function neologism_show_diagram($node) {
   $vocabulary = $node->title;
   $base = base_path();
-  $swf = $base . drupal_get_path('module','neologism').'/module_load_include('wf', 'neologism', '');
-  $img_legend = $base . drupal_get_path('module','neologism').'/module_load_include('ng', 'neologism', '');
+  $swf = $base . drupal_get_path('module','neologism').'/includes/Neologism.swf';
+  $img_legend = $base . drupal_get_path('module','neologism').'/includes/legend.png';
   $edit_mode = user_access('edit neologism') ? 1 : 0;
   $prefix = $base . NEOLOGISM .'/';
   $token = drupal_get_token();
@@ -480,7 +480,7 @@ EXCERPT;
 function neologism_view_index() {
 
   $result = pager_query(db_rewrite_sql('SELECT n.nid, n.sticky, n.created FROM {node} n WHERE n.type = "'.NEOLOGISM_CT_VOCABULARY.'" AND n.status = 1 ORDER BY n.sticky DESC, n.created DESC'), variable_get('default_nodes_main', 10));
-
+//TODO db_num_rows depreciated
   if (db_num_rows($result)) {
     $output = '';
     while ($node = db_fetch_object($result)) {
@@ -540,6 +540,7 @@ function neologism_link($type, $node = NULL, $teaser = FALSE) {
 /**
  * Implementation of hook_form_alter().
  */
+//TODO check the new forma_alter
 function neologism_form_alter(&$form, &$form_state, $form_id) {
   // Select the parent class if provided in the url of type node/add/class/parent/9
   if ($form_id == NEOLOGISM_CT_CLASS.'_node_form' && arg(3) == 'parent' && isset($form['field_subclassof']['nids'])) {
@@ -720,7 +721,7 @@ function get_all_classes($node) {
  */
 function neologism_get_preferred_content($accept) {
     if (isset($accept)) {
-        module_load_include('inc.php"', 'neologism', '"content_negotiation');
+        include(CONTENT_NEGOTATION_DIR . "content_negotiation.inc.php");
         $best = content_negotiation::mime_best_negotiation();
         if ($best == "application/rdf+xml")
             return RDF;
