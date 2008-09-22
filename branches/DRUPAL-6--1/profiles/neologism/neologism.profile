@@ -16,16 +16,13 @@ function neologism_profile_modules() {
   return array(
 
     // Core - optional
-    'color', 'help', 'menu', 'path', 'taxonomy',
+    'color', 'help', 'menu', 'path', 'taxonomy', 'dblog',
 
     // Core - required
     'block', 'filter', 'node', 'system', 'user', 'watchdog',
 
     // CCK core
     'content', 'nodereference', 'optionwidgets', 'text', 'userreference', 'content_copy', 'fieldgroup',
-    
-    // CCK
-    'multiselect',
     
     // Neologism
     'neologism',
@@ -41,7 +38,7 @@ function neologism_profile_modules() {
 function neologism_profile_details() {
   return array(
     'name' => 'Neologism',
-    'description' => 'Tool to publish RDF vocabularies online.'
+    'description' => 'Tool to easily create and publish RDF vocabularies online.'
   );
 }
 
@@ -52,7 +49,7 @@ function neologism_profile_details() {
  *   An optional HTML string to display to the user on the final installation
  *   screen.
  */
-function neologism_profile_final() {
+function default_profile_tasks(&$task, $url) {
   // Site information
   variable_set('site_name', 'Neologism');
   variable_set('site_mission', '<strong>Neologism</strong> is an online editor to publish RDF vocabularies.');
@@ -63,7 +60,6 @@ function neologism_profile_final() {
   variable_set('theme_settings', array (
     'toggle_slogan' => true,
   ));
-  //variable_set('site_frontpage', 'node/add/class');
   
   // Menus
   $item = array();
