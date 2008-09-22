@@ -163,9 +163,15 @@ function neologism_export_html($node) {
     // Free text (body)
     $output .= '<p id="last_update" class="neologism">' . check_markup($node->body) . ' </p>';
 
+    // Content type in urls are with - instead of _
+    $vocabulary_url_str = str_replace('_', '-', NEOLOGISM_CT_VOCABULARY);
+    $class_url_str = str_replace('_', '-', NEOLOGISM_CT_CLASS);
+    $property_url_str = str_replace('_', '-', NEOLOGISM_CT_PROPERTY);
+
+
     // Links to add term to the vocabulary. TODO: manage the multi vocabulary situation, and create a /parent path
     if (user_access('edit neologism')) {
-      $output .= '<p id="add_terms_link" class="neologism">' . l('Add class', 'node/add/'.NEOLOGISM_CT_CLASS, array('query' => "v=$node->nid")) .' '. l('Add property', 'node/add/'.NEOLOGISM_CT_PROPERTY, array('query' => "v=$node->nid")) . ' </p>';
+      $output .= '<p id="add_terms_link" class="neologism">' . l('Add class', 'node/add/'.$class_url_str, array('query' => "v=$node->nid")) .' '. l('Add property', 'node/add/'.$property_url_str, array('query' => "v=$node->nid")) . ' </p>';
     }
     
     //Vocabulary at glance
