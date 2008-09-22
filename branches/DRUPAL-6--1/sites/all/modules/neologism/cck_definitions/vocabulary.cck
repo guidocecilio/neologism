@@ -19,6 +19,7 @@ $content[type]  = array (
   'custom' => '1',
   'modified' => '1',
   'locked' => '0',
+  'comment' => '0',
 );
 $content[fields]  = array (
   0 => 
