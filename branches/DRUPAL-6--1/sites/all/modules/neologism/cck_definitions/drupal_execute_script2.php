@@ -46,3 +46,9 @@ $w =  array (
 
   include_once drupal_get_path('module', 'content') .'/includes/content.crud.inc';
   content_field_instance_update($w);
+
+
+
+
+
+Fatal error: Cannot pass parameter 2 by reference in /Applications/MAMP/htdocs/dneo_svn6/install.php on line 1112
