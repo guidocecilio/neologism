@@ -22,6 +22,22 @@ define("NEOLOGISM_CT_PROPERTY", "neo_property");
 function neologism_init() {
   drupal_add_css(drupal_get_path('module', NEOLOGISM) .'/neologism.css');
   drupal_add_js(drupal_get_path('module', 'neologism') . '/neologism.js');
+  
+  $ct = content_types();
+
+  if (!isset($ct['neo_vocabulary'])) {
+    module_load_include('install', 'neologism', 'neologism');
+    _neologism_create_content('vocabulary');
+  }
+  if (!isset($ct['neo_class'])) {
+    module_load_include('install', 'neologism', 'neologism');
+    _neologism_create_content('class');
+  }
+  if (!isset($ct['neo_property'])) {
+    module_load_include('install', 'neologism', 'neologism');
+    _neologism_create_content('property');
+  }
+  
 }
 
 /**
