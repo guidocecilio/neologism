@@ -514,6 +514,11 @@ function neologism_link($type, $node = NULL, $teaser = FALSE) {
     $vocabulary_nid = $node->field_vocabulary[0]['nid'];
     $destination = "destination=". drupal_urlencode("node/$vocabulary_nid");
 
+    // Content type in urls are with - instead of _
+    $vocabulary_url_str = str_replace('_', '-', NEOLOGISM_CT_VOCABULARY);
+    $class_url_str = str_replace('_', '-', NEOLOGISM_CT_CLASS);
+    $property_url_str = str_replace('_', '-', NEOLOGISM_CT_PROPERTY);
+
     if (user_access('edit neologism') && $node->type == NEOLOGISM_CT_CLASS) {
 			$links['neologism_edit_class'] = array(
 				'title' => t('Edit'),
@@ -522,11 +527,11 @@ function neologism_link($type, $node = NULL, $teaser = FALSE) {
 			);
       $links['neologism_add_subclass'] = array(
         'title' => t('Add subclass'),
-        'href' => "node/add/".NEOLOGISM_CT_CLASS."/parent/$node->nid"
+        'href' => "node/add/" . $class_url_str . "/parent/$node->nid"
       );
       $links['neologism_add_property'] = array(
         'title' => t('Add property'),
-        'href' => "node/add/".NEOLOGISM_CT_PROPERTY."/classparent/$node->nid"
+        'href' => "node/add/" . $property_url_str . "/classparent/$node->nid"
       );
     }
 
@@ -538,7 +543,7 @@ function neologism_link($type, $node = NULL, $teaser = FALSE) {
 			);
       $links['neologism_add_subproperty'] = array(
         'title' => t('Add subproperty'),
-        'href' => "node/add/".NEOLOGISM_CT_PROPERTY."/parent/$node->nid"
+        'href' => "node/add/" . $property_url_str . "/parent/$node->nid"
       );
     }
 
