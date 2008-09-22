@@ -557,24 +557,23 @@ function neologism_link($type, $node = NULL, $teaser = FALSE) {
  */
 //TODO check the new forma_alter
 function neologism_form_alter(&$form, &$form_state, $form_id) {
-  // Select the parent class if provided in the url of type node/add/class/parent/9
-  if ($form_id == NEOLOGISM_CT_CLASS.'_node_form' && arg(3) == 'parent' && isset($form['field_subclassof']['nids'])) {
-    $form['field_subclassof']['nids']['#default_value'] = arg(4);
-  }
   // Select the vocabulary when adding a class or a property from a vocabulary page
   if (($form_id == NEOLOGISM_CT_CLASS.'_node_form' || $form_id == NEOLOGISM_CT_PROPERTY.'_node_form') 
       && isset($_GET['v']) && isset($form['field_vocabulary']['#default_value'])) {
     $vocabulary_id = (int)$_GET['v'];
     $form['field_vocabulary']['#default_value'][0]['nid'] = $vocabulary_id;
   }
-
+  // Select the parent class if provided in the url of type node/add/class/parent/9
+  if ($form_id == NEOLOGISM_CT_CLASS.'_node_form' && arg(3) == 'parent' && isset($form['field_subclassof']['#default_value'])) {
+    $form['field_subclassof']['#default_value'][0]['nid'] = arg(4);
+  }
   // Select the domain of a property if provided in the url of type node/add/property/classparent/3
-  if ($form_id == NEOLOGISM_CT_PROPERTY.'_node_form' && arg(3) == 'classparent' && isset($form['field_domain']['nids'])) {
-    $form['field_domain']['nids']['#default_value'] = arg(4);
+  if ($form_id == NEOLOGISM_CT_PROPERTY.'_node_form' && arg(3) == 'classparent' && isset($form['field_domain']['#default_value'])) {
+    $form['field_domain']['#default_value'][0]['nid'] = arg(4);
   }
   // Select the parent class if provided in the url of type node/add/property/parent/11
-  if ($form_id == NEOLOGISM_CT_PROPERTY.'_node_form' && arg(3) == 'parent' && isset($form['field_subpropertyof']['nids'])) {
-    $form['field_subpropertyof']['nids']['#default_value'] = arg(4);
+  if ($form_id == NEOLOGISM_CT_PROPERTY.'_node_form' && arg(3) == 'parent' && isset($form['field_subpropertyof']['#default_value'])) {
+    $form['field_subpropertyof']['#default_value'][0]['nid'] = arg(4);
   }
 }
 
