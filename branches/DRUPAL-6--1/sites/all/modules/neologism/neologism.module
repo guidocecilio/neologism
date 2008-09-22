@@ -35,10 +35,10 @@ function neologism_perm() {
  * Implementation of hook_enable().
  */
 function neologism_enable () {
-  module_load_include('install', ''neologism'', 'neologism');
-  _neologism_install_create_content(_neologism_content_vocabulary());
-  _neologism_install_create_content(_neologism_content_class());
-  _neologism_install_create_content(_neologism_content_property());
+  module_load_include('install', 'neologism', 'neologism');
+//  _neologism_install_create_content(_neologism_content_vocabulary());
+//  _neologism_install_create_content(_neologism_content_class());
+//  _neologism_install_create_content(_neologism_content_property());
 }
 
 /**
@@ -110,9 +110,6 @@ function neologism_menu() {
 //             'type' => MENU_LOCAL_TASK,
 //         );
 //       }
-    }
-
-  }
 
   return $items;
 }
