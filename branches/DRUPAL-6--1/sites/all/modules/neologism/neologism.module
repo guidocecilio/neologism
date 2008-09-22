@@ -561,8 +561,9 @@ function neologism_form_alter(&$form, &$form_state, $form_id) {
   if ($form_id == NEOLOGISM_CT_CLASS.'_node_form' && arg(3) == 'parent' && isset($form['field_subclassof']['nids'])) {
     $form['field_subclassof']['nids']['#default_value'] = arg(4);
   }
-  // Select the vocabulary when adding a class from a vocabulary page
-  if ($form_id == NEOLOGISM_CT_CLASS.'_node_form' && isset($_GET['v']) && isset($form['field_vocabulary']['#default_value'])) {
+  // Select the vocabulary when adding a class or a property from a vocabulary page
+  if (($form_id == NEOLOGISM_CT_CLASS.'_node_form' || $form_id == NEOLOGISM_CT_PROPERTY.'_node_form') 
+      && isset($_GET['v']) && isset($form['field_vocabulary']['#default_value'])) {
     $vocabulary_id = (int)$_GET['v'];
     $form['field_vocabulary']['#default_value'][0]['nid'] = $vocabulary_id;
   }
@@ -574,11 +575,6 @@ function neologism_form_alter(&$form, &$form_state, $form_id) {
   // Select the parent class if provided in the url of type node/add/property/parent/11
   if ($form_id == NEOLOGISM_CT_PROPERTY.'_node_form' && arg(3) == 'parent' && isset($form['field_subpropertyof']['nids'])) {
     $form['field_subpropertyof']['nids']['#default_value'] = arg(4);
-  }
-  // Select the vocabulary when adding a class from a vocabulary page
-  if ($form_id == NEOLOGISM_CT_PROPERTY.'_node_form' && isset($_GET['v']) && isset($form['field_vocabulary']['nids'])) {
-    $vocabulary_id = (int)$_GET['v'];
-    $form['field_vocabulary']['nids']['#default_value'][0] = $vocabulary_id;
   }
 }
 
