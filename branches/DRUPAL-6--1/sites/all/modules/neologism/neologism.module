@@ -168,7 +168,6 @@ function neologism_export_html($node) {
     $class_url_str = str_replace('_', '-', NEOLOGISM_CT_CLASS);
     $property_url_str = str_replace('_', '-', NEOLOGISM_CT_PROPERTY);
 
-
     // Links to add term to the vocabulary. TODO: manage the multi vocabulary situation, and create a /parent path
     if (user_access('edit neologism')) {
       $output .= '<p id="add_terms_link" class="neologism">' . l('Add class', 'node/add/'.$class_url_str, array('query' => "v=$node->nid")) .' '. l('Add property', 'node/add/'.$property_url_str, array('query' => "v=$node->nid")) . ' </p>';
@@ -516,14 +515,11 @@ function neologism_link($type, $node = NULL, $teaser = FALSE) {
     $destination = "destination=". drupal_urlencode("node/$vocabulary_nid");
 
     if (user_access('edit neologism') && $node->type == NEOLOGISM_CT_CLASS) {
-      // Edit link only in the HTML output
-      if ($teaser) {
-        $links['neologism_edit_class'] = array(
-          'title' => t('Edit'),
-          'href' => "node/$node->nid/edit",
-          'query' => $destination,
-        );
-      }
+			$links['neologism_edit_class'] = array(
+				'title' => t('Edit'),
+				'href' => "node/$node->nid/edit",
+				'query' => $destination,
+			);
       $links['neologism_add_subclass'] = array(
         'title' => t('Add subclass'),
         'href' => "node/add/".NEOLOGISM_CT_CLASS."/parent/$node->nid"
@@ -535,14 +531,11 @@ function neologism_link($type, $node = NULL, $teaser = FALSE) {
     }
 
     if (user_access('edit neologism') && $node->type == NEOLOGISM_CT_PROPERTY) {
-      // Edit link only in the HTML output
-      if ($teaser) {
-        $links['neologism_edit_property'] = array(
-          'title' => t('Edit'),
-          'href' => "node/$node->nid/edit",
-          'query' => $destination,
-        );
-      }
+			$links['neologism_edit_property'] = array(
+				'title' => t('Edit'),
+				'href' => "node/$node->nid/edit",
+				'query' => $destination,
+			);
       $links['neologism_add_subproperty'] = array(
         'title' => t('Add subproperty'),
         'href' => "node/add/".NEOLOGISM_CT_PROPERTY."/parent/$node->nid"
