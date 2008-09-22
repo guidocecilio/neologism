@@ -36,9 +36,9 @@ function neologism_perm() {
  */
 function neologism_enable () {
   module_load_include('install', 'neologism', 'neologism');
-//  _neologism_install_create_content(_neologism_content_vocabulary());
-//  _neologism_install_create_content(_neologism_content_class());
-//  _neologism_install_create_content(_neologism_content_property());
+  _neologism_create_content('vocabulary');
+  _neologism_create_content('class');
+  _neologism_create_content('property');
 }
 
 /**
