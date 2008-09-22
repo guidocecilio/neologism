@@ -53,49 +53,61 @@ function neologism_menu() {
 		'page callback' => 'neologism_view_index',
 		'access arguments' => TRUE,
 		'type' => MENU_LOCAL_TASK,
-		);
-
-
-	$items['node/'. '%' .'/' . HTML] = array(
+  );
+	$items['node/%node/' . HTML] = array(
 			'title' => 'View HTML',
 			'page callback' => 'neologism_export_html',
-			'page arguments' => array($node),
+			'page arguments' => array(1),
+			'access callback' => 'node_access',
+			'access arguments' => array('view', 1),			
 			'type' => MENU_LOCAL_TASK,
 	);
-	$items['node/'. '%' .'/' . RDF] = array(
+	$items['node/%node/' . RDF] = array(
 			'title' => 'View RDF/XML',
 			'page callback' => 'neologism_export_rdf',
-			'page arguments' => array($node),
+			'page arguments' => array(1),
+			'access callback' => 'node_access',
+			'access arguments' => array('view', 1),			
 			'type' => MENU_LOCAL_TASK,
 	);
-	$items['node/'. '%' .'/n3'] = array(
+	$items['node/%node/' . N3] = array(
 			'title' => 'View N3',
 			'page callback' => 'neologism_export_n3',
-			'page arguments' => array($node),
+			'page arguments' => array(1),
+			'access callback' => 'node_access',
+			'access arguments' => array('view', 1),			
 			'type' => MENU_LOCAL_TASK,
 	);
-	$items['node/'. '%' .'/' . XML] = array(
+	$items['node/%node/' . XML] = array(
 			'title' => 'View XML',
 			'page callback' => 'neologism_export_xml',
-			'page arguments' => array($node),
+			'page arguments' => array(1),
+			'access callback' => 'node_access',
+			'access arguments' => array('view', 1),			
 			'type' => MENU_CALLBACK,
 	);
-	$items['node/'. '%' .'/layout'] = array(
+	$items['node/%node/layout'] = array(
 			'title' => 'Diagram Layout',
 			'page callback' => 'neologism_layout',
-			'page arguments' => array($node),
+			'page arguments' => array(1),
+			'access callback' => 'node_access',
+			'access arguments' => array('view', 1),			
 			'type' => MENU_CALLBACK,
 	);
-	$items['node/'. '%' .'/image'] = array(
+	$items['node/%node/image'] = array(
 			'title' => 'Diagram Image',
 			'page callback' => 'neologism_image',
-			'page arguments' => array($node),
+			'page arguments' => array(1),
+			'access callback' => 'node_access',
+			'access arguments' => array('view', 1),			
 			'type' => MENU_CALLBACK,
 	);
-	$items['node/'. '%' .'/diagram'] = array(
+	$items['node/%node/diagram'] = array(
 			'title' => 'Overview Diagram',
 			'page callback' => 'neologism_show_diagram',
-			'page arguments' => array($node),
+			'page arguments' => array(1),
+			'access callback' => 'node_access',
+			'access arguments' => array('view', 1),			
 			'type' => MENU_LOCAL_TASK,
 	);
 
@@ -110,7 +122,7 @@ function neologism_menu() {
 //             'type' => MENU_LOCAL_TASK,
 //         );
 //       }
-
+//var_dump($items);
   return $items;
 }
 
