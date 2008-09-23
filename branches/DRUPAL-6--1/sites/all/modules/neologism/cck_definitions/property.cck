@@ -58,7 +58,7 @@ $content[fields]  = array (
     'type' => 'text',
     'widget_type' => 'text_textfield',
     'change' => 'Change basic information',
-    'weight' => '-5',
+    'weight' => '-4',
     'rows' => '1',
     'size' => 60,
     'description' => 'This will be used for rdfs:label ',
@@ -110,7 +110,7 @@ $content[fields]  = array (
     'type' => 'nodereference',
     'widget_type' => 'nodereference_select',
     'change' => 'Change basic information',
-    'weight' => '-4',
+    'weight' => '-3',
     'description' => 'Select the class for the rdfs:domain of this property.',
     'default_value' => 
     array (
@@ -172,7 +172,7 @@ $content[fields]  = array (
     'type' => 'nodereference',
     'widget_type' => 'nodereference_select',
     'change' => 'Change basic information',
-    'weight' => '-3',
+    'weight' => '-2',
     'description' => 'Select the class for the rdfs:range of this property.',
     'default_value' => 
     array (
@@ -234,7 +234,7 @@ $content[fields]  = array (
     'type' => 'text',
     'widget_type' => 'text_textfield',
     'change' => 'Change basic information',
-    'weight' => '-2',
+    'weight' => '-1',
     'rows' => '1',
     'size' => 60,
     'description' => 'This will be used for rdfs:comment',
@@ -358,7 +358,7 @@ $content[fields]  = array (
     'type' => 'nodereference',
     'widget_type' => 'nodereference_select',
     'change' => 'Change basic information',
-    'weight' => '-1',
+    'weight' => '0',
     'description' => 'Select the inverse of this property. Your new property will have a statement expressing that it is a owl:inverseOf the selected property.
 
 ',
