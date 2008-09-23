@@ -1,3 +1,7 @@
+Neologism 0.32, 2008-09-23
+--------------------------
+- add some usability improvement in the forms: remove or hide some non used core fieldsets, and fix the weights of the property form.
+
 Neologism 0.31, 2008-09-23
 --------------------------
 - adjust the order of the class and property fields.
