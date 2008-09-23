@@ -1,6 +1,6 @@
 $content[type]  = array (
   'name' => 'Class',
-  'type' => 'neo_class',
+  'type' => NEOLOGISM_CT_CLASS,
   'description' => '',
   'title_label' => 'Id',
   'body_label' => 'Description of the class (only used in the documentation)',
@@ -193,11 +193,11 @@ $content[fields]  = array (
     'multiple' => '0',
     'referenceable_types' => 
     array (
-      'neo_class' => 'neo_class',
+      NEOLOGISM_CT_CLASS => NEOLOGISM_CT_CLASS,
       0 => 1,
       'page' => false,
-      'neo_property' => false,
-      'neo_vocabulary' => 0,
+      NEOLOGISM_CT_PROPERTY => false,
+      NEOLOGISM_CT_VOCABULARY => 0,
     ),
     'op' => 'Save field settings',
     'module' => 'nodereference',
@@ -255,11 +255,11 @@ $content[fields]  = array (
     'multiple' => '0',
     'referenceable_types' => 
     array (
-      'neo_vocabulary' => 'neo_vocabulary',
+      NEOLOGISM_CT_VOCABULARY => NEOLOGISM_CT_VOCABULARY,
       0 => 1,
-      'neo_class' => 0,
+      NEOLOGISM_CT_CLASS => 0,
       'page' => false,
-      'neo_property' => 0,
+      NEOLOGISM_CT_PROPERTY => 0,
     ),
     'op' => 'Save field settings',
     'module' => 'nodereference',
@@ -319,9 +319,9 @@ $content[fields]  = array (
     'multiple' => '1',
     'referenceable_types' => 
     array (
-      'neo_class' => 'neo_class',
-      'neo_property' => 0,
-      'neo_vocabulary' => 0,
+      NEOLOGISM_CT_CLASS => NEOLOGISM_CT_CLASS,
+      NEOLOGISM_CT_PROPERTY => 0,
+      NEOLOGISM_CT_VOCABULARY => 0,
     ),
     'op' => 'Save field settings',
     'module' => 'nodereference',
