@@ -589,6 +589,29 @@ function neologism_form_alter(&$form, &$form_state, $form_id) {
   if ($form_id == NEOLOGISM_CT_PROPERTY.'_node_form' && arg(3) == 'parent' && isset($form['field_subpropertyof']['#default_value'])) {
     $form['field_subpropertyof']['#default_value'][0]['nid'] = arg(4);
   }
+
+  // Hide the menu settings fieldset in class and property forms 
+  // as it is not likely to be used here and also steps in the middle of the form flow.
+  if (($form_id == NEOLOGISM_CT_CLASS.'_node_form' || $form_id == NEOLOGISM_CT_PROPERTY.'_node_form') && isset($form['menu'])) {
+    unset($form['menu']);
+  }
+  // Set the size of the description field to 5 rows in class and property forms.
+  if (($form_id == NEOLOGISM_CT_CLASS.'_node_form' || $form_id == NEOLOGISM_CT_PROPERTY.'_node_form') && isset($form['body_field']['body']['#rows'])) {
+    $form['body_field']['body']['#rows'] = 4;
+  }
+  // Hide the layout field of the vocublary page since it's only used
+  // internally by the viewer to store the diagram layout.
+  if ($form_id == NEOLOGISM_CT_VOCABULARY.'_node_form' && isset($form['field_layout'])) {
+    unset($form['field_layout']);
+  }
+  // Collapse the URL path fieldset to prevent people from messing with it.
+  if ($form_id == NEOLOGISM_CT_VOCABULARY.'_node_form' && isset($form['path']['#collapsed'])) {
+    $form['path']['#collapsed'] = TRUE;
+  }
+  // Set the weight of the menu settings for it to appear after the description field.
+  if ($form_id == NEOLOGISM_CT_VOCABULARY.'_node_form' && isset($form['menu']['#weight'])) {
+    $form['menu']['#weight'] = 1;
+  }
 }
 
 /**
