@@ -46,7 +46,7 @@ $content[groups]  = array (
         'label' => 'above',
       ),
     ),
-    'weight' => '-3',
+    'weight' => '-10',
     'group_name' => 'group_vocabulary',
   ),
 );
@@ -110,7 +110,7 @@ $content[fields]  = array (
     'type' => 'nodereference',
     'widget_type' => 'nodereference_select',
     'change' => 'Change basic information',
-    'weight' => '-2',
+    'weight' => '-4',
     'description' => 'Select the class for the rdfs:domain of this property.',
     'default_value' => 
     array (
@@ -172,7 +172,7 @@ $content[fields]  = array (
     'type' => 'nodereference',
     'widget_type' => 'nodereference_select',
     'change' => 'Change basic information',
-    'weight' => '-1',
+    'weight' => '-3',
     'description' => 'Select the class for the rdfs:range of this property.',
     'default_value' => 
     array (
@@ -234,7 +234,7 @@ $content[fields]  = array (
     'type' => 'text',
     'widget_type' => 'text_textfield',
     'change' => 'Change basic information',
-    'weight' => '1',
+    'weight' => '-2',
     'rows' => '1',
     'size' => 60,
     'description' => 'This will be used for rdfs:comment',
@@ -296,7 +296,7 @@ $content[fields]  = array (
     'type' => 'nodereference',
     'widget_type' => 'nodereference_select',
     'change' => 'Change basic information',
-    'weight' => '1',
+    'weight' => '-10',
     'description' => 'Specify the vocabulary this class belongs to.',
     'default_value' => 
     array (
@@ -358,7 +358,7 @@ $content[fields]  = array (
     'type' => 'nodereference',
     'widget_type' => 'nodereference_select',
     'change' => 'Change basic information',
-    'weight' => '2',
+    'weight' => '-1',
     'description' => 'Select the inverse of this property. Your new property will have a statement expressing that it is a owl:inverseOf the selected property.
 
 ',

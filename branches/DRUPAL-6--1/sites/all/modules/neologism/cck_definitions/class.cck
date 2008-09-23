@@ -46,7 +46,7 @@ $content[groups]  = array (
         'label' => 'above',
       ),
     ),
-    'weight' => '-3',
+    'weight' => '-10',
     'group_name' => 'group_vocabulary',
   ),
 );
@@ -110,7 +110,7 @@ $content[fields]  = array (
     'type' => 'text',
     'widget_type' => 'text_textfield',
     'change' => 'Change basic information',
-    'weight' => '-1',
+    'weight' => '-3',
     'rows' => '1',
     'size' => 60,
     'description' => 'This will be used for rdfs:comment',
@@ -172,7 +172,7 @@ $content[fields]  = array (
     'type' => 'nodereference',
     'widget_type' => 'nodereference_select',
     'change' => 'Change basic information',
-    'weight' => 0,
+    'weight' => '-2',
     'description' => 'Select the superclass of this class. Your new class will have a statement expressing that it is a rdfs:subClassOf the selected class.',
     'default_value' => 
     array (
@@ -234,7 +234,7 @@ $content[fields]  = array (
     'type' => 'nodereference',
     'widget_type' => 'nodereference_select',
     'change' => 'Change basic information',
-    'weight' => '1',
+    'weight' => '-10',
     'description' => 'Specify the vocabulary this class belongs to.',
     'default_value' => 
     array (
@@ -296,7 +296,7 @@ $content[fields]  = array (
     'type' => 'nodereference',
     'widget_type' => 'nodereference_select',
     'change' => 'Change basic information',
-    'weight' => '2',
+    'weight' => '-1',
     'description' => 'Select the classes that are disjoint with this class. Your new class will have statements expressing that it is owl:disjointWith the selected classes.',
     'default_value' => 
     array (
