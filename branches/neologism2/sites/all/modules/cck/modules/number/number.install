@@ -1,7 +1,8 @@
 <?php
-// $Id: number.install,v 1.28.2.4 2008/09/07 14:52:32 yched Exp $
+// $Id: number.install,v 1.28.2.6 2008/10/04 13:14:22 karens Exp $
 
 /**
+ * @file
  * Implementation of hook_install().
  */
 function number_install() {
@@ -45,13 +46,11 @@ function number_update_last_removed() {
  * Rename old decimal fields, which were really floats, to float
  */
 function number_update_6000() {
-  $ret = array();
-
-  if (drupal_get_installed_schema_version('content') < 6000) {
-    drupal_set_message(t('Some updates are still pending. Please return to <a href="@update-php">update.php</a> and run the remaining updates.', array('@update-php' => base_path() .'update.php?op=selection')), 'warning');
-    $ret['#abort'] = array('success' => FALSE, 'query' => t('Updates for content.module need to be run first.<br/>Please re-run the update script.'));
-    return $ret;
+  if ($abort = content_check_update('number')) {
+    return $abort;
   }
+
+  $ret = array();
 
   drupal_load('module', 'content');
   $ret[] = update_sql("UPDATE {". content_field_tablename() ."} SET type='number_float' WHERE type = 'number_decimal'");

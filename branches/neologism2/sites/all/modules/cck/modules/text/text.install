@@ -1,7 +1,8 @@
 <?php
-// $Id: text.install,v 1.37.2.5 2008/09/07 14:52:32 yched Exp $
+// $Id: text.install,v 1.37.2.10 2008/10/22 12:53:40 yched Exp $
 
 /**
+ * @file
  * Implementation of hook_install().
  */
 function text_install() {
@@ -49,13 +50,11 @@ function text_update_last_removed() {
  *
  */
 function text_update_6000() {
-  $ret = array();
-
-  if (drupal_get_installed_schema_version('content') < 6000) {
-    drupal_set_message(t('Some updates are still pending. Please return to <a href="@update-php">update.php</a> and run the remaining updates.', array('@update-php' => base_path() .'update.php?op=selection')), 'warning');
-    $ret['#abort'] = array('success' => FALSE, 'query' => t('Updates for content.module need to be run first.<br/>Please re-run the update script.'));
-    return $ret;
+  if ($abort = content_check_update('text')) {
+    return $abort;
   }
+
+  $ret = array();
 
   drupal_load('module', 'content');
   $result = db_query("SELECT * FROM {". content_instance_tablename() ."} WHERE widget_type = 'text'");
@@ -77,38 +76,81 @@ function text_update_6000() {
  * when they should be NULL.
  *
  */
-function text_update_6001() {
+function text_update_6001(&$sandbox) {
+  include_once('./'. drupal_get_path('module', 'content') .'/content.install');
+  drupal_load('module', 'content');
+
   $ret = array();
 
-  drupal_load('module', 'content');
-  // Get the latest cache values and schema.
-  content_clear_type_cache(TRUE, TRUE);
+  if (!isset($sandbox['progress'])) {
+    if ($abort = content_check_update('text')) {
+      return $abort;
+    }
 
-  include_once('./'. drupal_get_path('module', 'content') .'/content.install');
-  $types = content_types_install();
-  foreach ($types as $type_name => $fields) {
-    foreach ($fields as $field) {
-      switch ($field['type']) {
-        case 'text':
-          $db_info = content_database_info($field);
-          $table = $db_info['table'];
-          foreach ($db_info['columns'] as $column => $attributes) {
-            $attributes['not null'] = FALSE;
-            $column = $attributes['column'];
-            db_change_field($ret, $table, $column, $column, $attributes);
-            // TODO: errors on text/blob columns: no default value allowed (!)
-            db_field_set_no_default($ret, $table, $column);
-            if ($attributes['type'] == 'varchar' || $attributes['type'] == 'text') {
-              $ret[] = update_sql("UPDATE {". $table ."} SET ". $column ." = NULL WHERE ". $column ." = ''");
-            }
-            else {
-              // TODO: replace format = 0 with format = NULL ?? Is this right ?
-              $ret[] = update_sql("UPDATE {". $table ."} SET ". $column ." = NULL WHERE ". $column ." = 0");
-            }
-          }
-          break;
+    // Get the latest cache values and schema.
+    content_clear_type_cache(TRUE, TRUE);
+    $types = content_types_install();
+
+    if (empty($types)) {
+      return $ret;
+    }
+
+    $sandbox['fields'] = array();
+    foreach ($types as $type_name => $fields) {
+      foreach ($fields as $field) {
+        if ($field['type'] == 'text') {
+          $sandbox['fields'][] = $field;
+        }
       }
     }
+
+    if (empty($sandbox['fields'])) {
+      return $ret;
+    }
+
+    $sandbox['progress'] = 0;
+    $sandbox['visited'] = array();
   }
+
+  $field = $sandbox['fields'][$sandbox['progress']];
+
+  // We only want to process a field once -- if we hit it a second time,
+  // that means it's its own table and it should have already been updated.
+  if (!in_array($field['field_name'], $sandbox['visited'])) {
+    $db_info = content_database_info($field);
+    $table = $db_info['table'];
+    foreach ($db_info['columns'] as $column => $attributes) {
+      $attributes['not null'] = FALSE;
+      $column = $attributes['column'];
+      db_change_field($ret, $table, $column, $column, $attributes);
+      // TODO: errors on text/blob columns: no default value allowed (!)
+      db_field_set_no_default($ret, $table, $column);
+      if ($attributes['type'] == 'varchar' || $attributes['type'] == 'text') {
+        $ret[] = update_sql("UPDATE {". $table ."} SET ". $column ." = NULL WHERE ". $column ." = ''");
+      }
+      else {
+        // TODO: replace format = 0 with format = NULL ?? Is this right ?
+        $ret[] = update_sql("UPDATE {". $table ."} SET ". $column ." = NULL WHERE ". $column ." = 0");
+      }
+    }
+    $sandbox['visited'][] = $field['field_name'];
+  }
+
+  $sandbox['progress']++;
+  $ret['#finished'] = $sandbox['progress'] / count($sandbox['fields']);
+
   return $ret;
+}
+
+/**
+ * Update 6000 and 6001 were possibly broken if they were executed while
+ * the modules were still disabled, so we re-run them.
+ * Having them run a second time on sites that got updated correctly has no
+ * side-effect (see http://drupal.org/node/310873).
+ */
+function text_update_6002() {
+  return text_update_6000();
+}
+function text_update_6003(&$sandbox) {
+  return text_update_6001($sandbox);
 }

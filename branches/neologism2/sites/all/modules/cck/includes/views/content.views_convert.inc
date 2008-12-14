@@ -1,9 +1,11 @@
 <?php
-//$Id: content.views_convert.inc,v 1.1.2.1 2008/09/04 18:12:27 yched Exp $
+// $Id: content.views_convert.inc,v 1.1.2.4 2008/10/06 15:11:39 karens Exp $
+
 /**
  * @file
  * Field conversion for fields handled by this module.
  */
+
 /**
  * Implementation of hook_views_convert().
  *
@@ -30,6 +32,7 @@ function content_views_convert($display, $type, &$view, $views_field) {
       }
     }
   }
+
   // Is this a field that CCK should handle? If not, return.
   if (!in_array($views_field['field'], array_keys($views_fields))) {
     return;
@@ -38,12 +41,12 @@ function content_views_convert($display, $type, &$view, $views_field) {
   // Now update values, options, etc. to those selected in the imported view.
   switch ($type) {
     case 'field':
-      $view->display[$display]->display_options['fields'][$field['field']]['format'] = $field['options'];
-      if ($field['handler'] == 'content_views_field_handler_group') {
-        $view->display[$display]->display_options['fields'][$field['field']]['multiple']['group'] = 1;
+      $view->display[$display]->display_options['fields'][$views_field['field']]['format'] = $views_field['options'];
+      if ($views_field['handler'] == 'content_views_field_handler_group') {
+        $view->display[$display]->display_options['fields'][$views_field['field']]['multiple']['group'] = 1;
       }
       else {
-        $view->display[$display]->display_options['fields'][$field['field']]['multiple']['group'] = 0;
+        $view->display[$display]->display_options['fields'][$views_field['field']]['multiple']['group'] = 0;
       }
       return;
 

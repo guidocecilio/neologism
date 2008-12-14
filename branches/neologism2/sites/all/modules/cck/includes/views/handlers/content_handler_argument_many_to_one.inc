@@ -1,6 +1,10 @@
 <?php
-// $Id: content_handler_argument_many_to_one.inc,v 1.1.2.1 2008/09/04 18:12:27 yched Exp $
+// $Id: content_handler_argument_many_to_one.inc,v 1.1.2.2 2008/10/04 13:14:21 karens Exp $
 
+/**
+ * @file
+ * Handler for 'content_handler_argument_many_to_one' style.
+ */
 class content_handler_argument_many_to_one extends views_handler_argument_many_to_one {
   var $content_field;
 

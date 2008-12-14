@@ -1,7 +1,8 @@
 <?php
-// $Id: content_handler_field.inc,v 1.1.2.1 2008/09/04 18:12:27 yched Exp $
+// $Id: content_handler_field.inc,v 1.1.2.10 2008/11/11 00:26:53 yched Exp $
 
 /**
+ * @file
  * The subclass adds basic field and formatter info,
  * for field-specific subclasses to use if they need to.
  *
@@ -15,6 +16,16 @@ class content_handler_field extends views_handler_field_node {
   function construct() {
     parent::construct();
     $this->content_field = content_fields($this->definition['content_field_name']);
+  }
+
+  function init(&$view, $options) {
+    $field = $this->content_field;
+    parent::init($view, $options);
+    if ($field['multiple']) {
+      $this->additional_fields['delta'] = 'delta';
+    }
+    // We'll need the node type to render the results.
+    $this->additional_fields['type'] = array('table' => 'node', 'field' => 'type');
   }
 
   function options(&$options) {
@@ -38,6 +49,26 @@ class content_handler_field extends views_handler_field_node {
     $field = $this->content_field;
     $options = $this->options;
 
+    $form['label_type'] = array(
+      '#title' => t('Label'),
+      '#type' => 'radios',
+      '#options' => array(
+        'none' => t('None'),
+        'widget' => t('Widget label (@label)', array('@label' => $field['widget']['label'])),
+        'custom' => t('Custom'),
+      ),
+      '#default_value' => $options['label_type'],
+      '#weight' => 2,
+    );
+    $form['label'] = array(
+      '#title' => t('Custom label'),
+      '#type' => 'textfield',
+      '#default_value' => $options['label'],
+      '#process' => array('views_process_dependency'),
+      '#dependency' => array('radio:options[label_type]' => array('custom')),
+      '#weight' => 3,
+     );
+
     $field_types = _content_field_types();
     $formatters = array();
     if (is_array($field_types[$field['type']]['formatters'])) {
@@ -51,37 +82,48 @@ class content_handler_field extends views_handler_field_node {
       '#options' => $formatters,
       '#required' => TRUE,
       '#default_value' => $options['format'],
-      '#weight' => 0,
+      '#weight' => 4,
     );
-
-    $form['label_type'] = array(
-      '#title' => t('Label'),
-      '#type' => 'radios',
-      '#options' => array(
-        'none' => t('None'),
-        'widget' => t('Widget label (@label)', array('@label' => $field['widget']['label'])),
-        'custom' => t('Custom'),
-      ),
-      '#default_value' => $options['label_type'],
-      '#weight' => 1,
-    );
-    $form['label'] = array(
-      '#title' => t('Custom label'),
-      '#type' => 'textfield',
-      '#default_value' => $options['label'],
-      '#process' => array('views_process_dependency'),
-      '#dependency' => array('radio:options[label_type]' => array('custom')),
-      '#weight' => 2,
-     );
   }
 
+
+  /**
+   * Make sure some value is stored as a label.
+   *
+   * Don't use t(), since Views' views_handler_field already has
+   * $this->options['label'] marked as a translatable field.
+   *
+   * @see http://drupal.org/node/285470
+   */
+  function options_submit($form, &$form_state) {
+    switch ($form_state['values']['options']['label_type']) {
+      case 'none':
+        $form_state['values']['options']['label'] = '';
+        break;
+      case 'widget':
+        $form_state['values']['options']['label'] = $this->content_field['widget']['label'];
+        break;
+    }
+  }
+
+  /**
+   * @TODO
+   * Now that we save the label in the submit process above we could
+   * get rid of this function. Leave it here for now to be sure the
+   * label works for fields that haven't been updated since this
+   * change was made, since $this->options['label'] will be missing a
+   * value until it is updated in the view.
+   *
+   * Don't use t(), since Views' views_handler_field already has
+   * $this->options['label'] marked as a translatable field.
+   */
   function label() {
     $field = $this->content_field;
     switch ($this->options['label_type']) {
       case 'none':
         return '';
       case 'widget':
-        return t($field['widget']['label']);
+        return $field['widget']['label'];
       default:
         return $this->options['label'];
     }
@@ -106,24 +148,23 @@ class content_handler_field extends views_handler_field_node {
     $options = $this->options;
     $db_info = content_database_info($field);
 
-    // $values will be used as a fake $node object;
-    // we provide a build_mode for rendering.
-    // TODO: we can stick any value in there -
-    // what would make most sense ?  row_style ?
-    $values->build_mode = 'views';
+    // Build a pseudo-node from the retrieved values.
+    $node = drupal_clone($values);
+    // TODO : is nid always correct ?
+    // content_format and formatters will need a 'type'.
+    $node->type = $values->{$this->aliases['type']};
+    // Some formatters need to behave differently depending on the build_mode
+    // (for instance: preview), so we provide one.
+    $node->build_mode = NODE_BUILD_NORMAL;
 
     $item = array();
     foreach ($db_info['columns'] as $column => $attributes) {
-      $item[$column] = $values->{$this->table_alias .'_'. $attributes['column']};
+      $item[$column] = $values->{$this->aliases[$attributes['column']]};
     }
-    $item['#delta'] = !empty($values->{$this->table_alias . '_delta'}) ? $values->{$this->table_alias . '_delta'} : 0;
-    return $this->render_link(content_format($field, $item, $options['format'], $values), $values);
+
+    $item['#delta'] = $field['multiple'] ?  $values->{$this->aliases['delta']} : 0;
+
+    return $this->render_link(content_format($field, $item, $options['format'], $node), $values);
   }
 
-  function query() {
-    // Many of our formatters need the node type name, so let's be
-    // sure it's in the query.
-    $this->view->query->add_field('node', 'type');
-    parent::query();
-  }
 }

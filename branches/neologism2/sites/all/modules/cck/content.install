@@ -1,5 +1,5 @@
 <?php
-// $Id: content.install,v 1.85.2.13 2008/09/04 18:12:28 yched Exp $
+// $Id: content.install,v 1.85.2.30 2008/11/07 16:24:58 yched Exp $
 
 function content_requirements($phase) {
   $requirements = array();
@@ -8,8 +8,8 @@ function content_requirements($phase) {
   if (module_exists('views') && (!function_exists('views_api_version') || views_api_version() < 2.0)) {
     $requirements['cck_views'] = array(
       'title' => $t('CCK - No Views integration'),
-      'description' => $t("CCK fields integration with Views module is not compatible with the version of Views you are running.<br/>CCK data won't appear in your existing views.<br/> You might want to upgrade to a more recent version of Views module."),
-      'severity' => REQUIREMENT_WARNING,
+      'description' => $t("CCK integration with Views module requires Views 6.x-2.0-rc2 or greater."),
+      'severity' => REQUIREMENT_ERROR,
     );
   }
   return $requirements;
@@ -81,7 +81,7 @@ function content_types_install() {
  * Implementation of hook_install().
  */
 function content_install() {
-  variable_set('content_schema_version', 6002);
+  variable_set('content_schema_version', 6009);
   drupal_install_schema('content');
 }
 
@@ -94,6 +94,10 @@ function content_uninstall() {
   // The variable is used during the uninstall process,
   // so we removed it at the very end.
   variable_del('content_schema_version');
+  // Remove extra weights.
+  foreach (node_get_types('names') as $type_name) {
+    variable_del("content_extra_weights_$type_name");
+  }
 }
 
 /**
@@ -218,6 +222,49 @@ function content_update_last_removed() {
 }
 
 /**
+ * Helper function for module updates :
+ * - checks no updates are pending for content.module
+ * - checks content module and the module being updated are both enabled.
+ *
+ * @param $module
+ *   The name of the module being updated.
+ */
+function content_check_update($module = NULL) {
+  $ret = array();
+  // Check that modules are enabled before running their updates.
+  if (!module_exists('content') || ($module && !module_exists($module))) {
+    drupal_set_message(t("Updates for CCK-related modules are not run until the modules are enabled on the <a href=\"@admin-modules-path\">administer modules page</a>. When you enable them, you'll need to return to <a href=\"@update-php\">update.php</a> and run the remaining updates.", array('@admin-modules-path' => url('admin/build/modules'), '@update-php' => base_path() .'update.php?op=selection')), 'warning', FALSE);
+    // The content module is not enabled, nothing else can happen.
+    if ($module && !module_exists('content') && module_exists($module)) {
+      $query_message = t('!module.module has updates but cannot be updated because content.module is not enabled.<br />If and when content.module is enabled, you will need to re-run the update script. You will continue to see this message until the module is enabled and updates are run.', array('!module' => $module));
+    }
+    // The requested module is not enabled, which may be intentional.
+    // Just let the user know there are updates to be processed if enabled later.
+    else {
+      $query_message = t('!module.module has updates and is available in the modules folder but is not enabled.<br />If and when it is enabled, you will need to re-run the update script. You will continue to see this message until the module is enabled and updates are run.', array('!module' => $module ? $module : 'content'));
+    }
+    $ret['#abort'] = array('success' => FALSE, 'query' => $query_message);
+    return $ret;
+  }
+  // Check that content.module is up-to-date before running field module updates.
+  if ($module && (drupal_get_installed_schema_version('content', TRUE) < max(drupal_get_schema_versions('content')))) {
+    drupal_set_message(t('Some updates are still pending. Please return to <a href="@update-php">update.php</a> and run the remaining updates.', array('@update-php' => base_path() .'update.php?op=selection')), 'warning', FALSE);
+    $ret['#abort'] = array('success' => FALSE, 'query' => t('Some updates are still pending.<br/>Please re-run the update script.'));
+    return $ret;
+  }
+  // If everything is OK and updates are not aborted, make sure
+  // content_associate_fields() gets run. With all the complexity of
+  // the dependent updates, it can get missed when an update is aborted.
+  // It won't hurt anything to do this more than once in order to be sure
+  // it doesn't get skipped. Without this step, we can end up with
+  // field modules that are enabled and updated, but not marked as active
+  // in the content_node_field table.
+  if ($module and module_exists($module)) {
+    content_associate_fields($module);
+  }
+}
+
+/**
  * Add module name to fields table to make it easier to identify the fields to delete when a module
  * is uninstalled.
  *
@@ -225,6 +272,10 @@ function content_update_last_removed() {
  * is no other way to find the associated fields.
  */
 function content_update_6000() {
+  if ($abort = content_check_update()) {
+    return $abort;
+  }
+
   $ret = array();
 
   drupal_load('module', 'content');
@@ -268,6 +319,10 @@ function content_update_6000() {
  * with 'content_field'.
  */
 function content_update_6001() {
+  if ($abort = content_check_update()) {
+    return $abort;
+  }
+
   $ret = array();
   drupal_load('module', 'content');
   if (db_table_exists('content_node_field')) {
@@ -285,6 +340,10 @@ function content_update_6001() {
  * Switching to adding those tables only when needed.
  */
 function content_update_6002() {
+  if ($abort = content_check_update()) {
+    return $abort;
+  }
+
   $ret = array();
 
   drupal_load('module', 'content');
@@ -314,10 +373,15 @@ function content_update_6002() {
  * This update function will only be useful for early D6 testers...
  */
 function content_update_6003() {
+  if ($abort = content_check_update()) {
+    return $abort;
+  }
+
   $ret = array();
   if (db_column_exists('content_node_field', 'columns')) {
     db_change_field($ret, 'content_node_field', 'columns', 'db_columns', array('type' => 'text', 'size' => 'medium', 'not null' => TRUE));
   }
+  variable_set('content_schema_version', 6003);
   return $ret;
 }
 
@@ -326,6 +390,10 @@ function content_update_6003() {
  * Large tables might deserve a multipass update.
  */
 function content_update_6004(&$sandbox) {
+  if ($abort = content_check_update()) {
+    return $abort;
+  }
+
   $ret = array();
 
   // Do nothing if the indexes were already created by D5's content_update_1009.
@@ -359,7 +427,7 @@ function content_update_6004(&$sandbox) {
   if ($sandbox['count']) {
     $ret['#finished'] = 1 - count($sandbox['tables']) / $sandbox['count'];
   }
-
+  variable_set('content_schema_version', 6004);
   return $ret;
 }
 
@@ -367,9 +435,14 @@ function content_update_6004(&$sandbox) {
  * Add 'locked' property for fields.
  */
 function content_update_6005() {
+  if ($abort = content_check_update()) {
+    return $abort;
+  }
+
   $ret = array();
   drupal_load('module', 'content');
   db_add_field($ret, content_field_tablename(), 'locked', array('type' => 'int', 'size' => 'tiny', 'not null' => TRUE, 'default' => 0));
+  variable_set('content_schema_version', 6005);
   return $ret;
 }
 
@@ -377,8 +450,72 @@ function content_update_6005() {
  * Make sure the 'locked' column is NOT NULL (error in previous content_update_6005().
  */
 function content_update_6006() {
+  if ($abort = content_check_update()) {
+    return $abort;
+  }
+
   $ret = array();
   drupal_load('module', 'content');
   db_change_field($ret, content_field_tablename(), 'locked', 'locked', array('type' => 'int', 'size' => 'tiny', 'not null' => TRUE, 'default' => 0));
+  variable_set('content_schema_version', 6006);
+  return $ret;
+}
+
+/**
+ * Dummy update function to make sure the theme registry and css / JS aggregated files
+ * are updated.
+ */
+function content_update_6007() {
+  if ($abort = content_check_update()) {
+    return $abort;
+  }
+
+  variable_set('content_schema_version', 6007);
+  return array();
+}
+
+/**
+ * Dummy update function to make sure schema version gets updated.
+ */
+function content_update_6008() {
+  if ($abort = content_check_update()) {
+    return $abort;
+  }
+
+  variable_set('content_schema_version', 6008);
+  return array();
+}
+
+/**
+ * Add the 'exclude from $content' display setting to all existing field instances.
+ */
+function content_update_6009() {
+  if ($abort = content_check_update()) {
+    return $abort;
+  }
+
+  $ret = array();
+  $result = db_query("SELECT *  FROM {content_node_field_instance}");
+  while ($type = db_fetch_array($result)) {
+    $new_settings = array();
+    $display_settings = unserialize($type['display_settings']);
+    if (!empty($display_settings)) {
+      foreach ($display_settings as $key => $val) {
+        $new_settings[$key] = $val;
+        if ($key !== 'label' && is_array($val)) {
+          $new_settings[$key]['exclude'] = 0;
+        }
+      }
+    }
+    else {
+      $new_settings = array(
+        'label' => array('format' => 'above'),
+        'full' => array('format' => 'default', 'exclude' => 0),
+        'teaser' => array('format' => 'default', 'exclude' => 0),
+        );
+    }
+    db_query("UPDATE {content_node_field_instance} SET display_settings='%s' WHERE field_name='%s' AND type_name='%s'", serialize($new_settings), $type['field_name'], $type['type_name']);
+  }
+  variable_set('content_schema_version', 6009);
   return $ret;
 }

@@ -1,5 +1,5 @@
 <?php
-// $Id: number.module,v 1.91.2.16 2008/09/01 15:50:08 yched Exp $
+// $Id: number.module,v 1.91.2.30 2008/11/05 19:40:18 yched Exp $
 
 /**
  * @file
@@ -18,6 +18,7 @@ function number_theme() {
     'number_formatter_us_2' => array('arguments' => array('element' => NULL), 'function' => 'theme_number_formatter_generic'),
     'number_formatter_be_0' => array('arguments' => array('element' => NULL), 'function' => 'theme_number_formatter_generic'),
     'number_formatter_be_1' => array('arguments' => array('element' => NULL), 'function' => 'theme_number_formatter_generic'),
+    'number_formatter_be_2' => array('arguments' => array('element' => NULL), 'function' => 'theme_number_formatter_generic'),
     'number_formatter_fr_0' => array('arguments' => array('element' => NULL), 'function' => 'theme_number_formatter_generic'),
     'number_formatter_fr_1' => array('arguments' => array('element' => NULL), 'function' => 'theme_number_formatter_generic'),
     'number_formatter_unformatted' => array('arguments' => array('element' => NULL)),
@@ -26,41 +27,21 @@ function number_theme() {
 
 /**
  * Implementation of hook_field_info().
- *
- * Here we indicate that the content module will use its default
- * handling for the view of these fields.
- *
- * Callbacks can be omitted if default handing is used.
- * They're included here just so this module can be used
- * as an example for custom modules that might do things
- * differently.
  */
 function number_field_info() {
   return array(
     'number_integer' => array(
       'label' => t('Integer'),
       'description' => t('Store a number in the database as an integer.'),
-      'callbacks' => array(
-        'tables' => CONTENT_CALLBACK_DEFAULT,
-        'arguments' => CONTENT_CALLBACK_DEFAULT,
-        ),
-      ),
+    ),
     'number_decimal' => array(
       'label' => t('Decimal'),
       'description' => t('Store a number in the database in a fixed decimal format.'),
-      'callbacks' => array(
-        'tables' => CONTENT_CALLBACK_DEFAULT,
-        'arguments' => CONTENT_CALLBACK_DEFAULT,
-        ),
-      ),
+    ),
     'number_float' => array(
       'label' => t('Float'),
       'description' => t('Store a number in the database in a floating point format.'),
-      'callbacks' => array(
-        'tables' => CONTENT_CALLBACK_DEFAULT,
-        'arguments' => CONTENT_CALLBACK_DEFAULT,
-        ),
-      ),
+    ),
   );
 }
 
@@ -192,9 +173,14 @@ function number_field_settings($op, $field) {
         $db_info = content_database_info($field);
         $table_alias = content_views_tablename($field);
 
-        // Swap the filter handler to the 'in' operator.
-        $data[$table_alias][$field['field_name'] .'_value']['filter']['handler'] = 'content_handler_filter_many_to_one';
-        $data[$table_alias][$field['field_name'] .'_value']['filter']['numeric'] = TRUE;
+        // Filter: Add a 'many to one' filter.
+        $copy = $data[$table_alias][$field['field_name'] .'_value'];
+        $copy['title'] = t('@label (!name) - Allowed values', array('@label' => t($field['widget']['label']), '!name' => $field['field_name']));
+        $copy['filter']['handler'] = 'content_handler_filter_many_to_one';
+        $copy['filter']['numeric'] = TRUE;
+        unset($copy['field'], $copy['argument'], $copy['sort']);
+        $data[$table_alias][$field['field_name'] .'_value_many_to_one'] = $copy;
+        // Argument: swap the handler to the 'many to one' operator
         $data[$table_alias][$field['field_name'] .'_value']['argument']['handler'] = 'content_handler_argument_many_to_one';
         $data[$table_alias][$field['field_name'] .'_value']['argument']['numeric'] = TRUE;
         return $data;
@@ -227,6 +213,7 @@ function number_field($op, &$node, $field, &$items, $teaser, $page) {
       if (is_array($items)) {
         foreach ($items as $delta => $item) {
           $error_element = isset($item['_error_element']) ? $item['_error_element'] : '';
+          if (is_array($item) && isset($item['_error_element'])) unset($item['_error_element']);
           if ($item['value'] != '') {
             if (is_numeric($field['min']) && $item['value'] < $field['min']) {
               form_set_error($error_element, t('%name: the value may be no smaller than %min.', array('%name' => t($field['widget']['label']), '%min' => $field['min'])));
@@ -234,13 +221,24 @@ function number_field($op, &$node, $field, &$items, $teaser, $page) {
             if (is_numeric($field['max']) && $item['value'] > $field['max']) {
               form_set_error($error_element, t('%name: the value may be no larger than %max.', array('%name' => t($field['widget']['label']), '%max' => $field['max'])));
             }
-            if (count($allowed_values) && !array_key_exists($item['value'], $allowed_values)) {
-              form_set_error($error_element, t('%name: illegal value.', array('%name' => t($field['widget']['label']))));
+            if (count($allowed_values)) {
+              // We cannot use array_key_exists() because allowed values are
+              // stored as strings, and we need to compare numeric equality.
+              $valid = FALSE;
+              foreach ($allowed_values as $kay => $value) {
+                if ((float) $item['value'] == (float) $kay) {
+                  $valid = TRUE;
+                  break;
+                }
+              }
+              if (!$valid) {
+                form_set_error($error_element, t('%name: illegal value.', array('%name' => t($field['widget']['label']))));
+              }
             }
           }
         }
       }
-      break;
+      return $items;
   }
 }
 
@@ -258,7 +256,6 @@ function number_content_is_empty($item, $field) {
  * Implementation of hook_field_formatter_info().
  */
 function number_field_formatter_info() {
-
   return array(
     'default' => array('label' => '9999',            'multiple values' => CONTENT_HANDLE_CORE, 'field types' => array('number_integer', 'number_decimal', 'number_float')),
     'us_0'    => array('label' => '9,999',           'multiple values' => CONTENT_HANDLE_CORE, 'field types' => array('number_integer', 'number_decimal', 'number_float')),
@@ -457,6 +454,11 @@ function number_process($element, $edit, $form_state, $form) {
 
   $prefixes = array();
   $suffixes = array();
+
+  // Make sure we don't wipe out element validation added elsewhere.
+  if (empty($element['#element_validate'])) {
+    $element['#element_validate'] = array();
+  }
   if (!empty($field['prefix'])) {
     $prefixes = explode('|', $field['prefix']);
     $element[$field_key]['#field_prefix'] = array_pop($prefixes);
@@ -467,13 +469,13 @@ function number_process($element, $edit, $form_state, $form) {
   }
   switch ($field['type']) {
     case 'number_float':
-      $element['#element_validate'] = array('number_float_validate');
+      $element['#element_validate'][] = 'number_float_validate';
       break;
     case 'number_integer':
-      $element['#element_validate'] = array('number_integer_validate');
+      $element['#element_validate'][] = 'number_integer_validate';
       break;
     case 'number_decimal':
-      $element['#element_validate'] = array('number_decimal_validate');
+      $element['#element_validate'][] = 'number_decimal_validate';
       $element['#decimal'] = isset($field['decimal']) ? $field['decimal'] : '.';
       $element['#precision'] = isset($field['precision']) ? $field['precision'] : 10;
       $element['#scale'] = isset($field['scale']) ? $field['scale'] : 2;
@@ -503,11 +505,12 @@ function number_float_validate($element, &$form_state) {
     $start = $value;
     $value = preg_replace('@[^-0-9\.]@', '', $value);
     if ($start != $value) {
-      // No reason to make this an error, just need to inform user what has changed.
-      drupal_set_message(t('Only numbers and decimals are allowed in %field. %start was changed to %value.', array(
-      '%field' => t($field['widget']['label']), '%start' => $start, '%value' => $value)));
+      $error_field = implode('][', $element['#parents']) .']['. $field_key;
+      form_set_error($error_field, t('Only numbers and decimals are allowed in %field.', array('%field' => t($field['widget']['label']))));
     }
-    form_set_value($element[$field_key], $value, $form_state);
+    else {
+      form_set_value($element[$field_key], $value, $form_state);
+    }
   }
 }
 
@@ -525,11 +528,12 @@ function number_integer_validate($element, &$form_state) {
     $start = $value;
     $value = preg_replace('@[^-0-9]@', '', $value);
     if ($start != $value) {
-      // No reason to make this an error, just need to inform user what has changed.
-      drupal_set_message(t('Only numbers are allowed in %field. %start was changed to %value.', array(
-      '%field' => t($field['widget']['label']), '%start' => $start, '%value' => $value)));
+      $error_field = implode('][', $element['#parents']) .']['. $field_key;
+      form_set_error($error_field, t('Only numbers are allowed in %field.', array('%field' => t($field['widget']['label']))));
     }
-    form_set_value($element[$field_key], $value, $form_state);
+    else {
+      form_set_value($element[$field_key], $value, $form_state);
+    }
   }
 }
 
@@ -548,13 +552,14 @@ function number_decimal_validate($element, &$form_state) {
     $start = $value;
     $value = preg_replace('@[^-0-9\\'. $decimal .']@', '', $value);
     if ($start != $value) {
-      // No reason to make this an error, just need to inform user what has changed.
-      drupal_set_message( t('Only numbers and the decimal character (%decimal) are allowed in %field. %start was changed to %value.', array(
-      '%decimal' => $element['#decimal'], '%field' => t($field['widget']['label']), '%start' => $start, '%value' => $value)));
+      $error_field = implode('][', $element['#parents']) .']['. $field_key;
+      form_set_error($error_field, t('Only numbers and the decimal character (%decimal) are allowed in %field.', array('%decimal' => $element['#decimal'], '%field' => t($field['widget']['label']))));
     }
-    $value = str_replace($element['#decimal'], '.', $value);
-    $value = round($value, $element['#scale']);
-    form_set_value($element[$field_key], $value, $form_state);
+    else {
+      $value = str_replace($element['#decimal'], '.', $value);
+      $value = round($value, $element['#scale']);
+      form_set_value($element[$field_key], $value, $form_state);
+    }
   }
 }
 

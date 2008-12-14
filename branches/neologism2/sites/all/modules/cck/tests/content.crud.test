@@ -1,5 +1,9 @@
 <?php
-// $Id: content.crud.test,v 1.4.2.12 2008/09/06 15:54:33 yched Exp $
+// $Id: content.crud.test,v 1.4.2.15 2008/10/06 14:55:16 karens Exp $
+
+// TODO:
+// - Test search indexing
+// - Test values reordering with preview and failed validation
 
 /**
  * Base class for CCK CRUD tests.
@@ -374,8 +378,8 @@ class ContentCrudTestCase extends DrupalWebTestCase {
 class ContentCrudBasicTest extends ContentCrudTestCase {
   function getInfo() {
     return array(
-      'name' => t('CCK CRUD API - Basic API tests'),
-      'description' => t('Tests the field CRUD (create, read, update, delete) API. <b>Requires !schema_link.</b>', array('!schema_link' => l('Schema module', 'http://www.drupal.org/projects/schema'))),
+      'name' => t('CRUD - Basic API tests'),
+      'description' => t('Tests the field CRUD (create, read, update, delete) API. <strong>Requires <a href="@schema_link">Schema module</a>.</strong>', array('@schema_link' => 'http://www.drupal.org/projects/schema')),
       'group' => t('CCK'),
     );
   }
@@ -430,8 +434,8 @@ class ContentCrudBasicTest extends ContentCrudTestCase {
 class ContentCrudSingleToMultipleTest extends ContentCrudTestCase {
   function getInfo() {
     return array(
-      'name' => t('CCK CRUD API - Single to multiple'),
-      'description' => t('Tests the field CRUD (create, read, update, delete) API by creating a single value field and changing it to a multivalue field, sharing it between several content types. <b>Requires !schema_link.</b>', array('!schema_link' => l('Schema module', 'http://www.drupal.org/projects/schema'))),
+      'name' => t('CRUD - Single to multiple'),
+      'description' => t('Tests the field CRUD (create, read, update, delete) API by creating a single value field and changing it to a multivalue field, sharing it between several content types. <strong>Requires <a href="@schema_link">Schema module</a>.</strong>', array('@schema_link' => 'http://www.drupal.org/projects/schema')),
       'group' => t('CCK'),
     );
   }
@@ -505,8 +509,8 @@ class ContentCrudSingleToMultipleTest extends ContentCrudTestCase {
 class ContentCrudMultipleToSingleTest extends ContentCrudTestCase {
   function getInfo() {
     return array(
-      'name' => t('CCK CRUD API - Multiple to single'),
-      'description' => t('Tests the field CRUD (create, read, update, delete) API by creating a multivalue field and changing it to a single value field, sharing it between several content types. <b>Requires !schema_link.</b>', array('!schema_link' => l('Schema module', 'http://www.drupal.org/projects/schema'))),
+      'name' => t('CRUD - Multiple to single'),
+      'description' => t('Tests the field CRUD (create, read, update, delete) API by creating a multivalue field and changing it to a single value field, sharing it between several content types. <strong>Requires <a href="@schema_link">Schema module</a>.</strong>', array('@schema_link' => 'http://www.drupal.org/projects/schema')),
       'group' => t('CCK'),
     );
   }
@@ -639,70 +643,199 @@ class ContentCrudMultipleToSingleTest extends ContentCrudTestCase {
 class ContentUICrud extends ContentCrudTestCase {
   function getInfo() {
     return array(
-      'name' => t('Create and Tests Fields via the UI'),
-      'description' => t('Tests the CRUD (create, read, update, delete) operations for content fields via the UI. <b>Requires !schema_link.</b>', array('!schema_link' => l('Schema module', 'http://www.drupal.org/projects/schema'))),
+      'name' => t('Admin UI'),
+      'description' => t('Tests the CRUD (create, read, update, delete) operations for content fields via the UI. <strong>Requires <a href="@schema_link">Schema module</a>.</strong>', array('@schema_link' => 'http://www.drupal.org/projects/schema')),
       'group' => t('CCK'),
     );
   }
 
   function setUp() {
-    parent::setUp();
+    parent::setUp('fieldgroup');
     $this->loginWithPermissions();
   }
 
   function testAddFieldUI() {
     // Add a content type with a random name (to avoid schema module problems).
-    $edit = array();
     $type1 = 'simpletest'. mt_rand();
-    $admin_type1_url = 'admin/content/node-type/'. $type1;
-    $edit['name']  = $this->randomName(10);
-    $edit['type']  = $type1;
+    $type1_name = $this->randomName(10);
+    $edit = array(
+      'type' => $type1,
+      'name' => $type1_name,
+    );
     $this->drupalPost('admin/content/types/add', $edit, 'Save content type');
+    $admin_type1_url = 'admin/content/node-type/'. $type1;
 
     // Create a text field via the UI.
+    $field_name = strtolower($this->randomName(10));
+    $field_label = $this->randomName(10);
+    $edit = array(
+      '_add_new_field[label]' => $field_label,
+      '_add_new_field[field_name]' => $field_name,
+      '_add_new_field[type]' => 'text',
+      '_add_new_field[widget_type]' => 'text_textfield',
+    );
+    $this->drupalPost($admin_type1_url .'/fields', $edit, 'Save');
+    $this->assertRaw('These settings apply only to the <em>'. $field_label .'</em> field', 'Field settings page displayed');
+    $this->assertRaw('Size of textfield', 'Field and widget types correct.');
+    $this->assertNoRaw('Change basic information', 'No basic information displayed');
+    $field_name = 'field_'. $field_name;
+
     $edit = array();
-    $edit['field_name']  = strtolower($this->randomName(10));
-    $edit['label']       = $this->randomName(20);
-    $edit['type']        = 'text';
-    $this->drupalPost($admin_type1_url .'/add_field', $edit, 'Continue');
-    $field_url = 'field_'. $edit['field_name'];
-    $field_label = $edit['label'];
-    $edit = array();
-    $edit["widget_type"] = 'text_textfield';
     // POST to the page without reloading.
-    $this->drupalPost(NULL, $edit, 'Continue');
-    $this->assertRaw('Created field <em>'. $field_label, 'Success message displayed');
-    $this->drupalPost($admin_type1_url .'/fields/'. $field_url, array(), 'Save field settings');
+    $this->drupalPost(NULL, $edit, 'Save field settings');
+    $this->assertRaw('Added field <em>'. $field_label .'</em>.', 'Field settings saved');
+    $field_type1_url = $admin_type1_url .'/fields/'. $field_name;
+    $this->assertRaw($field_type1_url, 'Field displayed on overview.');
+
     // Check the schema - the values should be in the per-type table.
     $this->assertSchemaMatchesTables(array(
       'per_type' => array(
-        $type1 => array($field_url => array('value')),
+        $type1 => array($field_name => array('value')),
       ),
     ));
 
-    // Add a second content type.
-    $edit = array();
-    $type2 = 'simpletest'. mt_rand();
-    $admin_type2_url = 'admin/content/node-type/'. $type2;
-    $edit['name']  = $this->randomName(10);
-    $edit['type']  = $type2;
-    $this->drupalPost('admin/content/types/add', $edit, 'Save content type');
 
-    // Add the same field to a second content type.
+    // Add a second content type.
+    $type2 = 'simpletest'. mt_rand();
+    $type2_name = $this->randomName(10);
+    $edit = array(
+      'type' => $type2,
+      'name' => $type2_name,
+    );
+    $this->drupalPost('admin/content/types/add', $edit, 'Save content type');
+    $admin_type2_url = 'admin/content/node-type/'. $type2;
+
+    // Add the same field to the second content type.
+    $edit = array(
+      '_add_existing_field[label]' => $field_label,
+      '_add_existing_field[field_name]' => $field_name,
+      '_add_existing_field[widget_type]' => 'text_textarea',
+    );
+    $this->drupalPost($admin_type2_url .'/fields', $edit, 'Save');
+    $this->assertRaw('These settings apply only to the <em>'. $field_label .'</em> field', 'Field settings page displayed');
+    $this->assertRaw('Rows', 'Field and widget types correct.');
+    $this->assertNoRaw('Change basic information', 'No basic information displayed');
+
     $edit = array();
-    $edit['existing_field_name'] = $field_url;
-    $this->drupalPost($admin_type2_url .'/add_field', $edit, 'Add field');
+    $this->drupalPost(NULL, $edit, 'Save field settings');
+    $this->assertRaw('Added field <em>'. $field_label .'</em>.', 'Field settings saved');
+    $field_type2_url = $admin_type2_url .'/fields/'. $field_name;
+    $this->assertRaw($field_type2_url, 'Field displayed on overview.');
+
     // Check that a separate table is created for the shared field, and
     // that it's values are no longer in the per-type tables.
     $this->assertSchemaMatchesTables(array(
       'per_field' => array(
-        $field_url => array($field_url => array('value')),
+        $field_name => array($field_name => array('value')),
       ),
       'per_type' => array(
         $type1 => array(),
         $type2 => array(),
       ),
     ));
+
+
+    // Chancge the basic settings for this field.
+    $edit = array();
+    $this->drupalPost($field_type2_url, $edit, 'Change basic information');
+    $this->assertRaw('Edit basic information', 'Basic information form displayed');
+
+    $field_label2 = $this->randomName(10);
+    $edit = array(
+      'label' => $field_label2,
+      'widget_type' => 'text_textfield',
+    );
+    $this->drupalPost(NULL, $edit, 'Continue');
+    $this->assertRaw('These settings apply only to the <em>'. $field_label2 .'</em> field', 'Label changed');
+    $this->assertRaw('Size of textfield', 'Widget changed');
+
+    $edit = array();
+    // POST to the page without reloading.
+    $this->drupalPost(NULL, $edit, 'Save field settings');
+    $this->assertRaw('Saved field <em>'. $field_label2 .'</em>.', 'Field settings saved');
+
+
+    // Add a group to the second content type.
+    $group1_name = strtolower($this->randomName(10));
+    $group1_label = $this->randomName(10);
+    $edit = array(
+      '_add_new_group[label]' => $group1_label,
+      '_add_new_group[group_name]' => $group1_name,
+    );
+    $this->drupalPost($admin_type2_url .'/fields', $edit, 'Save');
+    $group1_name = 'group_'. $group1_name;
+    $this->assertRaw($admin_type2_url .'/groups/'. $group1_name, 'Group created');
+
+
+    // Remove the field from the second type.
+    $edit = array();
+    $this->drupalPost($field_type2_url .'/remove', $edit, 'Remove');
+    $this->assertRaw('Removed field <em>'. $field_label2 .'</em> from <em>'. $type2_name .'</em>', 'Field removed');
+    $this->assertNoRaw($field_type2_url, 'Field not displayed on overview.');
+
+    // Check the schema - the values should be in the per-type table.
+    $this->assertSchemaMatchesTables(array(
+      'per_type' => array(
+        $type1 => array($field_name => array('value')),
+      ),
+    ));
+
+    // Add a new field, an existing field, and a group in the same submit.
+    $field2_label = $this->randomName(10);
+    $field2_name = strtolower($this->randomName(10));
+    $group2_label = $this->randomName(10);
+    $group2_name = strtolower($this->randomName(10));
+    $edit = array(
+      '_add_new_field[label]' => $field2_label,
+      '_add_new_field[field_name]' => $field2_name,
+      '_add_new_field[type]' => 'text',
+      '_add_new_field[widget_type]' => 'text_textfield',
+      '_add_new_field[parent]' => $group1_name,
+      '_add_existing_field[label]' => $field_label,
+      '_add_existing_field[field_name]' => $field_name,
+      '_add_existing_field[widget_type]' => 'text_textarea',
+      '_add_existing_field[parent]' => '_add_new_group',
+      '_add_new_group[label]' => $group2_label,
+      '_add_new_group[group_name]' => $group2_name,
+    );
+    $this->drupalPost($admin_type2_url .'/fields', $edit, 'Save');
+    $this->assertRaw('These settings apply only to the <em>'. $field2_label .'</em> field', 'Field settings page for new field displayed');
+    // Submit new field settings
+    $edit = array();
+    $this->drupalPost(NULL, $edit, 'Save field settings');
+    $this->assertRaw('Added field <em>'. $field2_label .'</em>.', 'Field settings for new field saved');
+    $this->assertRaw('These settings apply only to the <em>'. $field_label .'</em> field', 'Field settings page for existing field displayed');
+    // Submit existing field settings
+    $edit = array();
+    $this->drupalPost(NULL, $edit, 'Save field settings');
+    $this->assertRaw('Added field <em>'. $field_label .'</em>.', 'Field settings for existing field saved');
+    $field2_name = 'field_'. $field2_name;
+    $field2_type2_url = $admin_type2_url .'/fields/'. $field2_name;
+    $this->assertRaw($field2_type2_url, 'New field displayed in overview');
+    $this->assertRaw($field_type2_url, 'Existing field displayed in overview');
+    $group2_name = 'group_'. $group2_name;
+    $this->assertRaw($admin_type2_url .'/groups/'. $group2_name, 'New group displayed in overview');
+
+    // Check Parenting
+    $groups = fieldgroup_groups($type2, FALSE, TRUE);
+    $this->assertTrue(isset($groups[$group1_name]['fields'][$field2_name]), 'New field in correct group');
+    $this->assertTrue(isset($groups[$group2_name]['fields'][$field_name]), 'Existing field in correct group');
+    $this->assertFieldByXPath('//select[@id="edit-'. strtr($field2_name, '_', '-') .'-parent"]//option[@selected]', $group1_name, 'Parenting for new field correct in overview');
+    $this->assertFieldByXPath('//select[@id="edit-'. strtr($field_name, '_', '-') .'-parent"]//option[@selected]', $group2_name, 'Parenting for existing field correct in overview');
+
+    // Check the schema : field1 is shared, field2 is in the per-type table.
+    $this->assertSchemaMatchesTables(array(
+      'per_field' => array(
+        $field_name => array($field_name => array('value')),
+      ),
+      'per_type' => array(
+        $type1 => array(),
+        $type2 => array($field2_name => array('value')),
+      ),
+    ));
+
+    // TODO : test validation failures...
+    // TODO : test ordering and extra fields...
   }
 
   function testFieldContentUI() {

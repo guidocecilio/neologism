@@ -1,14 +1,24 @@
 <?php
-//$Id: content.devel.inc,v 1.4 2008/06/03 14:16:01 karens Exp $
+// $Id: content.devel.inc,v 1.4.2.5 2008/11/05 12:00:21 karens Exp $
+
 /**
  * @file
  * Functions needed for Devel module integration.
+ * 
+ * TODO
+ * This is not really working correctly yet. It is getting called once
+ * for every field and then generating every field each time. But if
+ * you only process one field at a time the earlier ones lose their values.
+ * The current method works to create values, but is overly processor-
+ * intensive and needs to be reworked in a way that each field is 
+ * only processed once and all values are retained.
  */
+
 /**
- * Enrich the $node that is about to be saved with arbitrary 
+ * Enrich the $node that is about to be saved with arbitrary
  * information in each of its CCK fields.
  **/
-function content_generate_fields(&$node) {
+function content_generate_fields(&$node, $field) {
   $type_name = $node->type;
   $type = content_types($type_name);
   $field_types = _content_field_types();
@@ -17,8 +27,8 @@ function content_generate_fields(&$node) {
     foreach ($type['fields'] as $field) {
       $node_field = array();
       // If module handles own multiples, then only call its hook once.
-      if (content_callback('field', 'multiple values', $field) != CONTENT_CALLBACK_DEFAULT) {
-        $max = 1;
+      if (content_handle('widget', 'multiple values', $field) == CONTENT_HANDLE_MODULE) {
+        $max = 0;
       }
       else {
         switch ($field['multiple']) {
@@ -48,14 +58,14 @@ function content_generate_fields(&$node) {
           }
         }
       }
-      $node->$field['field_name'] = $node_field;
+      $node->{$field['field_name']} = $node_field;
     }
   }
 }
 
 /**
  * A simple function to return multiple values for fields that use
- * custom multiple value widgets but don't need any other special multiple 
+ * custom multiple value widgets but don't need any other special multiple
  * values handling. This will call the field generation function
  * a random number of times and compile the results into a node array.
  */
@@ -89,10 +99,10 @@ if (module_exists('text')) {
       return _text_content_generate($node, $field);
     }
   }
-  
+
   function _text_content_generate($node, $field) {
     $node_field = array();
-    if ($field['widget']['rows'] > 1) {
+    if ($field['widget']['type'] == 'text_textarea') {
       $format = $field['text_processing'] ? rand(0, 3) : 0;
       $node_field['value'] = devel_create_content($format);
       $node_field['format'] = $format;
@@ -139,20 +149,20 @@ if (module_exists('number')) {
           $max = is_numeric($field['max']) ? $field['max'] : 10000;
           $scale = 0;
           break;
-      
+
         case 'number_decimal':
           $precision = is_numeric($field['precision']) ? $field['precision'] : 10;
           $scale = is_numeric($field['scale']) ? $field['scale'] : 2;
           $max = is_numeric($field['max']) ? $field['max'] : pow(10, $precision);
           break;
-        
+
         case 'number_float':
           $precision = rand(10, 32);
           $scale = rand(0, 2);
           $max = is_numeric($field['max']) ? $field['max'] : pow(10, $precision);
           break;
-      }  
-      $node_field['value'] = round(rand($min, $max), $scale);    
+      }
+      $node_field['value'] = round(rand($min, $max), $scale);
     }
     return $node_field;
   }
@@ -167,7 +177,7 @@ if (module_exists('nodereference')) {
       return _nodereference_content_generate($node, $field);
     }
   }
-  
+
   function _nodereference_content_generate($node, $field) {
     $node_field = array();
     $allowed_values = nodereference_allowed_values($field);
@@ -189,7 +199,7 @@ if (module_exists('userreference')) {
       return _userreference_content_generate($node, $field);
     }
   }
-  
+
   function _userreference_content_generate($node, $field) {
     $node_field = array();
     $allowed_values = userreference_allowed_values($field);

@@ -1,7 +1,8 @@
 <?php
-// $Id: content.node_form.inc,v 1.7.2.12 2008/08/30 15:06:13 yched Exp $
+// $Id: content.node_form.inc,v 1.7.2.14 2008/10/04 13:14:21 karens Exp $
 
 /**
+ * @file
  * Create fields' form for a content type.
  *
  * Each field defines its own component of the content entry form, via its
@@ -206,7 +207,7 @@ function content_multiple_value_form(&$form, &$form_state, $field, $items) {
         $element['_weight'] = array(
           '#type' => 'weight',
           '#delta' => $max, // this 'delta' is the 'weight' element's property
-          '#default_value' => $delta,
+          '#default_value' => isset($items[$delta]['_weight']) ? $items[$delta]['_weight'] : $delta,
           '#weight' => 100,
         );
       }

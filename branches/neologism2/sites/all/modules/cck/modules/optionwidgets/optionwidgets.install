@@ -1,7 +1,8 @@
 <?php
-// $Id: optionwidgets.install,v 1.23.2.4 2008/09/07 14:52:32 yched Exp $
+// $Id: optionwidgets.install,v 1.23.2.7 2008/10/04 13:14:22 karens Exp $
 
 /**
+ * @file
  * Implementation of hook_install().
  */
 function optionwidgets_install() {
@@ -49,13 +50,11 @@ function optionwidgets_update_last_removed() {
  * the module names in the field and instance tables, so do it here.
  */
 function optionwidgets_update_6000() {
-  $ret = array();
-
-  if (drupal_get_installed_schema_version('content') < 6000) {
-    drupal_set_message(t('Some updates are still pending. Please return to <a href="@update-php">update.php</a> and run the remaining updates.', array('@update-php' => base_path() .'update.php?op=selection')), 'warning');
-    $ret['#abort'] = array('success' => FALSE, 'query' => t('Updates for content.module need to be run first.<br/>Please re-run the update script.'));
-    return $ret;
+  if ($abort = content_check_update('optionwidgets')) {
+    return $abort;
   }
+
+  $ret = array();
 
   drupal_load('module', 'content');
   $ret[] = update_sql("UPDATE {". content_instance_tablename() ."} SET widget_type = 'optionwidgets_select' WHERE widget_type = 'options_select'");
@@ -64,4 +63,14 @@ function optionwidgets_update_6000() {
 
   content_associate_fields('optionwidgets');
   return $ret;
+}
+
+/**
+ * Update 6000 was possibly broken if it was executed while
+ * the modules were still disabled, so we re-run it.
+ * Having it run a second time on sites that got updated correctly has no
+ * side-effect (see http://drupal.org/node/310873).
+ */
+function optionwidgets_update_6001() {
+  return optionwidgets_update_6000();
 }

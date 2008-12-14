@@ -1,7 +1,8 @@
 <?php
-// $Id: userreference.install,v 1.23.2.4 2008/09/07 14:52:32 yched Exp $
+// $Id: userreference.install,v 1.23.2.6 2008/10/04 13:14:23 karens Exp $
 
 /**
+ * @file
  * Implementation of hook_install().
  */
 function userreference_install() {
@@ -45,14 +46,10 @@ function userreference_update_last_removed() {
  * Placeholder update to set newly installed versions to the latest update number.
  */
 function userreference_update_6000() {
-  $ret = array();
-
-  // OK, stupid, but this is just for consistency...
-  if (drupal_get_installed_schema_version('content') < 6000) {
-    drupal_set_message(t('Some updates are still pending. Please return to <a href="@update-php">update.php</a> and run the remaining updates.', array('@update-php' => base_path() .'update.php?op=selection')), 'warning');
-    $ret['#abort'] = array('success' => FALSE, 'query' => t('Updates for content.module need to be run first.<br/>Please re-run the update script.'));
-    return $ret;
+  if ($abort = content_check_update('userreference')) {
+    return $abort;
   }
 
+  $ret = array();
   return $ret;
 }

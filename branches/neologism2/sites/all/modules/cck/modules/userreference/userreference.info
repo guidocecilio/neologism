@@ -6,9 +6,9 @@ dependencies[] = text
 dependencies[] = optionwidgets
 package = CCK
 core = 6.x
-; Information added by drupal.org packaging script on 2008-09-09
-version = "6.x-2.0-rc7"
+; Information added by drupal.org packaging script on 2008-11-12
+version = "6.x-2.1"
 core = "6.x"
 project = "cck"
-datestamp = "1221003605"
+datestamp = "1226449204"
 

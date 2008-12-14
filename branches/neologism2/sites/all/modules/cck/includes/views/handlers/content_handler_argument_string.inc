@@ -1,7 +1,8 @@
 <?php
-// $Id: content_handler_argument_string.inc,v 1.1.2.1 2008/09/04 18:12:27 yched Exp $
+// $Id: content_handler_argument_string.inc,v 1.1.2.2 2008/10/04 13:14:21 karens Exp $
 
 /**
+ * @file
  * The subclass simply adds properties,
  * for field-specific subclasses to use if they need to.
  */

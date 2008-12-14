@@ -1,7 +1,8 @@
 <?php
-// $Id: content_plugin_style_php_array_ac.inc,v 1.1.2.1 2008/09/04 18:12:27 yched Exp $
+// $Id: content_plugin_style_php_array_ac.inc,v 1.1.2.2 2008/10/04 13:14:21 karens Exp $
 
 /**
+ * @file
  * Handler for 'content_php_array_autocomplete' style.
  */
 class content_plugin_style_php_array_ac extends views_plugin_style {

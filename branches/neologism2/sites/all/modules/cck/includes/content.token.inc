@@ -1,29 +1,50 @@
 <?php
-// $Id: content.token.inc,v 1.5.2.1 2008/08/05 18:10:27 yched Exp $
+// $Id: content.token.inc,v 1.5.2.7 2008/11/10 15:56:35 yched Exp $
+
+/**
+ * @file
+ * Implementation of hook_content_build_modes
+ * (on behalf of token.module)
+ */
+function token_content_build_modes() {
+  return array(
+    'token' => array(
+      'title' => t('Token'),
+      'build modes' => array(
+        'token' => array(
+          'title' => t('Token'),
+          'views style' => FALSE,
+        ),
+      ),
+    ),
+  );
+}
 
 // Two helper functions that generate appropriate tokens for CCK-added fields.
 function content_token_values($type, $object = NULL) {
   $tokens = array();
   if ($type == 'node') {
     $node = $object;
-    $node->build_mode = 'token_values';
-    $node->content = array();
-    content_view($node);
-    // The formatted values will only be known after the content has been rendered.
-    drupal_render($node->content);
-    content_alter($node);
+    // Prevent against invalid 'nodes' built by broken 3rd party code.
+    if (isset($node->type)) {
+      $type = content_types($node->type);
+      $node->build_mode = 'token';
+      $node->content = array();
+      content_view($node);
+      // The formatted values will only be known after the content has been rendered.
+      drupal_render($node->content);
+      content_alter($node);
 
-    $field_types = _content_field_types();
-    $type = content_types($node->type);
-    foreach ($type['fields'] as $field) {
-      $items = $node->{$field['field_name']};
-      $function = $field_types[$field['type']]['module'] . '_token_values';
-      if (!empty($items) && function_exists($function)) {
-        $token_values = $function('field', $items);
-        foreach($token_values as $token => $value) {
-          $tokens[$field['field_name'] .'-'. $token] = $value;
+      $field_types = _content_field_types();
+      foreach ($type['fields'] as $field) {
+        $items = $node->{$field['field_name']};
+        $function = $field_types[$field['type']]['module'] . '_token_values';
+        if (!empty($items) && function_exists($function)) {
+          $token_values = $function('field', $items);
+          foreach ($token_values as $token => $value) {
+            $tokens[$field['field_name'] .'-'. $token] = $value;
+          }
         }
-
       }
     }
   }
@@ -59,6 +80,7 @@ if (module_exists('nodereference')) {
 
       $tokens['node reference']['nid']   = t('Referenced node ID');
       $tokens['node reference']['title'] = t('Referenced node title');
+      $tokens['node reference']['title-raw'] = t('Referenced node unfiltered title. WARNING - raw user input.');
       $tokens['node reference']['link']  = t("Formatted html link to the referenced node.");
       $tokens['node reference']['path']  = t("Relative path alias to the referenced node.");
       $tokens['node reference']['url']  = t("Absolute path alias to the referenced node.");
@@ -71,9 +93,11 @@ if (module_exists('nodereference')) {
     if ($type == 'field') {
       $item = $object[0];
 
+      $title = is_numeric($item['nid']) ? _nodereference_titles($item['nid']) : '';
       $tokens['nid']   = $item['nid'];
-      $tokens['title'] = strip_tags($item['view']);
-      $tokens['link']  = $item['view'];
+      $tokens['title'] = $title ? check_plain($title) : '';
+      $tokens['title-raw'] = $title;
+      $tokens['link']  = isset($item['view']) ? $item['view'] : '';
       $tokens['path'] = url('node/' . $item['nid']);
       $tokens['url'] = url('node/' . $item['nid'], array('absolute' => TRUE));
 
@@ -99,7 +123,7 @@ if (module_exists('number')) {
       $item = $object[0];
 
       $tokens['raw']       = $item['value'];
-      $tokens['formatted'] = $item['view'];
+      $tokens['formatted'] = isset($item['view']) ? $item['view'] : '';
 
       return $tokens;
     }
@@ -123,7 +147,7 @@ if (module_exists('text')) {
       $item = $object[0];
 
       $tokens['raw']  = $item['value'];
-      $tokens['formatted'] = $item['view'];
+      $tokens['formatted'] = isset($item['view']) ? $item['view'] : '';
       return $tokens;
     }
   }
@@ -149,8 +173,8 @@ if (module_exists('userreference')) {
       $item = $object[0];
 
       $tokens['uid']   = $item['uid'];
-      $tokens['name']  = strip_tags($item['view']);
-      $tokens['link']  = $item['view'];
+      $tokens['name']  = isset($item['view']) ? strip_tags($item['view']) : '';
+      $tokens['link']  = isset($item['view']) ? $item['view'] : '';
       $tokens['path'] = url('user/' . $item['uid']);
       $tokens['url'] = url('user/' . $item['uid'], array('absolute' => TRUE));
 

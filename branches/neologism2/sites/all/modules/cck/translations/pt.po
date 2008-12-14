@@ -1,4 +1,4 @@
-# $Id: pt.po,v 1.1 2007/09/25 03:31:32 yched Exp $
+# $Id: pt.po,v 1.1.2.1 2008/10/06 15:11:40 karens Exp $
 # Portuguese translation of Drupal (general)
 # Copyright 2007 Fernando Silva <fernando.silva@openquest.pt>
 # Generated from files:
@@ -110,7 +110,7 @@ msgid ""
 "Should not include &lt;?php ?&gt; delimiters. If this field is filled out, the "
 "array returned by this code will override the allowed values list above."
 msgstr ""
- 
+
 #: content.info:0 content_copy.info:0 fieldgroup.info:0 nodereference.info:0 number.info:0 optionwidgets.info:0 text.info:0 userreference.info:0
 msgid "CCK"
 msgstr "CCK"
