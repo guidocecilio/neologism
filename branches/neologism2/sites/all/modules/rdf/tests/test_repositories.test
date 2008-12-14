@@ -1,0 +1,37 @@
+<?php
+// $Id: test_repositories.test,v 1.1 2008/06/10 21:41:17 arto Exp $
+
+class RepositoryTestCase extends DrupalTestCase {
+  function get_info() {
+    return array(
+      'name'  => t('Repositories'),
+      'desc'  => t('Creates, renames and deletes a local RDF repository.'),
+      'group' => t('RDF'),
+    );
+  }
+
+  function setup() {
+    $this->repository = 'simpletest';
+    $this->table = RDF_DB_TABLE_PREFIX . $this->repository;
+    parent::setup();
+  }
+
+  function test_create_repository() {
+    $this->assertFalse(db_table_exists($this->table), t('Table does not exist'));
+    rdf_db_create_repository($this->repository, array('dc:title' => t('Simpletest'), 'dc:description' => ''));
+    $this->assertTrue(db_table_exists($this->table), t('Table was created'));
+  }
+
+  function test_rename_repository() {
+    rdf_db_rename_repository($this->repository, $this->repository . '_renamed');
+    $this->assertTrue(db_table_exists($this->table . '_renamed'), t('Table was renamed'));
+
+    rdf_db_rename_repository($this->repository . '_renamed', $this->repository);
+    $this->assertTrue(db_table_exists($this->table), t('Table was renamed back'));
+  }
+
+  function test_delete_repository() {
+    rdf_db_delete_repository($this->repository);
+    $this->assertFalse(db_table_exists($this->table), t('Table was deleted'));
+  }
+}

@@ -1,0 +1,14 @@
+; $Id: rdf_schema.info,v 1.2 2008/06/04 15:40:34 arto Exp $
+name = RDF Schema
+description = Provides an RDF Schema (RDFS) vocabulary for Drupal data.
+package = RDF
+dependencies[] = rdf
+core = 6.x
+php = 5.2
+
+; Information added by drupal.org packaging script on 2008-06-13
+version = "6.x-1.0-alpha3"
+core = "6.x"
+project = "rdf"
+datestamp = "1213356913"
+

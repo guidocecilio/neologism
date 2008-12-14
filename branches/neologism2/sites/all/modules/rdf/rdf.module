@@ -1,0 +1,498 @@
+<?php
+// $Id: rdf.module,v 1.11 2008/06/13 11:29:13 arto Exp $
+/**
+ * rdf.module - Enables the use of RDF metadata in Drupal 6.x.
+ *
+ * @author Arto Bendiken <http://bendiken.net/>
+ * @copyright Copyright (c) 2007-2008 Arto Bendiken. All rights reserved.
+ * @license GPL <http://creativecommons.org/licenses/GPL/2.0/>
+ * @package rdf.module
+ */
+
+//////////////////////////////////////////////////////////////////////////////
+// Core API hooks
+
+/**
+ * Implementation of hook_init().
+ */
+function rdf_init() {
+  $path = drupal_get_path('module', 'rdf');
+  require_once $path . '/rdf.api.inc';
+  require_once $path . '/rdf.db.inc';
+
+  rdf_define_vocabularies(); // TODO: replace with autoload-based solution
+
+  if (user_access('access RDF data')) {
+    rdf_add_autodiscovery_link(t('RDF'), url('rdf'));
+  }
+
+  // Attempt to load the ARC2 library, if available. This library must be
+  // manually installed by the administrator due to license incompatibility.
+  if (!class_exists('ARC2')) {
+    @include_once RDF_ARC2_PATH . '/ARC2.php';
+  }
+
+  // Integrate into the Services API, if available.
+  if (module_exists('services')) {
+    require_once $path . '/rdf.services.inc';
+  }
+}
+
+/**
+ * Implementation of hook_help().
+ */
+function rdf_help($path, $arg = NULL) {
+  switch ($path) {
+    case 'admin/content/rdf':
+      return '<p>' . t('Any knowledge about anything can be decomposed into statements of <em>triples</em> (3-tuples) consisting of <em>subject</em>, <em>predicate</em>, and <em>object</em>.') . '</p>';
+    case 'admin/settings/rdf':
+      return '<p>' . t('<a href="http://drupal.org/handbook/modules/rdf" title="Resource Description Framework">RDF</a> is a <a href="http://www.w3.org/RDF/">W3C standard</a> for modeling and sharing distributed knowledge based on a decentralized open-world assumption.') . '</p>';
+    case 'admin/settings/rdf#formats':
+      return '<p>' . t('RDF data can be serialized into a number of textual formats (also known as representations). The two built-in, always available formats are <a href="http://drupal.org/node/219870">RDF/PHP</a> and <a href="http://drupal.org/node/219874">RDF/JSON</a>. For interoperability with more RDF formats, you can <a href="@status">install the ARC2 library</a> which adds parsing/serialization support for several widespread formats.', array('@status' => url('admin/reports/status'))) . '</p>';
+    case 'admin/settings/rdf/namespaces':
+      return '<p>' . t('<a href="http://drupal.org/node/219858#namespaces">Namespaces</a> define URI abbreviations for use in <a href="http://drupal.org/node/219856#curie" title="Compact URIs">CURIEs</a> and for purposes of human-friendly display of RDF data.') . '</p>';
+    case 'admin/settings/rdf/contexts':
+      return '<p>' . t('<a href="http://drupal.org/node/219858#contexts">Contexts</a>, also known as <a href="http://www.w3.org/2004/03/trix/">named graphs</a>,  ....') . '</p>';
+    case 'admin/settings/rdf/repositories':
+      return '<p>' . t('<a href="http://drupal.org/node/219858#repositories">Repositories</a> are storage containers for RDF data, and can be implemented, for instance, in terms of an in-memory triple store, a serialized file on disk, an RDBMS database, or an RPC connection to a remote service.') . '</p>';
+    case 'admin/settings/rdf/repositories/rdf/add':
+      return '<p>' . t('To create a new local RDF repository, enter the human-readable name, the machine-readable name, and all other relevant fields that are on this page.') . '</p>';
+  }
+}
+
+/**
+ * Implementation of hook_perm().
+ */
+function rdf_perm() {
+  return array(
+    'access RDF data',
+    'administer RDF data',
+    'administer RDF repositories',
+    'administer RDF namespaces',
+    'import RDF data',
+    'export RDF data',
+  );
+}
+
+/**
+ * Implementation of hook_menu().
+ */
+function rdf_menu() {
+  return array(
+    // Export site information
+    'rdf' => array(
+      'title' => 'RDF',
+      'type' => MENU_CALLBACK,
+      'access callback' => 'user_access',
+      'access arguments' => array('access RDF data'),
+      'page callback' => 'rdf_export_site',
+      'file' => 'rdf.pages.inc',
+    ),
+
+    // Export user information
+    'user/%/rdf' => array(
+      'title' => 'RDF',
+      'type' => MENU_CALLBACK,
+      'access callback' => 'user_access',
+      'access arguments' => array('access RDF data'),
+      'page callback' => 'rdf_export_entity',
+      'page arguments' => array('user', 1),
+      'file' => 'rdf.pages.inc',
+    ),
+
+    // Export node information
+    'node/%/rdf' => array(
+      'title' => 'RDF',
+      'type' => MENU_CALLBACK,
+      'access callback' => 'user_access',
+      'access arguments' => array('access RDF data'),
+      'page callback' => 'rdf_export_entity',
+      'page arguments' => array('node', 1),
+      'file' => 'rdf.pages.inc',
+    ),
+
+    // Administer >> Content management >> RDF data
+    'admin/content/rdf' => array(
+      'title' => 'RDF data',
+      'access arguments' => array('administer RDF data'),
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('rdf_admin_data'),
+      'file' => 'rdf.admin.inc',
+    ),
+    'admin/content/rdf/list' => array(
+      'title' => 'List',
+      'type' => MENU_DEFAULT_LOCAL_TASK,
+    ),
+    'admin/content/rdf/add' => array(
+      'title' => 'Add statement',
+      'type' => MENU_LOCAL_TASK,
+      'weight' => 1,
+      'access arguments' => array('administer RDF data'),
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('rdf_db_admin_data_form'),
+      'file' => 'rdf.admin.inc',
+    ),
+    'admin/content/rdf/import' => array(
+      'title' => 'Import data',
+      'type' => MENU_LOCAL_TASK,
+      'weight' => 20,
+      'access arguments' => array('import RDF data'),
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('rdf_import_admin_screen'),
+      'file' => 'rdf.admin.inc',
+    ),
+    'admin/content/rdf/export' => array(
+      'title' => 'Export data',
+      'type' => MENU_LOCAL_TASK,
+      'weight' => 30,
+      'access arguments' => array('export RDF data'),
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('rdf_export_admin_screen'),
+      'file' => 'rdf.admin.inc',
+    ),
+
+    // Administer >> Site configuration >> RDF settings
+    'admin/settings/rdf' => array(
+      'title' => 'RDF settings',
+      'description' => 'Settings for the RDF API.',
+      'access arguments' => array('administer site configuration'),
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('rdf_admin_settings'),
+      'file' => 'rdf.admin.inc',
+    ),
+
+    // Administer >> Site configuration >> RDF settings >> Namespaces
+    'admin/settings/rdf/namespaces' => array(
+      'title' => 'Namespaces',
+      'access arguments' => array('administer RDF namespaces'),
+      'page callback' => 'rdf_admin_namespaces',
+      'file' => 'rdf.admin.inc',
+      'weight' => 10,
+    ),
+    'admin/settings/rdf/namespaces/list' => array(
+      'title' => 'List',
+      'type' => MENU_DEFAULT_LOCAL_TASK,
+    ),
+    'admin/settings/rdf/namespaces/add' => array(
+      'title' => 'Add namespace',
+      'type' => MENU_LOCAL_TASK,
+      'weight' => 1,
+      'access arguments' => array('administer RDF namespaces'),
+      'page callback' => 'rdf_db_admin_ns_edit',
+      'file' => 'rdf.admin.inc',
+    ),
+    'admin/settings/rdf/namespaces/edit' => array(
+      'title' => 'Edit namespace',
+      'type' => MENU_CALLBACK,
+      'access arguments' => array('administer RDF namespaces'),
+      'page callback' => 'rdf_db_admin_ns_edit',
+      'file' => 'rdf.admin.inc',
+    ),
+    'admin/settings/rdf/namespaces/delete' => array(
+      'title' => 'Delete namespace',
+      'type' => MENU_CALLBACK,
+      'access arguments' => array('administer RDF namespaces'),
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('rdf_db_admin_ns_delete'),
+      'file' => 'rdf.admin.inc',
+    ),
+
+    // Administer >> Site configuration >> RDF settings >> Contexts
+    'admin/settings/rdf/contexts' => array(
+      'title' => 'Contexts',
+      'access arguments' => array('administer RDF data'),
+      'page callback' => 'rdf_admin_contexts',
+      'file' => 'rdf.admin.inc',
+      'weight' => 20,
+    ),
+    'admin/settings/rdf/contexts/list' => array(
+      'title' => 'List',
+      'type' => MENU_DEFAULT_LOCAL_TASK,
+    ),
+
+    // Administer >> Site configuration >> RDF settings >> Repositories
+    'admin/settings/rdf/repositories' => array(
+      'title' => 'Repositories',
+      'access arguments' => array('administer RDF repositories'),
+      'page callback' => 'rdf_admin_repositories',
+      'file' => 'rdf.admin.inc',
+      'weight' => 30,
+    ),
+    'admin/settings/rdf/repositories/list' => array(
+      'title' => 'List',
+      'type' => MENU_DEFAULT_LOCAL_TASK,
+    ),
+    'admin/settings/rdf/repositories/rdf/add' => array(
+      'title' => 'Add local repository',
+      'type' => MENU_LOCAL_TASK,
+      'weight' => 1,
+      'access arguments' => array('administer RDF repositories'),
+      'page callback' => 'rdf_db_admin_db_edit',
+      'file' => 'rdf.admin.inc',
+    ),
+    'admin/settings/rdf/repositories/rdf/edit' => array(
+      'title' => 'Edit local repository',
+      'type' => MENU_CALLBACK,
+      'access arguments' => array('administer RDF repositories'),
+      'page callback' => 'rdf_db_admin_db_edit',
+      'file' => 'rdf.admin.inc',
+    ),
+    'admin/settings/rdf/repositories/rdf/delete' => array(
+      'title' => 'Delete local repository',
+      'type' => MENU_CALLBACK,
+      'access arguments' => array('administer RDF repositories'),
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('rdf_db_admin_db_delete'),
+      'file' => 'rdf.admin.inc',
+    ),
+  );
+}
+
+/**
+ * Implementation of hook_hook_info()
+ */
+function rdf_hook_info() {
+  return array(
+    'rdf' => array(
+      'rdf' => array(
+        'insert' => array(
+          'runs when' => t('After inserting a new RDF statement'),
+        ),
+        'update' => array(
+          'runs when' => t('After deleting an existing RDF statement'),
+        ),
+      ),
+    ),
+  );
+}
+
+/**
+ * Implementation of hook_theme()
+ */
+function rdf_theme() {
+  return array(
+    'rdf_property_table' => array(
+      'arguments' => array('data' => NULL),
+      'file' => 'rdf.theme.inc',
+    ),
+    'rdf_triple_table' => array(
+      'arguments' => array('data' => NULL),
+      'file' => 'rdf.theme.inc',
+    ),
+    'rdf_triple_row' => array(
+      'arguments' => array('subject' => NULL, 'predicate' => NULL, 'object' => NULL),
+      'file' => 'rdf.theme.inc',
+    ),
+    'rdf_triple_cell' => array(
+      'arguments' => array('value' => NULL),
+      'file' => 'rdf.theme.inc',
+    ),
+    'rdf_value' => array(
+      'arguments' => array('value' => NULL),
+      'file' => 'rdf.theme.inc',
+    ),
+    'rdf_admin_settings' => array(
+      'arguments' => array('form' => NULL),
+      'file' => 'rdf.admin.inc',
+    ),
+    'rdf_admin_data' => array(
+      'arguments' => array('form' => NULL),
+      'file' => 'rdf.admin.inc',
+    ),
+  );
+}
+
+/**
+ * Implementation of hook_cron().
+ */
+function rdf_db_cron() {
+  // TODO: Run CHECK TABLE on {rdf_data_*}
+  // TODO: Purge unused URLs from {rdf_resources} ?
+  // TODO: Merge duplicate statements in {rdf_data_*} ?
+}
+
+/**
+ * Implementation of hook_user().
+ */
+function rdf_user($op, &$edit, &$account, $category = NULL) {
+  switch ($op) {
+    case 'view':
+      if (user_access('access RDF data')) {
+        rdf_add_autodiscovery_link(t('RDF'), url('user/' . $account->uid . '/rdf'));
+      }
+      break;
+  }
+}
+
+/**
+ * Implementation of hook_nodeapi().
+ */
+function rdf_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
+  switch ($op) {
+    case 'view':
+      if (user_access('access RDF data')) {
+        rdf_add_autodiscovery_link(t('RDF'), url('node/' . $node->nid . '/rdf'));
+      }
+      break;
+  }
+}
+
+//////////////////////////////////////////////////////////////////////////////
+// RDF API hooks
+
+/**
+ * Implementation of hook_rdf_formats().
+ */
+function rdf_rdf_formats() {
+  return array(
+    'rdf+php' => array(
+      'title'       => t('RDF/PHP'),
+      'link'        => 'http://drupal.org/node/219870',
+      'mime_type'   => 'application/vnd.php.serialized',
+      'encoding'    => 'ascii',
+      'file_ext'    => 'txt',
+      'serialize'   => 'rdf_serialize_php',
+      'unserialize' => 'rdf_unserialize_php',
+    ),
+    'rdf+json' => array(
+      'title'       => t('RDF/JSON'),
+      'link'        => 'http://drupal.org/node/219874',
+      'mime_type'   => 'application/json',
+      'encoding'    => 'utf-8',
+      'file_ext'    => 'js',
+      'serialize'   => 'rdf_serialize_json',
+      'unserialize' => 'rdf_unserialize_json',
+    ),
+    'rdf+xml' => array(
+      'title'       => t('RDF/XML'),
+      'link'        => 'http://www.w3.org/TR/rdf-syntax-grammar/',
+      'mime_type'   => 'application/rdf+xml',
+      'encoding'    => 'utf-8',
+      'file_ext'    => 'rdf',
+      'serialize'   => 'rdf_serialize_xml',
+      'unserialize' => class_exists('ARC2') ? 'rdf_unserialize_xml' : NULL,
+    ),
+    'trix' => array(
+      'title'       => t('TriX'),
+      'link'        => 'http://www.w3.org/2004/03/trix/',
+      'mime_type'   => 'application/trix',
+      'encoding'    => 'utf-8',
+      'file_ext'    => 'xml',
+      'serialize'   => 'rdf_serialize_trix',
+      'unserialize' => NULL,
+    ),
+    'turtle' => array(
+      'title'       => t('Turtle'),
+      'link'        => 'http://www.dajobe.org/2004/01/turtle/',
+      'mime_type'   => 'application/x-turtle',
+      'encoding'    => 'utf-8',
+      'file_ext'    => 'ttl',
+      'serialize'   => 'rdf_serialize_turtle',
+      'unserialize' => class_exists('ARC2') ? 'rdf_unserialize_turtle' : NULL,
+    ),
+    'ntriples' => array(
+      'title'       => t('N-Triples'),
+      'link'        => 'http://www.w3.org/TR/rdf-testcases/#ntriples',
+      'mime_type'   => 'text/plain', // TODO: any semi-standardized alternative?
+      'encoding'    => 'ascii',
+      'file_ext'    => 'nt',
+      'serialize'   => 'rdf_serialize_ntriples',
+      'unserialize' => class_exists('ARC2') ? 'rdf_unserialize_ntriples' : NULL,
+    ),
+  );
+}
+
+/**
+ * Implementation of hook_rdf_namespaces().
+ */
+function rdf_rdf_namespaces() {
+  return array_merge(array(
+    '_'        => 'http://bnode.net/',
+    'rdf'      => 'http://www.w3.org/1999/02/22-rdf-syntax-ns#',
+    'rdfs'     => 'http://www.w3.org/2000/01/rdf-schema#',
+    'xsi'      => 'http://www.w3.org/2001/XMLSchema-instance#',
+    'xsd'      => 'http://www.w3.org/2001/XMLSchema#',
+    'owl'      => 'http://www.w3.org/2002/07/owl#',
+    'dc'       => 'http://purl.org/dc/elements/1.1/',
+    'dcterms'  => 'http://purl.org/dc/terms/',
+    'dcmitype' => 'http://purl.org/dc/dcmitype/',
+    'foaf'     => 'http://xmlns.com/foaf/0.1/',
+  ), rdf_db_rdf_namespaces());
+}
+
+/**
+ * Implementation of hook_rdf_contexts().
+ */
+function rdf_rdf_contexts() {
+  return array_merge(array(RDF_SITE_URI), rdf_db_rdf_contexts());
+}
+
+/**
+ * Implementation of hook_rdf_repositories().
+ */
+function rdf_rdf_repositories() {
+  return array_merge(array(
+    'system' => array(
+      'title'      => t('System'),
+      'type'       => 'system',
+      'persistent' => TRUE,
+      'mutable'    => FALSE,
+      'enabled'    => TRUE,
+      'statements' => NULL,
+      'module'     => 'rdf',
+      'callbacks'  => array(
+        'query'    => array('function' => 'rdf_rdf_query', 'arguments' => array()),
+      ),
+      'filters'    => array(
+        'subject'  => RDF_SITE_URI,
+      ),
+    ),
+  ), rdf_db_rdf_repositories());
+}
+
+/**
+ * Implementation of hook_rdf_properties().
+ */
+function rdf_rdf_properties() {
+  return array(
+    'rdf'      => array('first', 'object', 'predicate', 'rest', 'subject', 'type', 'value'),
+    'rdfs'     => array('comment', 'domain', 'isDefinedBy', 'label', 'member', 'range', 'seeAlso', 'subClassOf', 'subPropertyOf'),
+    'xsd'      => array('base64Binary', 'boolean', 'byte', 'date', 'dateTime', 'decimal', 'double', 'duration', 'float', 'hexBinary', 'int', 'integer', 'language', 'long', 'short', 'string', 'time', 'token'),
+    'owl'      => array('allValuesFrom', 'backwardCompatibleWith', 'cardinality', 'complementOf', 'differentFrom', 'disjointWith', 'distinctMembers', 'equivalentClass', 'equivalentProperty', 'hasValue', 'imports', 'incompatibleWith', 'intersectionOf', 'inverseOf', 'maxCardinality', 'minCardinality', 'oneOf', 'onProperty', 'priorVersion', 'sameAs', 'someValuesFrom', 'unionOf', 'versionInfo'),
+    'dc'       => array('contributor', 'coverage', 'creator', 'date', 'description', 'format', 'identifier', 'language', 'publisher', 'relation', 'rights', 'source', 'subject', 'title', 'type'),
+    'dcterms'  => array('abstract_', 'accessRights', 'accrualMethod', 'accrualPeriodicity', 'accrualPolicy', 'alternative', 'audience', 'available', 'bibliographicCitation', 'conformsTo', 'contributor', 'coverage', 'created', 'creator', 'date', 'dateAccepted', 'dateCopyrighted', 'dateSubmitted', 'description', 'educationLevel', 'extent', 'format', 'hasFormat', 'hasPart', 'hasVersion', 'identifier', 'instructionalMethod', 'isFormatOf', 'isPartOf', 'isReferencedBy', 'isReplacedBy', 'isRequiredBy', 'issued', 'isVersionOf', 'language', 'license', 'mediator', 'medium', 'modified', 'provenance', 'publisher', 'references', 'relation', 'replaces', 'requires', 'rights', 'rightsHolder', 'source', 'spatial', 'subject', 'tableOfContents', 'temporal', 'title', 'type', 'valid'),
+    'dcmitype' => array(),
+    'foaf'     => array(/*stable:*/'homepage', 'made', 'maker', 'mbox', 'member', /*testing:*/'depiction', 'depicts', 'family_name', 'firstName', 'gender', 'givenname', 'img', 'interest', 'isPrimaryTopicOf', 'knows', 'logo', 'mbox_sha1sum', 'name', 'nick', 'page', 'phone', 'primaryTopic', 'surname', 'thumbnail', 'title', 'topic', 'weblog'),
+  );
+}
+
+/**
+ * Implementation of hook_rdf_resources().
+ */
+function rdf_rdf_resources($context) {
+  switch ($context) {
+    case NULL:
+    case RDF_SITE_URI:
+      return array(RDF_SITE_URI => new RDF_QueryCallback('rdf_load_site'));
+  }
+}
+
+/**
+ * Implementation of hook_rdf_query().
+ */
+function rdf_rdf_query($subject, $predicate, $object, $options = array()) {
+  $context = isset($options['context']) ? $options['context'] : NULL;
+
+  $data = array();
+  foreach (module_implements('rdf_resources') as $module) {
+    $function = $module . '_rdf_resources';
+    if ($resources = $function($context)) {
+      foreach ($resources as $uri => $callback) {
+        if (!$subject || (string)$subject == $uri) {
+          $data = array_merge_recursive($data, _rdf_filter(array($uri => rdf_expand_qnames($callback->call())), $subject, $predicate, $object, $options));
+        }
+      }
+    }
+  }
+  return rdf_denormalize($data);
+}
