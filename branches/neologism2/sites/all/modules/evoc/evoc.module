@@ -30,6 +30,9 @@ function evoc_menu() {
 }
 
 function evoc_evoc() {
+  global $rdf_namespaces;
+  rdf_get_namespaces();
+var_dump($rdf_namespaces);
 //var_dump(rdf_get_namespaces());
 
 /////////////////////////
@@ -53,10 +56,66 @@ $terms[] = array('type' => 'property', 'id' => 'mbox');
 $terms[] = array('type' => 'property', 'id' => 'made');
 $terms[] = array('type' => 'property', 'id' => 'knows');
 $terms[] = array('type' => 'property', 'id' => 'gender');
+/////////////////////////
 
-_evoc_save_rdf_terms($ns, $prefix, $terms);
-//var_dump($terms);
 
+
+
+// typical input data given by the user via a form.
+$vocabulary_uri = 'http://xmlns.com/foaf/0.1/';
+$vocabulary_prefix = 'foaf';
+//$vocabulary_uri = 'http://rdfs.org/sioc/ns#';
+//$vocabulary_prefix = 'sioc';
+
+
+if (!in_array($vocabulary_uri, $rdf_namespaces)) {
+  // Add momentarily the namespace in memory to be able to convert the URIs to QNames.
+  $rdf_namespaces[$vocabulary_prefix] = $vocabulary_uri;
+}
+//var_dump($rdf_namespaces);
+
+// Typical SPARQL query to retrieve properties/classes, working for at least FOAF...
+$q_classes = "prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+select *
+from <$vocabulary_uri>
+where {?class rdf:type rdfs:Class}
+limit 100";
+
+$q_properties = "prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+select *
+from <$vocabulary_uri>
+where {?class rdf:type rdf:Property}
+limit 100";
+
+// FIXME in sparql module.
+require_once drupal_get_path('module', 'sparql') . '/sparql.client.inc';
+
+$sparql_res = sparql_request('http://srvgal65.deri.ie:2020/sparql', $q_properties);
+//var_dump($sparql_res);
+
+// Parse the SPARQL results and extract the relevant terms.
+$terms_to_import = array();
+foreach ($sparql_res as $term) {
+  $term_qname = rdf_uri_to_qname($term['class']->uri);
+  $term_qname_parts = explode(':', $term_qname);
+  $term_prefix = $term_qname_parts[0];
+  $term_id = $term_qname_parts[1];
+  // We only import the terms with the specified prefix.
+  if ($term_prefix == $vocabulary_prefix) {
+    $terms_to_import[] = array('type' => 'property', 'id' => $term_id);
+    drupal_set_message("$term_qname selected to imported.");
+  }
+  else {
+    drupal_set_message("$term_qname discarded.");
+  }
+}
+
+// Clean up the terms to import and remove any duplicate.
+//var_dump($terms_to_import);
+
+_evoc_save_rdf_terms($ns, $prefix, $terms_to_import);
 
 return 'e';
 }
@@ -67,12 +126,19 @@ return 'e';
  */
 function _evoc_save_rdf_terms($ns, $prefix, $terms) {
 //var_dump(func_get_args());
+//exit;
+
+  drupal_set_message("----------- starting the import ---------------");
+
 
   // Namespace management.
   
   // Get the existing namespaces stored in the system.
-  $rdf_namespaces = rdf_get_namespaces();
+  // Here we want to make sure we have the namespace stored in the db in case
+  // the module defining this ns in hook_rdf_namespaces() is disabled.
+  $rdf_namespaces = rdf_db_rdf_namespaces();
   
+  var_dump($rdf_namespaces);
   if (!in_array($ns, $rdf_namespaces)) { //FIXME: check also the prefix and raise a warning
     db_query("INSERT INTO {rdf_namespaces} (prefix, uri) VALUES ('%s', '%s')", $prefix, $ns);
     drupal_set_message(t('The namespace has been created.'));
@@ -90,6 +156,10 @@ function _evoc_save_rdf_terms($ns, $prefix, $terms) {
 
     if (!db_fetch_object($res)) {
       db_query("INSERT INTO {evoc_rdf_terms} (type, prefix, id) VALUES ('%s', '%s', '%s')", $term['type'], $prefix, $term['id']);  
+      drupal_set_message("$prefix:" . $term['id'] . " successfully imported.");
+    }
+    else {
+      drupal_set_message("$prefix:" . $term['id'] . " already exists in the system.");
     }
 
   }
