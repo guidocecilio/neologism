@@ -1,0 +1,105 @@
+<?php
+// $Id: rdfcck.module,v 1.1.2.8 2008/11/07 20:03:31 scor Exp $
+
+/**
+ * @file
+ * Defines mappings between CCK fields and RDF, and exports nodes as RDF.
+ */
+
+/**
+ * Implementation of hook_perm().
+ */
+function evoc_perm() {
+}
+
+/**
+ * Implementation of hook_menu().
+ */
+function evoc_menu() {
+  $items = array();
+
+  $items['evoc'] = array(
+    'title' => 'evoc',
+    'description' => "View, edit, and delete your site's content.",
+    'page callback' => 'evoc_evoc',
+    'access arguments' => array('administer nodes'),
+    'type' => MENU_CALLBACK,
+  );
+
+  return $items;
+}
+
+function evoc_evoc() {
+//var_dump(rdf_get_namespaces());
+
+/////////////////////////
+// Example of input
+$ns = 'http://xmlns.com/foaf/0.1/';
+$prefix = 'foaf';
+$terms = array();
+$terms[] = array('type' => 'class', 'id' => 'Project');
+$terms[] = array('type' => 'class', 'id' => 'Organization');
+$terms[] = array('type' => 'class', 'id' => 'OnlineAccount');
+$terms[] = array('type' => 'class', 'id' => 'Document');
+$terms[] = array('type' => 'class', 'id' => 'Agent');
+$terms[] = array('type' => 'class', 'id' => 'Image');
+$terms[] = array('type' => 'class', 'id' => 'Person');
+$terms[] = array('type' => 'class', 'id' => 'Group');
+$terms[] = array('type' => 'class', 'id' => 'OnlineGamingAccount');
+$terms[] = array('type' => 'class', 'id' => 'OnlineChatAccount');
+$terms[] = array('type' => 'class', 'id' => 'PersonalProfileDocument');
+$terms[] = array('type' => 'class', 'id' => 'OnlineEcommerceAccount');
+$terms[] = array('type' => 'property', 'id' => 'mbox');
+$terms[] = array('type' => 'property', 'id' => 'made');
+$terms[] = array('type' => 'property', 'id' => 'knows');
+$terms[] = array('type' => 'property', 'id' => 'gender');
+
+_evoc_save_rdf_terms($ns, $prefix, $terms);
+//var_dump($terms);
+
+
+return 'e';
+}
+
+
+/**
+ * Handle the creation or update of a set of RDF terms of a given namespace.
+ */
+function _evoc_save_rdf_terms($ns, $prefix, $terms) {
+//var_dump(func_get_args());
+
+  // Namespace management.
+  
+  // Get the existing namespaces stored in the system.
+  $rdf_namespaces = rdf_get_namespaces();
+  
+  if (!in_array($ns, $rdf_namespaces)) { //FIXME: check also the prefix and raise a warning
+    db_query("INSERT INTO {rdf_namespaces} (prefix, uri) VALUES ('%s', '%s')", $prefix, $ns);
+    drupal_set_message(t('The namespace has been created.'));
+  }
+  elseif ($rdf_namespaces[$prefix] != $ns) {
+    db_query("UPDATE {rdf_namespaces} SET prefix = '%s', uri = '%s' WHERE prefix = '%s'", $prefix, $uri, $key);
+    drupal_set_message(t('The namespace has been updated.'));
+  }
+  
+  // RDF terms management.
+  foreach ($terms as $term) {
+    // Check whether this term is already in the system.
+    // TODO optimize this by loading the whole prefix terms from the db and then check against it in memory
+    $res = db_query(db_rewrite_sql('SELECT tid FROM {evoc_rdf_terms} WHERE prefix="%s" AND id = "%s"'), $prefix, $term['id']);
+
+    if (!db_fetch_object($res)) {
+      db_query("INSERT INTO {evoc_rdf_terms} (type, prefix, id) VALUES ('%s', '%s', '%s')", $term['type'], $prefix, $term['id']);  
+    }
+
+  }
+
+}
+
+
+
+
+
+
+
+
