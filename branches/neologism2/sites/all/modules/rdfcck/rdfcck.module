@@ -263,11 +263,10 @@ function _rdfcck_get_default_class($field_name) {
 function _rdfcck_get_properties() {
   $properties_options = array();
   $properties_options[0] = '<none>';
-  $properties = db_query(db_rewrite_sql('SELECT n.nid, n.title FROM {content_field_vocabulary} c INNER JOIN {node} n ON c.nid = n.nid
-    WHERE n.type = "neo_property" AND n.status = 1'));
+  $properties = db_query(db_rewrite_sql('SELECT * FROM {evoc_rdf_terms} WHERE type = "property"'));
 
   while ($item = db_fetch_object($properties)) {
-    $properties_options[$item->nid] = $item->title;
+    $properties_options[$item->tid] = $item->prefix . ':' . $item->id;
   }
 
   return $properties_options;
@@ -276,11 +275,10 @@ function _rdfcck_get_properties() {
 function _rdfcck_get_classes() {
   $classes_options = array();
   $classes_options[0] = '<none>';
-  $classes = db_query(db_rewrite_sql('SELECT n.nid, n.title FROM {content_field_vocabulary} c INNER JOIN {node} n ON c.nid = n.nid
-    WHERE n.type = "neo_class" AND n.status = 1'));
+  $classes = db_query(db_rewrite_sql('SELECT * FROM {evoc_rdf_terms} WHERE type = "class"'));
 
   while ($item = db_fetch_object($classes)) {
-    $classes_options[$item->nid] = $item->title;
+    $classes_options[$item->tid] = $item->prefix . ':' . $item->id;
   }
   return $classes_options;
 }
