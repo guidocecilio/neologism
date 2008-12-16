@@ -32,9 +32,169 @@ function evoc_menu() {
     'page arguments' => array('evoc_import_form'),
     'access arguments' => array('administer nodes'),
   );
+  $items['evoc/uri'] = array(
+    'title' => 'Link to a URI',
+    'description' => "",
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('evoc_uri_form'),
+    'access arguments' => array('administer nodes'),
+  );
+  $items['evoc/js'] = array(
+    'title' => 'Javascript Choice Form',
+    'page callback' => 'evoc_js',
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+  );
 
   return $items;
 }
+
+function evoc_uri_form($form_state) {
+  $form['sparql_lookup'] = array(
+    '#title' => t('SPARQL lookup'),
+    '#prefix' => '<div class="clear-block" id="sparql-lookup-wrapper">', // This is our wrapper div.
+    '#suffix' => '</div>',
+    '#tree' => TRUE,
+  );
+  $form['sparql_lookup']['keyword'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Vocabulary URI'),
+    '#required' => TRUE,
+    '#default_value' => $form_state['values']['sparql_lookup']['keyword'],
+    '#prefix' => '<div class="clear-block">', // This is our wrapper div.
+    '#suffix' => '</div>',
+    '#ahah' => array(
+      'event' => 'change',
+      'effect' => 'fade',
+      // This is the "magical path". Note that the parameter is an array of
+      // the parents of the form item of the wrapper div!
+      'path' => ahah_helper_path(array('sparql_lookup')),
+      'wrapper' => 'sparql-lookup-wrapper',
+      'progress' => array('type' => 'bar', 'message' => t('Please wait while suggested URIs are retrieved...')),
+    ),
+  );
+
+  // If 'company' is selected, then these two form items will be displayed.
+  if ($form_state['values']['sparql_lookup']['keyword'] ) {
+  sleep(2);
+    $form['sparql_lookup']['uri_choices'] = array(
+			'#type' => 'radios',
+			'#title' => t('Suggested URIs'),
+			'#default_value' => '',
+			'#options' => array(
+				'status' => t('Published'),
+				'moderate' => t('In moderation queue'),
+				'promote' => t('Promoted to front page'),
+				'sticky' => t('Sticky at top of lists'),
+				'revision' => t('Create new revision'),
+			),
+			'#description' => t('Choose the URI which describe the best what you want to represent.'),
+    );
+  }
+
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => 'Submit',
+  );
+  return $form;
+
+/*
+  // Add a wrapper for the choices and more button.
+  $form['choice_wrapper'] = array(
+    '#tree' => FALSE,
+    '#prefix' => '<div class="clear-block" id="poll-choice-wrapper">',
+    '#suffix' => '</div>',
+  );
+  // Container for just the poll choices.
+  $form['choice_wrapper']['choice'] = array(
+    '#prefix' => '<div id="poll-choices">',
+    '#suffix' => '</div>',
+    '#theme' => 'poll_choices',
+  );
+
+  // We name our button 'poll_more' to avoid conflicts with other modules using
+  // AHAH-enabled buttons with the id 'more'.
+  $form['choice_wrapper']['poll_more'] = array(
+    '#type' => 'submit',
+    '#value' => t('More choices'),
+    '#description' => t("If the amount of boxes above isn't enough, click here to add more choices."),
+    '#weight' => 1,
+    '#submit' => array('poll_more_choices_submit'), // If no javascript action.
+    '#ahah' => array(
+      'path' => 'evoc/js',
+      'wrapper' => 'poll-choices',
+      'method' => 'replace',
+      'effect' => 'fade',
+    ),
+  );
+*/
+
+}
+
+
+function evoc_js() {
+//$output = "<p>hi</p>";
+//sleep(1);
+//$output = "hiiiiiiiiiiiiiiiii";
+
+//$output = var_export($_POST, TRUE);
+//  drupal_json(array('status' => TRUE, 'data' => $output));
+//return;
+
+  // Build our new form element.
+//  $form_element = _poll_choice_form($delta);
+  $form_element = array(
+    '#tree' => TRUE,
+  );
+
+  // We'll manually set the #parents property of these fields so that
+  // their values appear in the $form_state['values']['choice'] array.
+  $form_element['chtext'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Choice @n', array('@n' => ($delta + 1))),
+    '#default_value' => $value,
+    '#parents' => array('choice', $delta, 'chtext'),
+  );
+
+  drupal_alter('form', $form_element, array(), 'poll_choice_js');
+
+  // Build the new form.
+  $form_state = array('submitted' => FALSE);
+  $form_build_id = $_POST['form_build_id'];
+  // Add the new element to the stored form. Without adding the element to the
+  // form, Drupal is not aware of this new elements existence and will not
+  // process it. We retreive the cached form, add the element, and resave.
+  if (!$form = form_get_cache($form_build_id, $form_state)) {
+    exit();
+  }
+  $form['choice_wrapper']['choice'][$delta] = $form_element;
+  form_set_cache($form_build_id, $form, $form_state);
+  $form += array(
+    '#post' => $_POST,
+    '#programmed' => FALSE,
+  );
+
+  // Rebuild the form.
+  $form = form_builder('poll_node_form', $form, $form_state);
+
+  // Render the new output.
+  $choice_form = $form['choice_wrapper']['choice'];
+  unset($choice_form['#prefix'], $choice_form['#suffix']); // Prevent duplicate wrappers.
+  $choice_form[$delta]['#attributes']['class'] = empty($choice_form[$delta]['#attributes']['class']) ? 'ahah-new-content' : $choice_form[$delta]['#attributes']['class'] .' ahah-new-content';
+  $choice_form[$delta]['chvotes']['#value'] = 0;
+  $output = theme('status_messages') . drupal_render($choice_form);
+
+  drupal_json(array('status' => TRUE, 'data' => $output));
+}
+
+
+function evoc_uri_form_submit($form, &$form_state) {
+  $form_state['storage']['values'] = $form_state['values'];
+  $form_state['rebuild'] = true;
+
+}
+
 
 function evoc_import_form($form_state) {
   $form['ns_uri'] = array(
