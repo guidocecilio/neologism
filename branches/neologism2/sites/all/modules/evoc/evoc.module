@@ -31,7 +31,6 @@ function evoc_menu() {
     'page callback' => 'drupal_get_form',
     'page arguments' => array('evoc_import_form'),
     'access arguments' => array('administer nodes'),
-    'type' => MENU_CALLBACK,
   );
 
   return $items;
