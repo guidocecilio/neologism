@@ -25,16 +25,47 @@ function evoc_menu() {
     'access arguments' => array('administer nodes'),
     'type' => MENU_CALLBACK,
   );
+  $items['evoc/import'] = array(
+    'title' => 'Import vocabulary',
+    'description' => "Import RDF terms of an external vocabulary.",
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('evoc_import_form'),
+    'access arguments' => array('administer nodes'),
+    'type' => MENU_CALLBACK,
+  );
 
   return $items;
 }
 
-function evoc_evoc() {
-  global $rdf_namespaces;
-  rdf_get_namespaces();
-//var_dump($rdf_namespaces);
-//var_dump(rdf_get_namespaces());
+function evoc_import_form($form_state) {
+  $form['ns_uri'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Vocabulary URI'),
+    '#required' => TRUE,
+    '#default_value' => $form_state['values']['ns_uri'],
+    '#description' => "Enter the URI of the vocabulary to import. Make sure it finishes by either / or #.",
+  ); 
+  $form['prefix'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Prefix'),
+    '#required' => TRUE,
+    '#default_value' => $form_state['values']['prefix'],
+    '#description' => "Choose a prefix for this vocabulary.",
+  ); 
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => 'Submit',
+  );
+  return $form;
+}
+function evoc_import_form_submit($form, &$form_state) {
+  $form_state['storage']['values'] = $form_state['values'];
+  $form_state['rebuild'] = true;
 
+  evoc_import_vocabulary($form_state['values']['ns_uri'], $form_state['values']['prefix']);
+}
+
+/*
 /////////////////////////
 // Example of input
 $ns = 'http://xmlns.com/foaf/0.1/';
@@ -43,16 +74,6 @@ $terms = array();
 $terms[] = array('type' => 'class', 'id' => 'Project');
 $terms[] = array('type' => 'class', 'id' => 'Organization');
 $terms[] = array('type' => 'class', 'id' => 'OnlineAccount');
-$terms[] = array('type' => 'class', 'id' => 'Document');
-$terms[] = array('type' => 'class', 'id' => 'Agent');
-$terms[] = array('type' => 'class', 'id' => 'Image');
-$terms[] = array('type' => 'class', 'id' => 'Person');
-$terms[] = array('type' => 'class', 'id' => 'Group');
-$terms[] = array('type' => 'class', 'id' => 'OnlineGamingAccount');
-$terms[] = array('type' => 'class', 'id' => 'OnlineChatAccount');
-$terms[] = array('type' => 'class', 'id' => 'PersonalProfileDocument');
-$terms[] = array('type' => 'class', 'id' => 'OnlineEcommerceAccount');
-$terms[] = array('type' => 'property', 'id' => 'mbox');
 $terms[] = array('type' => 'property', 'id' => 'made');
 $terms[] = array('type' => 'property', 'id' => 'knows');
 $terms[] = array('type' => 'property', 'id' => 'gender');
@@ -62,8 +83,8 @@ $terms[] = array('type' => 'property', 'id' => 'gender');
 
 
 // typical input data given by the user via a form.
-$vocabulary_uri = '';
-$vocabulary_prefix = '';
+//$vocabulary_uri = '';
+//$vocabulary_prefix = '';
 
 $vocabulary_uri = 'http://xmlns.com/foaf/0.1/';
 $vocabulary_prefix = 'foaf';
@@ -97,6 +118,12 @@ $vocabulary_prefix = 'dcmitype';
 
 $vocabulary_uri = 'http://rdfs.org/ns/void#';
 $vocabulary_prefix = 'void';
+
+*/
+
+function evoc_import_vocabulary($vocabulary_uri, $vocabulary_prefix) {
+  global $rdf_namespaces;
+  rdf_get_namespaces();
 
 
 
@@ -182,10 +209,10 @@ foreach ($term_queries as $query) {
 		// We only import the terms with the specified prefix.
 		if ($term_prefix == $vocabulary_prefix) {
 			$terms_to_import[] = array('type' => $type, 'id' => $term_id);
-			drupal_set_message("$term_qname selected to imported.");
+//			drupal_set_message("$term_qname selected to imported.");
 		}
 		else {
-			drupal_set_message("$term_qname discarded.");
+//			drupal_set_message("$term_qname discarded.");
 		}
 	}
 
@@ -206,7 +233,7 @@ function _evoc_save_rdf_terms($ns, $prefix, $terms) {
 //var_dump(func_get_args());
 //exit;
 
-  drupal_set_message("----------- starting the import ---------------");
+//  drupal_set_message("----------- starting the import ---------------");
 
 
   // Namespace management.
@@ -281,17 +308,20 @@ function evoc_rdf_repositories() {
  * Implementation of hook_rdf_query().
  */
 function evoc_rdf_query($table, $subject, $predicate, $object, array $options = array()) {
-echo 'enter evoc_rdf_query';
-  $result = db_query(_rdf_db_sql_select($table, $subject, $predicate, $object, $options));
-
+//echo 'enter evoc_rdf_query';
+//var_dump($table);
+//  $result = db_query(_rdf_db_sql_select($table, $subject, $predicate, $object, $options));
+//var_dump(func_get_args());
   $data = array();
   while ($row = db_fetch_object($result)) {
     $object = $row->o ? rdf_uriref($row->o) : rdf_literal($row->data, $row->lang, $row->type);
     $data[] = array($row->s, $row->p, $object);
   }
-  $data[] = array('a', 'f', rdf_literal('e'));
+  $data[] = array('a', rdf_qname_to_uriref('rdfs:Resource'), rdf_literal('e'));
   return $data;
 }
+
+// rdf_qname_to_uriref('rdfs:Resource')
 
 
 
