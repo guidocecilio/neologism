@@ -531,18 +531,15 @@ function evoc_rdf_query($table, $subject, $predicate, $object, array $options = 
 //var_dump($table);
 //  $result = db_query(_rdf_db_sql_select($table, $subject, $predicate, $object, $options));
 //var_dump(func_get_args());
-  $data = array();
-  while ($row = db_fetch_object($result)) {
-    $object = $row->o ? rdf_uriref($row->o) : rdf_literal($row->data, $row->lang, $row->type);
-    $data[] = array($row->s, $row->p, $object);
-  }
-  $data[] = array('a', rdf_qname_to_uriref('rdfs:Resource'), rdf_literal('e'));
-  return $data;
+//   $data = array();
+//   while ($row = db_fetch_object($result)) {
+//     $object = $row->o ? rdf_uriref($row->o) : rdf_literal($row->data, $row->lang, $row->type);
+//     $data[] = array($row->s, $row->p, $object);
+//   }
+//   $data[] = array('a', rdf_qname_to_uriref('rdfs:Resource'), rdf_literal('e'));
+//   return $data;
 }
 
 // rdf_qname_to_uriref('rdfs:Resource')
-
-
-
 
 
