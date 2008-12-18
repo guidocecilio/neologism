@@ -109,6 +109,7 @@ function rdf_schema_load_schema() {
 }
 
 function rdf_schema_load_schema_class($class, $class_info, $comment = NULL) {
+  $comment = !empty($comment) ? $comment : $class_info['comment'];
   $comment = !empty($comment) ? $comment : module_invoke($class_info['module'], 'help', 'node/add/#' . $class, NULL);
   $comment = !empty($comment) ? $comment : module_invoke($class_info['module'], 'help', 'admin/help#' . $class_info['module'], NULL);
   return array(
