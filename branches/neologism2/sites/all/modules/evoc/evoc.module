@@ -543,3 +543,38 @@ function evoc_rdf_query($table, $subject, $predicate, $object, array $options = 
 // rdf_qname_to_uriref('rdfs:Resource')
 
 
+/**
+ * Implementation of hook_rdf_classes().
+ */
+function evoc_rdf_classes() {
+  // Retrieve the content types.
+  $types = node_get_types();
+  $classes = array();
+  foreach ($types as $type) {
+    // Construct a class for each content type using the content type name a default class id.
+    $classes[$type->type] = array(
+      'title' => $type->name,
+      'uri' => 'field/' . $type->type,
+      'module'  => 'content', // module necessary here to allow rdf_schema module to consider this class enable.
+      'comment' => $type->description,
+      'enabled' => TRUE,
+    
+    
+    );
+  }
+ return $classes;
+}
+
+/**
+ * Implementation of hook_rdf_properties().
+ */
+function evoc_rdf_properties() {
+  return array(
+    // TODO
+  );
+}
+
+
+
+
+
