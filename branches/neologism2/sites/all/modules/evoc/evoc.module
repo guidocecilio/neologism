@@ -49,6 +49,66 @@ function evoc_menu() {
   return $items;
 }
 
+// Add the SPARQL lookup in the node add/edit form.
+function evoc_form_alter(&$form, $form_state, $form_id) {
+  if ($form['#id'] == 'node-form') {
+
+
+// $form['field_link'][0]['#description'] = 'scor';
+// //var_dump($form['field_link']);
+// 
+// 
+//   $form['sparql_lookup'] = array(
+//     '#title' => t('SPARQL lookup'),
+//     '#prefix' => '<div class="clear-block" id="sparql-lookup-wrapper">', // This is our wrapper div.
+//     '#suffix' => '</div>',
+//     '#tree' => TRUE,
+//   );
+// //var_dump(ahah_helper_path(array('sparql_lookup')));
+//   $form['sparql_lookup']['keyword'] = array(
+//     '#type' => 'textfield',
+//     '#title' => t('Vocabulary URI'),
+//     '#required' => TRUE,
+//     '#default_value' => $form_state['values']['sparql_lookup']['keyword'],
+//     '#prefix' => '<div class="clear-block">',
+//     '#suffix' => '</div>',
+//     '#ahah' => array(
+//       'event' => 'change',
+//       'effect' => 'fade',
+//       // This is the "magical path". Note that the parameter is an array of
+//       // the parents of the form item of the wrapper div!
+//       'path' => ahah_helper_path(array('sparql_lookup')),
+//       'wrapper' => 'sparql-lookup-wrapper',
+//       'progress' => array('type' => 'bar', 'message' => t('Please wait while suggested URIs are retrieved...')),
+//     ),
+//   );
+//   if ($form_state['values']['sparql_lookup']['keyword'] ) {
+//     $form['sparql_lookup']['uri_choices'] = array(
+// 			'#type' => 'radios',
+// 			'#title' => t('Suggested URIs'),
+// 			'#default_value' => '',
+// 			'#options' => array(
+// 				'status' => t('Published'),
+// 				'moderate' => t('In moderation queue'),
+// 				'promote' => t('Promoted to front page'),
+// 				'sticky' => t('Sticky at top of lists'),
+// 				'revision' => t('Create new revision'),
+// 			),
+// 			'#description' => t('Choose the URI which describes the best what you want to represent.'),
+//     );
+//   }
+// //var_dump($form);
+// 
+  
+  
+  }
+
+
+return $form;
+
+
+}
+
 function evoc_uri_form($form_state) {
   $form['sparql_lookup'] = array(
     '#title' => t('SPARQL lookup'),
@@ -88,7 +148,7 @@ function evoc_uri_form($form_state) {
 				'sticky' => t('Sticky at top of lists'),
 				'revision' => t('Create new revision'),
 			),
-			'#description' => t('Choose the URI which describe the best what you want to represent.'),
+			'#description' => t('Choose the URI which describes the best what you want to represent.'),
     );
   }
 
