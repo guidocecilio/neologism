@@ -158,7 +158,7 @@ function rdf_schema_load_user($user) {
 function rdf_schema_load_node($node) {
   $node = is_object($node) ? $node : node_load((int)$node);
   return array(
-    rdf::type         => rdf_uriref(rdf_qname_to_uri(variable_get('rdf_schema_class_' . $node->type, 'drupal:node'))),
+    rdf::type         => rdf_uriref(rdf_qname_to_uri($type = variable_get('rdf_schema_class_' . $node->type) ? $type :  'drupal:node')),
     'node:nid'        => (int)$node->nid,
     'node:vid'        => (int)$node->vid,
     'node:uid'        => (int)$node->uid,
