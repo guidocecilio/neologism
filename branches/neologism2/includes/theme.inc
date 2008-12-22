@@ -1728,6 +1728,16 @@ function template_preprocess(&$variables, $hook) {
   }
 }
 
+function drupal_get_rdf_namespaces() {
+  // Serialize the RDF namespaces used in RDFa annotation.
+  $xml_rdf_namespaces = array();
+  foreach (module_invoke_all('rdf_namespaces') as $prefix => $uri) {
+    $xml_rdf_namespaces[] = 'xmlns:' . $prefix . '="' . $uri . '"';
+  }
+  return implode("\n  ", $xml_rdf_namespaces);
+}
+
+
 /**
  * Process variables for page.tpl.php
  *
@@ -1816,6 +1826,8 @@ function template_preprocess_page(&$variables) {
   $variables['scripts']           = drupal_get_js();
   $variables['tabs']              = theme('menu_local_tasks');
   $variables['title']             = drupal_get_title();
+  $variables['rdf_namespaces']    = drupal_get_rdf_namespaces();
+  $variables['grddl_profile']     = 'http://ns.inria.fr/grddl/rdfa/';
   // Closure should be filled last.
   $variables['closure']           = theme('closure');
 
