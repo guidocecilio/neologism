@@ -2238,6 +2238,8 @@ function content_preprocess_content_field(&$variables) {
       'content-field-'. $element['#node']->type,
       'content-field-'. $element['#field_name'] .'-'. $element['#node']->type,
     ),
+    'rdfa_property' => 'drupal:' . $field['field_name'],
+    'rel' => $field['type'] == 'link' || $field['type'] == 'nodereference' ? 'drupal:' . $field['field_name'] : NULL,
   );
   $variables = array_merge($variables, $additions);
 }

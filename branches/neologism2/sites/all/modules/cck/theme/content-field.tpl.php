@@ -25,6 +25,9 @@
  * @see template_preprocess_field()
  */
 ?>
+
+
+
 <?php if (!$field_empty) : ?>
 <div class="field field-type-<?php print $field_type_css ?> field-<?php print $field_name_css ?>">
   <?php if ($label_display == 'above') : ?>
@@ -39,7 +42,11 @@
             <div class="field-label-inline<?php print($delta ? '' : '-first')?>">
               <?php print t($label) ?>:&nbsp;</div>
           <?php } ?>
-          <?php print $item['view'] ?>
+          <?php if ($rel) : ?>
+            <span rel="<?php print $rdfa_property ?>"><?php print $item['view'] ?></span>
+          <?php else : ?>
+            <span property="<?php print $rdfa_property ?>"><?php print $item['view'] ?></span>
+          <?php endif;?>
         </div>
       <?php $count++;
       endif;
