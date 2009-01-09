@@ -125,8 +125,10 @@ function rdf_schema_profile_field_form_submit($form, &$form_state) {
 function rdf_schema_rdf_namespaces() {
   $namespaces = array('drupal' => RDF_SCHEMA_URI);
   foreach (rdf_schema_get_entities() as $entity) {
+  //var_dump($entity);
     $namespaces[$entity] = RDF_SCHEMA_URI . $entity . '#';
   }
+  //var_dump($namespaces);
   return $namespaces;
 }
 
@@ -219,10 +221,10 @@ function rdf_schema_rdf_properties() {
 function rdf_schema_rdf_resources($context) {
   switch ($context) {
     case NULL:
-      return array_merge(rdf_schema_get_resources(), rdf_schema_get_classes());
+      return array_merge(rdf_schema_get_resources(), rdf_schema_get_classes(), rdf_schema_get_properties());
     case RDF_SITE_URI:
       return rdf_schema_get_resources();
     case RDF_SCHEMA_URI:
-      return rdf_schema_get_classes();
+      return array_merge(rdf_schema_get_classes(), rdf_schema_get_properties());
   }
 }
