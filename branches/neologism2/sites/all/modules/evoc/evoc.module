@@ -569,9 +569,98 @@ function evoc_rdf_classes() {
  * Implementation of hook_rdf_properties().
  */
 function evoc_rdf_properties() {
-  return array(
-    // TODO
-  );
+  $types = node_get_types();
+  $properties = array();
+  foreach ($types as $type) {
+    // Construct a property for each content type using the content type name a default class id.
+    $type = content_types($type->type); // This contains the CCK fields definitions.
+//var_dump($type);
+
+    // Core node title and body.
+    if ($type['has_title']) {
+      // The type should be already lower case, but we use it for future compatibility reasons.
+      // TODO: maybe move this case formatting further in the worflow and centralize it?
+      $property_id = strtolower($type['type'] . '_title');
+      $properties[$property_id] = array(
+        'title' => 'Title',
+        'class' => $type['type'],
+        'comment' => 'Title of the node',
+      );
+    }
+    if ($type['has_body']) {
+      $property_id = strtolower($type['type'] . '_body');
+      $properties[$property_id] = array(
+        'title' => 'Body',
+        'class' => $type['type'],
+        'comment' => 'Body of the node',
+      );
+    }
+    
+    // CCK fields.
+    if ($type['fields']) {
+      foreach ($type['fields'] as $field) {
+        // Determine the range of the property.
+        $range = NULL;
+      //var_dump($field);
+        // Noderefence field.
+        switch ($field['type']) {
+          case 'nodereference' :
+            if (isset($field['referenceable_types'])) {
+              // Loop through all the referencable type, and pick the first one we find.
+              // FIXME - what to do when we have more than one referencable type?
+              $range = NULL;
+              foreach ($field['referenceable_types'] as $referencable_type) {
+                if ($referencable_type) {
+                  $range = 'drupal:' . $referencable_type;
+                  break;
+                }
+                else {
+                  $range = 'err01'; // This should not happen (referencable type not found).
+                }
+              }
+            }
+            break;
+            
+          case 'userreference' :
+            $range = 'drupal:user';
+            break;
+            
+          case 'number_decimal' :
+            $range = 'xsd:decimal';
+            break;
+            
+          case 'number_integer' :
+            $range = 'xsd:integer';
+            break;
+            
+          case 'number_float' :
+            $range = 'xsd:float';
+            break;
+            
+          case 'link' :
+            $range = 'rdf:resource';
+            break;
+            
+        }
+        
+        // Generate the property information.
+        // TODO: centralize the generation of the property name so that other modules
+        // like CCK can fetch this name as well e.g. get_rdf_property_id($field, $type);
+        $property_id = strtolower($field['field_name']);
+        $properties[$property_id] = array(
+          'title' => $field['widget']['label'],
+          'class' => $field['type_name'],
+          'comment' => $field['widget']['description'],
+          'range' => isset($range) ? $range : NULL,
+        );
+      }
+    
+    
+    }
+  }
+//  var_dump($properties);
+ return array('drupal' => $properties);
+
 }
 
 
