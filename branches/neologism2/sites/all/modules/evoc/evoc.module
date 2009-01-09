@@ -583,7 +583,7 @@ function evoc_rdf_properties() {
       $property_id = strtolower($type['type'] . '_title');
       $properties[$property_id] = array(
         'title' => 'Title',
-        'class' => $type['type'],
+        'domain' => $type['type'],
         'comment' => 'Title of the node',
       );
     }
@@ -591,7 +591,7 @@ function evoc_rdf_properties() {
       $property_id = strtolower($type['type'] . '_body');
       $properties[$property_id] = array(
         'title' => 'Body',
-        'class' => $type['type'],
+        'domain' => $type['type'],
         'comment' => 'Body of the node',
       );
     }
@@ -649,7 +649,7 @@ function evoc_rdf_properties() {
         $property_id = strtolower($field['field_name']);
         $properties[$property_id] = array(
           'title' => $field['widget']['label'],
-          'class' => $field['type_name'],
+          'domain' => $field['type_name'],
           'comment' => $field['widget']['description'],
           'range' => isset($range) ? $range : NULL,
         );
