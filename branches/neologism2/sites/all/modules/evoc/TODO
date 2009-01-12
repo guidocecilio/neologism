@@ -1,4 +1,6 @@
-- rename the path to something like /ns/
-- use the best practise convention for classes and proerpties
-- distinguish each property for each classe, to work around shared fields
+- rename the path /ns
+- use only the # convention
+- distinguish each property for each class, to work around shared fields
 - use ns0 instead of Drupal
+
+- use the best practise convention for classes and proerpties
