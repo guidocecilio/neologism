@@ -150,7 +150,7 @@ function rdf_schema_rdf_classes() {
       'table'   => 'users',
       'query'   => 'SELECT uid FROM {users} WHERE uid > 0',
       'uri'     => 'user/%uid',
-      'enabled' => TRUE,
+      'enabled' => FALSE,
     ),
     'vocabulary' => array(
       'title'   => t('Taxonomy vocabulary'),
@@ -176,7 +176,7 @@ function rdf_schema_rdf_classes() {
       'query'   => 'SELECT nid FROM {node}',
       'uri'     => 'node/%nid',
       'load'    => 'node_load',
-      'enabled' => TRUE,
+      'enabled' => FALSE,
     ),
     'comment' => array(
       'title'   => t('Comment'),

@@ -22,7 +22,7 @@ function rdf_schema_get_class_uri($class) {
 }
 
 function rdf_schema_get_property_uri($class, $property) {
-  return RDF_SCHEMA_URI . $class . '#' . $property;
+  return RDF_SCHEMA_URI . $class . '' . $property;
 }
 
 function rdf_schema_get_entities() {
