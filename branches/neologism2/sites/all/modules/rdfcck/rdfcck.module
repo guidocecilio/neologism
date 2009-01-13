@@ -282,3 +282,93 @@ function _rdfcck_get_classes() {
   }
   return $classes_options;
 }
+
+
+
+
+/**
+ * Implementation of hook_rdf_resources()
+ */
+function rdfcck_rdf_resources($context) {
+  switch ($context) {
+    case NULL:
+    case RDF_SITE_URI:
+      // TODO improve the discovery mechanism for passing the nid to the loading function.
+      $uri = url('node/' . arg(1), array('absolute' => TRUE));
+      return array($uri => new RDF_QueryCallback('rdfcck_load_node', array(arg(1))));
+  }
+}
+
+// Only the actual node is loaded with its CCK fields.
+function rdfcck_load_node($node) {
+  $node = is_object($node) ? $node : node_load((int)$node);
+
+//var_dump($node);
+
+  $resources = array(
+    rdf::type         => rdf_uriref(rdf_qname_to_uri('drupal:' . ucfirst(strtolower($node->type)))),
+    'drupal:' . build_rdf_property_id('title', $node->type)      => $node->title,
+    'drupal:' . build_rdf_property_id('body', $node->type)      => $node->body,
+    'node:created'    => rdf_datetime($node->created),
+    'node:changed'    => rdf_datetime($node->changed),
+  );
+  
+  $type = content_types($node->type);
+//  var_dump($type);
+  if ($type['fields']) {
+    foreach ($type['fields'] as $field) {
+      $rdf_field_name = build_rdf_property_id($field['field_name'], $node->type);
+			switch ($field['type']) {
+				case 'nodereference' :
+					$field_values = $node->$field['field_name'];
+					// Generate a triple for each different values.
+					$uris = array();
+					foreach ($field_values as $value) {
+  					$uris[] = rdf_uriref(url('node/' . $value['nid'], array('absolute' => TRUE)));
+					}
+					$resources['drupal:' . $rdf_field_name] = $uris;
+					break;
+					
+				case 'userreference' :
+				  // TODO
+					break;
+					
+				case 'text' :
+					$field_value = $node->$field['field_name'];
+					$resources['drupal:' . $rdf_field_name] = $field_value[0]['value'];
+					break;
+
+				case 'number_decimal' :
+				  // TODO
+					$range = 'xsd:decimal';
+					break;
+					
+				case 'number_integer' :
+				  // TODO
+					$range = 'xsd:integer';
+					break;
+					
+				case 'number_float' :
+				  // TODO
+					$range = 'xsd:float';
+					break;
+					
+				case 'link' :
+					$field_values = $node->$field['field_name'];
+					// Generate a triple for each different values.
+					$uris = array();
+					foreach ($field_values as $value) {
+  					$uris[] = rdf_uriref($value['url']);
+					}
+					$resources['drupal:' . $rdf_field_name] = $uris;
+					break;
+					
+			}
+    }  
+  }
+  
+  return $resources;
+}
+
+
+
