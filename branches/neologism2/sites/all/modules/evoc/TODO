@@ -4,3 +4,4 @@
 - use ns0 instead of Drupal
 
 - use the best practise convention for classes and proerpties
+- remove dependency fix rdf_schema (schema generation + local ns declaration)
