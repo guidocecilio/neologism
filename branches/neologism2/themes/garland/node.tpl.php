@@ -6,7 +6,7 @@
 // TODOmove this somewhere else
 // build the typeof class name.
 
-$rdfa_typeof = 'drupal:' . $node->type;
+$rdfa_typeof = 'drupal:' . _build_site_rdf_class_id($node->type);
 
 ?>
 

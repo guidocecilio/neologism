@@ -6,11 +6,11 @@
 // TODOmove this somewhere else
 // build the typeof class name.
 
-$rdfa_typeof = 'drupal:' . $node->type;
+$rdfa_typeof = 'drupal:' . _build_site_rdf_class_id($node->type);
 
 ?>
 
-<div id="node-<?php print $node->nid; ?>" class="node<?php if ($sticky) { print ' sticky'; } ?><?php if (!$status) { print ' node-unpublished'; } ?>" typeof="<?php print $rdfa_typeof ?>">
+<div id="node-<?php print $node->nid; ?>" class="node<?php if ($sticky) { print ' sticky'; } ?><?php if (!$status) { print ' node-unpublished'; } ?>" typeof="<?php print $rdfa_typeof ?>" about="<?php print $node_url ?>#self">
 <?php print $picture ?>
 
 <?php if ($page == 0): ?>
