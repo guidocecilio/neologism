@@ -1077,3 +1077,14 @@ table.system-status-report tr.ok, table.system-status-report tr.ok th {
   background-color: #dfd;
   border-color: #beb;
 }
+
+.field-field-description {
+float: left;
+width:60%;
+}
+.field-field-picture {
+float:right;
+}
+.view-id-reviews {
+clear: both;
+}
