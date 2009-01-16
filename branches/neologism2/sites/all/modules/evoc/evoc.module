@@ -556,7 +556,7 @@ function evoc_rdf_classes() {
     // Construct a class for each content type using the content type name a default class id.
     // The type should be already lower case, but we use it for future compatibility reasons.
     // TODO: maybe move this case formatting further in the worflow and centralize it?
-    $class_id = ucfirst(strtolower($type->type));
+    $class_id = _build_site_rdf_class_id($type->type);
     $classes[$class_id] = array(
       'title' => $type->name,
       'uri' => 'field/' . $type->type,
@@ -573,6 +573,7 @@ function evoc_rdf_classes() {
 /**
  * Implementation of hook_rdf_properties().
  */
+ // @TODO This should prob go into RDFCCK
 function evoc_rdf_properties() {
   $types = node_get_types();
   $properties = array();
@@ -582,7 +583,7 @@ function evoc_rdf_properties() {
 
     // Core node title and body.
     if ($type['has_title']) {
-      $property_id = build_rdf_property_id('title', $type['type']);
+      $property_id = _build_site_rdf_property_id('title', $type['type']);
       $properties[$property_id] = array(
         'title' => 'Title',
         'domain' => $type['type'],
@@ -590,7 +591,7 @@ function evoc_rdf_properties() {
       );
     }
     if ($type['has_body']) {
-      $property_id = build_rdf_property_id('body', $type['type']);
+      $property_id = _build_site_rdf_property_id('body', $type['type']);
       $properties[$property_id] = array(
         'title' => 'Body',
         'domain' => $type['type'],
@@ -649,7 +650,7 @@ function evoc_rdf_properties() {
         // Generate the property information.
         // TODO: centralize the generation of the property name so that other modules
         // like CCK can fetch this name as well e.g. get_rdf_property_id($field, $type);
-        $property_id = build_rdf_property_id($field['field_name'], $field['type_name']);
+        $property_id = _build_site_rdf_property_id($field['field_name'], $field['type_name']);
         $properties[$property_id] = array(
           'title' => $field['widget']['label'],
           'domain' => $field['type_name'],
@@ -670,7 +671,15 @@ function evoc_rdf_properties() {
 // Given that CCK field cannot have upper case letters, we use it in our naming
 // convention. Type name is inserted here to work around the shared CCK fields.
 // The type should be already lower case, but we force it here for future compatibility reasons.
-function build_rdf_property_id($field, $type) {
+function _build_site_rdf_class_id($type) {
+  return ucfirst(strtolower($type));
+}
+
+// We apply a specific naming pattern.
+// Given that CCK field cannot have upper case letters, we use it in our naming
+// convention. Type name is inserted here to work around the shared CCK fields.
+// The type should be already lower case, but we force it here for future compatibility reasons.
+function _build_site_rdf_property_id($field, $type) {
   return strtolower($type) . '_' . ucfirst(strtolower(str_Replace('field_', '', $field)));
 }
 

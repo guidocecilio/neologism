@@ -306,9 +306,9 @@ function rdfcck_load_node($node) {
 //var_dump($node);
 
   $resources = array(
-    rdf::type         => rdf_uriref(rdf_qname_to_uri('drupal:' . ucfirst(strtolower($node->type)))),
-    'drupal:' . build_rdf_property_id('title', $node->type)      => $node->title,
-    'drupal:' . build_rdf_property_id('body', $node->type)      => $node->body,
+    rdf::type         => rdf_uriref(rdf_qname_to_uri('drupal:' . _build_site_rdf_class_id($node->type))),
+    'drupal:' . _build_site_rdf_property_id('title', $node->type)      => $node->title,
+    'drupal:' . _build_site_rdf_property_id('body', $node->type)      => $node->body,
     'node:created'    => rdf_datetime($node->created),
     'node:changed'    => rdf_datetime($node->changed),
   );
@@ -317,7 +317,7 @@ function rdfcck_load_node($node) {
 //  var_dump($type);
   if ($type['fields']) {
     foreach ($type['fields'] as $field) {
-      $rdf_field_name = build_rdf_property_id($field['field_name'], $node->type);
+      $rdf_field_name = _build_site_rdf_property_id($field['field_name'], $node->type);
 			switch ($field['type']) {
 				case 'nodereference' :
 					$field_values = $node->$field['field_name'];

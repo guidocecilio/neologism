@@ -5,3 +5,10 @@
 
 - use the best practise convention for classes and proerpties
 - remove dependency fix rdf_schema (schema generation + local ns declaration)
+
+- allow multiple values for RDF export text.module
+
+- create a URI for the node
+- reuse them as much as possible
+
+cons: tabulator does not read RDFa
