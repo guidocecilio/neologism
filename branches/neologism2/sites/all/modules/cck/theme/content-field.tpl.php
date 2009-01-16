@@ -27,7 +27,6 @@
 ?>
 
 
-
 <?php if (!$field_empty) : ?>
 <div class="field field-type-<?php print $field_type_css ?> field-<?php print $field_name_css ?>">
   <?php if ($label_display == 'above') : ?>
@@ -42,7 +41,8 @@
             <div class="field-label-inline<?php print($delta ? '' : '-first')?>">
               <?php print t($label) ?>:&nbsp;</div>
           <?php } ?>
-          <?php if ($rel) : ?>
+          <?php //if ($rel) : // removed, not sure what this $rel was for... ?>
+          <?php if ($field['type'] == 'image') : ?>
             <span rel="<?php print $rdfa_property ?>"><?php print $item['view'] ?></span>
           <?php else : ?>
             <span property="<?php print $rdfa_property ?>"><?php print $item['view'] ?></span>
