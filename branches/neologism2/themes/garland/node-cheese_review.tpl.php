@@ -43,19 +43,6 @@ $rdfa_child_node_property = 'drupal:' . _build_site_rdf_property_id('review', 'c
       <div class="links"><?php print $links; ?></div>
     <?php endif; ?>
     
-    <div class="links">
-      <?php if ($teaser): ?>
-       <a href="<? print $node_url ?>">Read the reviews</a>
-      <?php endif; ?>
-      <?php if ($teaser && $logged_in): ?>
-        - 
-      <?php endif; ?>
-      <?php if ($logged_in): ?>
-        <a href="<? print url('node/add/cheese-review') ?>">Write a review</a>
-      <?php endif; ?>
-
-    </div>
-    
   </div>
 
 </div>
