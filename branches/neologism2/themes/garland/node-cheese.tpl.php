@@ -36,7 +36,12 @@ $rdfa_typeof = 'drupal:' . $node->type;
       <div class="links"><?php print $links; ?></div>
     <?php endif; ?>
     
-    <div class="links"><a href="<? print url('node/add/cheese-review') ?>">Write a review</a></div>
+    <div class="links">
+      <a href="<? print url('node/add/cheese-review') ?>">Write a review</a>
+      <?php if ($teaser): ?>
+       - <a href="<? print $node_url ?>">Read the reviews</a>
+      <?php endif; ?>
+    </div>
     
   </div>
 
