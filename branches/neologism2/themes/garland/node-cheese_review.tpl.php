@@ -8,8 +8,10 @@
 
 $rdfa_typeof = 'drupal:' . _build_site_rdf_class_id($node->type);
 $rdfa_title = 'drupal:' . _build_site_rdf_property_id('title', $node->type);
-
+$rdfa_child_node_property = 'drupal:' . _build_site_rdf_property_id('review', 'cheese');;
 ?>
+
+<div rel="<?php print $rdfa_child_node_property; ?>" >
 
 <div id="node-<?php print $node->nid; ?>" class="node<?php if ($sticky) { print ' sticky'; } ?><?php if (!$status) { print ' node-unpublished'; } ?>" typeof="<?php print $rdfa_typeof ?>" about="<?php print $node_url ?>#self">
 <?php print $picture ?>
@@ -56,4 +58,8 @@ $rdfa_title = 'drupal:' . _build_site_rdf_property_id('title', $node->type);
     
   </div>
 
+</div>
+<?php
+// encapsulation for the child element cheese_review
+?>
 </div>
