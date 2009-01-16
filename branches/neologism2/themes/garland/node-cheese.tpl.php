@@ -35,6 +35,9 @@ $rdfa_typeof = 'drupal:' . $node->type;
     <?php if ($links): ?>
       <div class="links"><?php print $links; ?></div>
     <?php endif; ?>
+    
+    <div class="links"><a href="<? print url('node/add/cheese-review') ?>">Write a review</a></div>
+    
   </div>
 
 </div>
