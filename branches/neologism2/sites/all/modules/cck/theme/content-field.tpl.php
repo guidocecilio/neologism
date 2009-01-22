@@ -41,8 +41,7 @@
             <div class="field-label-inline<?php print($delta ? '' : '-first')?>">
               <?php print t($label) ?>:&nbsp;</div>
           <?php } ?>
-          <?php //if ($rel) : // removed, not sure what this $rel was for... ?>
-          <?php if ($field['type'] == 'image') : ?>
+          <?php if ($rel) : // rel is defined in content.module and is true if the property should be inserted in a rel attribute ?>
             <span rel="<?php print $rdfa_property ?>"><?php print $item['view'] ?></span>
           <?php else : ?>
             <span property="<?php print $rdfa_property ?>"><?php print $item['view'] ?></span>
