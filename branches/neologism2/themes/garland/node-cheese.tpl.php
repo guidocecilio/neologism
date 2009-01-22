@@ -6,8 +6,8 @@
 // TODOmove this somewhere else
 // build the typeof class name.
 
-$rdfa_typeof = 'drupal:' . _build_site_rdf_class_id($node->type);
-$rdfa_title = 'rdfs:label drupal:' . _build_site_rdf_property_id('title', $node->type);
+$rdfa_typeof = 'drupal:' . _rdfcck_build_site_rdf_class_id($node->type);
+$rdfa_title = 'rdfs:label drupal:' . _rdfcck_build_site_rdf_property_id('title', $node->type);
 
 ?>
 
