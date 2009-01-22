@@ -42,9 +42,9 @@
               <?php print t($label) ?>:&nbsp;</div>
           <?php } ?>
           <?php if ($rel) : // rel is defined in content.module and is true if the property should be inserted in a rel attribute ?>
-            <span rel="<?php print $rdfa_property ?>"><?php print $item['view'] ?></span>
-          <?php else : ?>
-            <span property="<?php print $rdfa_property ?>"><?php print $item['view'] ?></span>
+            <div style="display: inline" rel="<?php print $rdfa_property ?>"><?php print $item['view'] ?></div>
+          <?php else : // div and display:inline necessary when there is HTML code in value of the field. ?>
+            <div style="display: inline" property="<?php print $rdfa_property ?>"><?php print $item['view'] ?></div>
           <?php endif;?>
         </div>
       <?php $count++;
