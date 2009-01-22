@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rdf:RDF
+  xmlns:Cheese="http://drupal.deri.ie/cheese/ns#Cheese#"
+  xmlns:Cheese_review="http://drupal.deri.ie/cheese/ns#Cheese_review#"
+  xmlns:_="http://bnode.net/"
+  xmlns:comment="http://drupal.deri.ie/cheese/ns#comment#"
+  xmlns:dc="http://purl.org/dc/elements/1.1/"
+  xmlns:dcmitype="http://purl.org/dc/dcmitype/"
+  xmlns:dcterms="http://purl.org/dc/terms/"
+  xmlns:dist="http://www.w3.org/2007/08/pyRdfa/distiller#"
+  xmlns:drupal="http://drupal.deri.ie/cheese/ns#"
+  xmlns:foaf="http://xmlns.com/foaf/0.1/"
+  xmlns:node="http://drupal.deri.ie/cheese/ns#node#"
+  xmlns:ov="http://open.vocab.org/terms/"
+  xmlns:owl="http://www.w3.org/2002/07/owl#"
+  xmlns:path="http://drupal.deri.ie/cheese/ns#path#"
+  xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+  xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+  xmlns:sioc="http://rdfs.org/sioc/ns#"
+  xmlns:term="http://drupal.deri.ie/cheese/ns#term#"
+  xmlns:umbel="http://umbel.org/umbel/sc/"
+  xmlns:user="http://drupal.deri.ie/cheese/ns#user#"
+  xmlns:variable="http://drupal.deri.ie/cheese/ns#variable#"
+  xmlns:vocabulary="http://drupal.deri.ie/cheese/ns#vocabulary#"
+  xmlns:xhv="http://www.w3.org/1999/xhtml/vocab#"
+  xmlns:xml="http://www.w3.org/XML/1998/namespace"
+  xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance#"
+>
+  <drupal:Cheese rdf:about="/cheese/node/20#self">
+    <drupal:cheese_Title xml:lang="en">Ardrahan Cheese</drupal:cheese_Title>
+    <drupal:field_country_origin xml:lang="en">Ireland</drupal:field_country_origin>
+    <rdfs:label xml:lang="en">Ardrahan Cheese</rdfs:label>
+    <drupal:field_description rdf:parseType="Literal"><p xml:lang="en" xmlns="http://www.w3.org/1999/xhtml">Ardrahan is a type of semi-soft cheese with a pungent aroma, Ardrahan cheese has buttery textured honey-coloured centre with a complex delicate flavour. It has a washed rind which grows into a golden colour, and its size and weight tend to vary slightly due to the fact that it is a hand-made product. In general the large wheel weighs about 1.5 kg. There is also a small consumer wheel which weighs 300g. It is yellow-coloured.</p>
+<p xml:lang="en" xmlns="http://www.w3.org/1999/xhtml">Ardrahan also develops a nutty flavour with maturity. It has a unique flavour that lingers, leaving a very pleasant after-taste. It contains only 25% fat approximately. It is hand made using traditional methods and only whole milk and vegetarian rennet are used.</p>
+</drupal:field_description>
+    <foaf:page rdf:resource="/cheese/node/20"/>
+    <drupal:field_source_milk xml:lang="en">cow</drupal:field_source_milk>
+    <drupal:field_picture rdf:resource="http://drupal.deri.ie/cheese/sites/default/files/Ardrahan_cheese.jpg"/>
+  </drupal:Cheese>
+  <drupal:Cheese rdf:about="/cheese/node/5#self">
+    <drupal:cheese_Title xml:lang="en">Cottage cheese</drupal:cheese_Title>
+    <drupal:field_country_origin xml:lang="en">United Kingdom</drupal:field_country_origin>
+    <rdfs:label xml:lang="en">Cottage cheese</rdfs:label>
+    <drupal:field_description rdf:parseType="Literal"><p xml:lang="en" xmlns="http://www.w3.org/1999/xhtml">Cottage cheese is a cheese curd product with a mild flavor. It is drained, but not pressed so some whey remains. The curd is usually washed to remove acidity giving sweet curd cheese. It is not aged or colored. Different styles of cottage cheese are made from milks with different fat levels and in small curd or large curd preparations. Cottage cheese which is pressed becomes hoop cheese, farmer cheese, pot cheese or queso blanco.</p>
+<p xml:lang="en" xmlns="http://www.w3.org/1999/xhtml">Cottage cheese may be eaten straight. It is also eaten with fruit, with fruit puree, on toast, in green salads, - or as an ingredient in recipes like jello salad and various desserts. It can be used to replace grated cheese or ricotta cheese in most recipes (such as lasagna).</p>
+<p xml:lang="en" xmlns="http://www.w3.org/1999/xhtml">The term &quot;cottage cheese&quot; is believed to have originated because the simple cheese was usually made in cottages from any milk leftover after making butter. The term was first used in 1848. An older term for cottage cheese is curds and whey.</p>
+</drupal:field_description>
+    <foaf:page rdf:resource="/cheese/node/5"/>
+    <drupal:field_source_milk xml:lang="en">cow</drupal:field_source_milk>
+    <drupal:field_picture rdf:resource="http://drupal.deri.ie/cheese/sites/default/files/150px-Cottage_Cheese_homemade.jpg"/>
+  </drupal:Cheese>
+  <rdf:Description rdf:about="http://www.w3.org/2007/08/pyRdfa/distiller">
+    <dist:warning>
+      <rdf:Description>
+        <dist:onURI>
+          <rdf:Description rdf:about="">
+            <xhv:alternate rdf:resource="http://drupal.deri.ie/cheese/rss.xml"/>
+            <xhv:icon rdf:resource="/cheese/misc/favicon.ico"/>
+            <xhv:stylesheet rdf:resource="/cheese/modules/system/system-menus.css?n"/>
+            <xhv:stylesheet rdf:resource="/cheese/modules/user/user.css?n"/>
+            <xhv:stylesheet rdf:resource="/cheese/themes/garland/print.css?n"/>
+            <xhv:stylesheet rdf:resource="/cheese/modules/system/system.css?n"/>
+            <xhv:stylesheet rdf:resource="/cheese/sites/all/modules/cck/modules/fieldgroup/fieldgroup.css?n"/>
+            <xhv:stylesheet rdf:resource="/cheese/modules/system/defaults.css?n"/>
+            <xhv:stylesheet rdf:resource="/cheese/modules/node/node.css?n"/>
+            <xhv:stylesheet rdf:resource="/cheese/modules/openid/openid.css?n"/>
+            <xhv:stylesheet rdf:resource="/cheese/sites/all/modules/imagefield/imagefield.css?n"/>
+            <xhv:stylesheet rdf:resource="/cheese/sites/all/modules/filefield/filefield.css?n"/>
+            <xhv:stylesheet rdf:resource="/cheese/sites/all/modules/cck/theme/content-module.css?n"/>
+            <xhv:stylesheet rdf:resource="/cheese/themes/garland/style.css?n"/>
+            <xhv:meta rdf:resource="/cheese/node/3/rdf"/>
+            <xhv:meta rdf:resource="/cheese/node/20/rdf"/>
+            <xhv:meta rdf:resource="/cheese/node/13/rdf"/>
+            <xhv:meta rdf:resource="/cheese/node/1/rdf"/>
+            <xhv:meta rdf:resource="/cheese/node/14/rdf"/>
+            <xhv:meta rdf:resource="/cheese/rdf"/>
+            <xhv:meta rdf:resource="/cheese/node/2/rdf"/>
+            <xhv:meta rdf:resource="/cheese/node/17/rdf"/>
+            <xhv:meta rdf:resource="/cheese/node/5/rdf"/>
+            <xhv:meta rdf:resource="/cheese/node/4/rdf"/>
+          </rdf:Description>
+        </dist:onURI>
+        <dist:message>invalid @rel/@rev value: 'shortcut'</dist:message>
+      </rdf:Description>
+    </dist:warning>
+  </rdf:Description>
+  <drupal:Cheese rdf:about="/cheese/node/1#self">
+    <drupal:cheese_Title xml:lang="en">Parmigiano-Reggiano</drupal:cheese_Title>
+    <drupal:field_country_origin xml:lang="en">Italy</drupal:field_country_origin>
+    <rdfs:label xml:lang="en">Parmigiano-Reggiano</rdfs:label>
+    <drupal:field_description rdf:parseType="Literal"><p xml:lang="en" xmlns="http://www.w3.org/1999/xhtml">Parmigiano-Reggiano is a hard, fat granular cheese, cooked but not pressed, named after the producing areas of Parma, Reggio Emilia, Modena, Bologna, in Emilia-Romagna, and Mantova, in Lombardy, Italy.</p>
+<p xml:lang="en" xmlns="http://www.w3.org/1999/xhtml">Parmigiano is simply the Italian adjective for Parma; the French version, Parmesan, is used in the English language. The term Parmesan is also loosely used as a common term for cheeses imitating true Parmesan cheese, especially outside Europe; within Europe, the Parmesan name is classified as a protected designation of origin.</p>
+</drupal:field_description>
+    <foaf:page rdf:resource="/cheese/node/1"/>
+    <drupal:field_source_milk xml:lang="en">cow</drupal:field_source_milk>
+    <drupal:field_picture rdf:resource="http://drupal.deri.ie/cheese/sites/default/files/260px-Parmigiano_reggiano_piece.jpg"/>
+  </drupal:Cheese>
+  <drupal:Cheese rdf:about="/cheese/node/4#self">
+    <drupal:cheese_Title xml:lang="en">Cambozola</drupal:cheese_Title>
+    <drupal:field_country_origin xml:lang="en">Germany</drupal:field_country_origin>
+    <rdfs:label xml:lang="en">Cambozola</rdfs:label>
+    <drupal:field_description rdf:parseType="Literal"><p xml:lang="en" xmlns="http://www.w3.org/1999/xhtml">Cambozola is a cow's milk cheese that is a combination of a French soft-ripened triple cream cheese and Italian Gorgonzola. It was patented and industrially produced for the world market by large German company Champignon in the 1970s. The cheese (originally called Bavaria Blu), was invented circa 1900 and is still produced by the Bergader family in the Chiemgau region of Bavaria.</p>
+</drupal:field_description>
+    <foaf:page rdf:resource="/cheese/node/4"/>
+    <drupal:field_source_milk xml:lang="en">cow</drupal:field_source_milk>
+    <drupal:field_picture rdf:resource="http://drupal.deri.ie/cheese/sites/default/files/260px-Cambozola.jpg"/>
+  </drupal:Cheese>
+  <drupal:Cheese rdf:about="/cheese/node/3#self">
+    <drupal:cheese_Title xml:lang="en">Handkase</drupal:cheese_Title>
+    <drupal:field_country_origin xml:lang="en">Germany</drupal:field_country_origin>
+    <rdfs:label xml:lang="en">Handkase</rdfs:label>
+    <drupal:field_description rdf:parseType="Literal"><p xml:lang="en" xmlns="http://www.w3.org/1999/xhtml">Handkäse (literally: hand cheese) is a German regional sour milk cheese (often Harzer) and is a culinary speciality of Frankfurt. It gets its name from the former way of producing it: forming it with your own hands.</p>
+<p xml:lang="en" xmlns="http://www.w3.org/1999/xhtml">It is a small, translucent, yellow cheese with a pungent aroma that many people find unpleasant. It is sometimes square, but more often round in shape.</p>
+</drupal:field_description>
+    <foaf:page rdf:resource="/cheese/node/3"/>
+    <drupal:field_source_milk xml:lang="en">cow</drupal:field_source_milk>
+    <drupal:field_picture rdf:resource="http://drupal.deri.ie/cheese/sites/default/files/180px-Handkaese_20060117.jpg"/>
+  </drupal:Cheese>
+  <drupal:Cheese rdf:about="/cheese/node/13#self">
+    <drupal:cheese_Title xml:lang="en">Castelo Branco</drupal:cheese_Title>
+    <drupal:field_country_origin xml:lang="en">Portugal</drupal:field_country_origin>
+    <rdfs:label xml:lang="en">Castelo Branco</rdfs:label>
+    <drupal:field_description rdf:parseType="Literal"><p xml:lang="en" xmlns="http://www.w3.org/1999/xhtml">Castelo Branco cheese (Queijo de Castelo Branco) is a cheese named after the city of Castelo Branco, in Portugal, the chief city of the district where it is produced. The cheese is made from milk produced by either a goat or a ewe, and has a soft texture. Typically the cheese takes 40 days to mature when made with goat's milk, and 50 days when made with ewe's milk. The fat content is around 45%, and the cheese is usually a close-to-white colour.</p>
+</drupal:field_description>
+    <foaf:page rdf:resource="/cheese/node/13"/>
+    <drupal:field_source_milk xml:lang="en">goat</drupal:field_source_milk>
+    <drupal:field_picture rdf:resource="http://drupal.deri.ie/cheese/sites/default/files/Bacchalau do Castelo.JPG"/>
+  </drupal:Cheese>
+  <drupal:Cheese rdf:about="/cheese/node/14#self">
+    <drupal:cheese_Title xml:lang="en">Requeijão</drupal:cheese_Title>
+    <drupal:field_country_origin xml:lang="en">Portugal</drupal:field_country_origin>
+    <rdfs:label xml:lang="en">Requeijão</rdfs:label>
+    <drupal:field_description rdf:parseType="Literal"><p xml:lang="en" xmlns="http://www.w3.org/1999/xhtml">Requeijão is a milk-derived product, produced in Portugal and Brazil.</p>
+<p xml:lang="en" xmlns="http://www.w3.org/1999/xhtml">The Portuguese product is white to yellowish-white, solid, and usually having a characteristic strong taste; typically sold in specially designed draining plastic or basket-like weaved containers, or in plastic cups.</p>
+</drupal:field_description>
+    <foaf:page rdf:resource="/cheese/node/14"/>
+    <drupal:field_source_milk xml:lang="en">cow</drupal:field_source_milk>
+    <drupal:field_picture rdf:resource="http://drupal.deri.ie/cheese/sites/default/files/Requeijao180.jpg"/>
+  </drupal:Cheese>
+  <drupal:Cheese rdf:about="/cheese/node/17#self">
+    <drupal:cheese_Title xml:lang="en">Serpa</drupal:cheese_Title>
+    <drupal:field_country_origin xml:lang="en">Portugal</drupal:field_country_origin>
+    <rdfs:label xml:lang="en">Serpa</rdfs:label>
+    <drupal:field_description rdf:parseType="Literal"><p xml:lang="en" xmlns="http://www.w3.org/1999/xhtml">Serpa cheese is one of the most traditional Portuguese cheeses with it's strong and spicy flavour.</p>
+</drupal:field_description>
+    <foaf:page rdf:resource="/cheese/node/17"/>
+    <drupal:field_source_milk xml:lang="en">goat</drupal:field_source_milk>
+    <drupal:field_picture rdf:resource="http://drupal.deri.ie/cheese/sites/default/files/a_serpa.gif"/>
+  </drupal:Cheese>
+  <drupal:Cheese rdf:about="/cheese/node/2#self">
+    <drupal:cheese_Title xml:lang="en">Brie</drupal:cheese_Title>
+    <drupal:field_country_origin xml:lang="en">France</drupal:field_country_origin>
+    <rdfs:label xml:lang="en">Brie</rdfs:label>
+    <drupal:field_description rdf:parseType="Literal"><p xml:lang="en" xmlns="http://www.w3.org/1999/xhtml">Brie is a soft cows' cheese named after Brie, the French province in which it originated (roughly corresponding to the modern département of Seine-et-Marne). It is pale in colour with a slight greyish tinge under crusty white mould; very soft and savoury with a hint of ammonia. The white mouldy rind is edible, and is not intended to be separated from the cheese during consumption.</p>
+</drupal:field_description>
+    <foaf:page rdf:resource="/cheese/node/2"/>
+    <drupal:field_source_milk xml:lang="en">cow</drupal:field_source_milk>
+    <drupal:field_picture rdf:resource="http://drupal.deri.ie/cheese/sites/default/files/280px-Brie_de_Meaux_close.jpg"/>
+  </drupal:Cheese>
+</rdf:RDF>

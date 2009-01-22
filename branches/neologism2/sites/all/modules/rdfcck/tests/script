@@ -1,0 +1,5 @@
+curl -s http://drupal.deri.ie/cheese/ | py /Users/stecor/htdocs/pyrdfa/pyRdfa/scripts/localRDFa.py > localrdfa_drupal.deri.ie
+
+curl -s http://drupal.deri.ie/cheese/node/20 | py /Users/stecor/htdocs/pyrdfa/pyRdfa/scripts/localRDFa.py > localrdfa_drupal.deri.ie-node-20
+
+curl http://drupal.deri.ie/cheese/ns# > _drupal.deri.ie-ns
