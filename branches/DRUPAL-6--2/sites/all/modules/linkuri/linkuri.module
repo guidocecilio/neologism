@@ -3,28 +3,14 @@
 
 /**
  * @file
- * Defines simple linkuri field types.
+ * Defines simple link field types.
  */
+define('LINK_EXTERNAL', 'external');
+define('LINK_INTERNAL', 'internal');
+define('LINK_FRONT', 'front');
+define('LINK_EMAIL', 'email');
+define('LINK_DOMAINS', 'aero|arpa|biz|com|cat|coop|edu|gov|info|int|jobs|mil|museum|name|nato|net|org|pro|travel|mobi|local');
 
-/**
- * Implementation of hook_theme().
- */
-function linkuri_theme() {
-  return array(
-    'linkuri_textarea' => array(
-      'arguments' => array('element' => NULL),
-    ),
-    'linkuri_textfield' => array(
-      'arguments' => array('element' => NULL),
-    ),
-    'linkuri_formatter_default' => array(
-      'arguments' => array('element' => NULL),
-    ),
-    'linkuri' => array(
-      'arguments' => array('element' => NULL),
-    ),
-  );
-}
 
 /**
  * Implementation of hook_field_info().
@@ -44,14 +30,10 @@ function linkuri_field_info() {
 function linkuri_field_settings($op, $field) {
   switch ($op) {
     case 'form':
-      $form = array();
-      $options = array(0 => t('Plain text'), 1 => t('Filtered text (user selects input format)'));
-//       $form['text_processing'] = array(
-//         '#type' => 'radios',
-//         '#title' => t('Text processing'),
-//         '#default_value' => is_numeric($field['text_processing']) ? $field['text_processing'] : 0,
-//         '#options' => $options,
-//       );
+       $form = array(
+//         '#theme' => 'linkuri_field_settings',
+       );
+
       $form['sparql_query'] = array(
         '#type' => 'textarea',
         '#title' => t('SPARQL query'),
@@ -66,36 +48,144 @@ function linkuri_field_settings($op, $field) {
         '#required' => TRUE,
         '#description' => t('SPARQL endpoint against which the query above will be sent.'),
       );
-//       $form['allowed_values_fieldset'] = array(
-//         '#type' => 'fieldset',
-//         '#title' => t('Allowed values'),
-//         '#collapsible' => TRUE,
-//         '#collapsed' => TRUE,
-//       );
-//       $form['allowed_values_fieldset']['allowed_values'] = array(
-//         '#type' => 'textarea',
-//         '#title' => t('Allowed values list'),
-//         '#default_value' => !empty($field['allowed_values']) ? $field['allowed_values'] : '',
-//         '#required' => FALSE,
-//         '#rows' => 10,
-//         '#description' => t('The possible values this field can contain. Enter one value per line, in the format key|label. The key is the value that will be stored in the database, and it must match the field storage type (%type). The label is optional, and the key will be used as the label if no label is specified.<br />Allowed HTML tags: @tags', array('%type' => $field['type'], '@tags' => _content_filter_xss_display_allowed_tags())),
-//       );
-//       $form['allowed_values_fieldset']['advanced_options'] = array(
-//         '#type' => 'fieldset',
-//         '#title' => t('PHP code'),
-//         '#collapsible' => TRUE,
-//         '#collapsed' => empty($field['allowed_values_php']),
-//       );
+      $form['uri'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Optional URL'),
+        '#default_value' => $field['uri'],
+        '#return_value' => 'optional',
+        '#description' => t('If checked, the URL field is optional and submitting a title alone will be acceptable. If the URL is ommitted, the title will be displayed as plain text.'),
+      );
+
+      $title_options = array(
+        'optional' => t('Optional Title'),
+        'required' => t('Required Title'),
+        'value' => t('Static Title: '),
+        'none' => t('No Title'),
+      );
+
+      $form['title'] = array(
+        '#type' => 'radios',
+        '#title' => t('Link Title'),
+        '#default_value' => isset($field['title']) ? $field['title'] : 'optional',
+        '#options' => $title_options,
+        '#description' => t('If the link title is optional or required, a field will be displayed to the end user. If the link title is static, the link will always use the same title. If <a href="http://drupal.org/project/token">token module</a> is installed, the static title value may use any other node field as its value. Static and token-based titles may include most inline XHTML tags such as <em>strong</em>, <em>em</em>, <em>img</em>, <em>span</em>, etc.'),
+      );
+
+      $form['title_value'] = array(
+        '#type' => 'textfield',
+        '#default_value' => $field['title_value'],
+        '#size' => '46',
+      );
+
+      // Add token module replacements if available
+      if (module_exists('token')) {
+        $form['tokens'] = array(
+          '#type' => 'fieldset',
+          '#collapsible' => TRUE,
+          '#collapsed' => TRUE,
+          '#title' => t('Placeholder tokens'),
+          '#description' => t("The following placeholder tokens can be used in both paths and titles. When used in a path or title, they will be replaced with the appropriate values."),
+        );
+        $form['tokens']['help'] = array(
+          '#value' => theme('token_help', 'node'),
+        );
+
+        $form['enable_tokens'] = array(
+          '#type' => 'checkbox',
+          '#title' => t('Allow user-entered tokens'),
+          '#default_value' => isset($field['enable_tokens']) ? $field['enable_tokens'] : 1,
+          '#description' => t('Checking will allow users to enter tokens in URLs and Titles on the node edit form. This does not affect the field settings on this page.'),
+        );
+      }
+
+      $form['display'] = array(
+        '#tree' => true,
+      );
+      $form['display']['url_cutoff'] = array(
+        '#type' => 'textfield',
+        '#title' => t('URL Display Cutoff'),
+        '#default_value' => isset($field['display']['url_cutoff']) ? $field['display']['url_cutoff'] : '80',
+        '#description' => t('If the user does not include a title for this link, the URL will be used as the title. When should the link title be trimmed and finished with an elipsis (&hellip;)? Leave blank for no limit.'),
+        '#maxlength' => 3,
+        '#size' => 3,
+      );
+
+      $target_options = array(
+        'default' => t('Default (no target attribute)'),
+        '_top' => t('Open link in window root'),
+        '_blank' => t('Open link in new window'),
+        'user' => t('Allow the user to choose'),
+      );
+      $form['attributes'] = array(
+        '#tree' => true,
+      );
+      $form['attributes']['target'] = array(
+        '#type' => 'radios',
+        '#title' => t('Link Target'),
+        '#default_value' => empty($field['attributes']['target']) ? 'default' : $field['attributes']['target'],
+        '#options' => $target_options,
+      );
+      $form['attributes']['rel'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Rel Attribute'),
+        '#description' => t('When output, this link will have this rel attribute. The most common usage is <a href="http://en.wikipedia.org/wiki/Nofollow">rel=&quot;nofollow&quot;</a> which prevents some search engines from spidering entered links.'),
+        '#default_value' => empty($field['attributes']['rel']) ? '' : $field['attributes']['rel'],
+        '#field_prefix' => 'rel = "',
+        '#field_suffix' => '"',
+        '#size' => 20,
+      );
+      $form['attributes']['class'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Additional CSS Class'),
+        '#description' => t('When output, this link will have have this class attribute. Multiple classes should be separated by spaces.'),
+        '#default_value' => empty($field['attributes']['class']) ? '' : $field['attributes']['class'],
+      );
       return $form;
 
+    case 'validate':
+      if ($field['title'] == 'value' && empty($field['title_value'])) {
+        form_set_error('title_value', t('A default title must be provided if the title is a static value'));
+      }
+      break;
+
     case 'save':
-      return array('sparql_query', 'sparql_endpoint');
+      return array('sparql_query', 'sparql_endpoint', 'attributes', 'display', 'uri', 'title', 'title_value', 'enable_tokens');
 
     case 'database columns':
       return array(
         'uri' => array('type' => 'varchar', 'length' => 255, 'not null' => FALSE, 'sortable' => TRUE),
+        'title' => array('type' => 'varchar', 'length' => 255, 'not null' => FALSE, 'sortable' => TRUE),
+        'attributes' => array('type' => 'text', 'size' => 'medium', 'not null' => FALSE),
       );
+
+    case 'views data':
+      module_load_include('inc', 'link', 'views/link.views');
+      return linkuri_views_content_field_data($field);
   }
+}
+
+/**
+ * Theme the settings form for the linkuri field.
+ */
+// function theme_linkuri_field_settings($form) {
+//   $title_value = drupal_render($form['title_value']);
+//   $title_checkbox = drupal_render($form['title']['value']);
+// 
+//   // Set Static Title radio option to include the title_value textfield.
+//   $form['title']['value'] = array('#value' => '<div class="container-inline">'. $title_checkbox . $title_value .'</div>');
+// 
+//   // Reprint the title radio options with the included textfield.
+//   return drupal_render($form);
+// }
+
+/**
+ * Implementation of hook_content_is_empty().
+ */
+function linkuri_content_is_empty($item, $field) {
+  if (empty($item['title']) && empty($item['uri'])) {
+    return TRUE;
+  }
+  return FALSE;
 }
 
 /**
@@ -103,296 +193,576 @@ function linkuri_field_settings($op, $field) {
  */
 function linkuri_field($op, &$node, $field, &$items, $teaser, $page) {
   switch ($op) {
+    case 'load':
+      foreach ($items as $delta => $item) {
+        _linkuri_load($items[$delta], $delta);
+      }
+      break;
+
     case 'validate':
-//       $allowed_values = content_allowed_values($field);
-//       if (is_array($items)) {
-//         foreach ($items as $delta => $item) {
-//           $error_element = isset($item['_error_element']) ? $item['_error_element'] : '';
-//           if (is_array($item) && isset($item['_error_element'])) unset($item['_error_element']);
-//           if (!empty($item['value'])) {
-//             if (count($allowed_values) && !array_key_exists($item['value'], $allowed_values)) {
-//               form_set_error($error_element, t('%name: illegal value.', array('%name' => t($field['widget']['label']))));
-//             }
-//             if (!empty($field['max_length']) && drupal_strlen($item['value']) > $field['max_length']) {
-//               form_set_error($error_element, t('%name: the value may not be longer than %max characters.', array('%name' => $field['widget']['label'], '%max' => $field['max_length'])));
-//             }
-//           }
-//         }
-//       }
-//       return $items;
+      $optional_field_found = FALSE;
+      foreach($items as $delta => $value) {
+        _linkuri_validate($items[$delta],$delta, $field, $node, $optional_field_found);
+      }
+
+      if ($field['uri'] == 'optional' && $field['title'] == 'optional' && $field['required'] && !$optional_field_found) {
+        form_set_error($field['field_name'] .'][0][title', t('At least one title or URL must be entered.'));
+      }
+      break;
+
+    case 'presave':
+      foreach($items as $delta => $value) {
+        _linkuri_process($items[$delta], $delta, $field, $node);
+      }
+      break;
 
     case 'sanitize':
-//       foreach ($items as $delta => $item) {
-//         if (!empty($field['text_processing'])) {
-//           $check = is_null($node) || (isset($node->build_mode) && $node->build_mode == NODE_BUILD_PREVIEW);
-//           $text = isset($item['value']) ? check_markup($item['value'], $item['format'], $check) : '';
-//         }
-//         else {
-//           $text = check_plain($item['value']);
-//         }
-//         $items[$delta]['safe'] = $text;
-//       }
+      foreach ($items as $delta => $value) {
+        _linkuri_sanitize($items[$delta], $delta, $field, $node);
+      }
+      break;
   }
 }
-
-/**
- * Implementation of hook_content_is_empty().
- */
-function linkuri_content_is_empty($item, $field) {
-  if (empty($item['uri'])) {
-    return TRUE;
-  }
-  return FALSE;
-}
-
-/**
- * Implementation of hook_field_formatter_info().
- */
-// How the linkuri will be displayed.
-function linkuri_field_formatter_info() {
-  return array(
-    'default' => array(
-      'label' => t('Default'),
-      'field types' => array('linkuri'),
-      'multiple values' => CONTENT_HANDLE_CORE,
-    ),
-  );
-}
-
-/**
- * Theme function for 'default' linkuri field formatter.
- */
-function theme_linkuri_formatter_default($element) {
-  return empty($element['#item']['uri']) ? '' : check_plain($element['#item']['uri']);
-}
-
-
-// function _linkuri_allowed_values($element) {
-//   $field = content_fields($element['#field_name'], $element['#type_name']);
-//   if (($allowed_values = content_allowed_values($field)) && isset($allowed_values[$element['#item']['value']])) {
-//     return $allowed_values[$element['#item']['value']];
-//   }
-// }
 
 /**
  * Implementation of hook_widget_info().
- *
- * Here we indicate that the content module will handle
- * the default value and multiple values for these widgets.
- *
- * Callbacks can be omitted if default handing is used.
- * They're included here just so this module can be used
- * as an example for custom modules that might do things
- * differently.
  */
 function linkuri_widget_info() {
   return array(
-    'linkuri_textfield' => array(
-      'label' => t('linkuri Text field'),
+    'linkuri' => array(
+      'label' => 'Text Field the URI',
       'field types' => array('linkuri'),
       'multiple values' => CONTENT_HANDLE_CORE,
-      'callbacks' => array(
-        'default value' => CONTENT_CALLBACK_DEFAULT,
-      ),
-    ),
-    'linkuri_textarea' => array(
-      'label' => t('linkuri Text area (multiple rows)'),
-      'field types' => array('linkuri'),
-      'multiple values' => CONTENT_HANDLE_CORE,
-      'callbacks' => array(
-        'default value' => CONTENT_CALLBACK_DEFAULT,
-      ),
     ),
   );
 }
-
-/**
- * Implementation of FAPI hook_elements().
- *
- * Any FAPI callbacks needed for individual widgets can be declared here,
- * and the element will be passed to those callbacks for processing.
- *
- * Drupal will automatically theme the element using a theme with
- * the same name as the hook_elements key.
- *
- * Autocomplete_path is not used by linkuri_widget but other widgets can use it
- * (see nodereference and userreference).
- */
-function linkuri_elements() {
-  return array(
-    'linkuri_textfield' => array(
-      '#input' => TRUE,
-      '#columns' => array('value'), '#delta' => 0,
-      '#process' => array('linkuri_textfield_process'),
-      '#autocomplete_path' => FALSE,
-    ),
-    'linkuri_textarea' => array(
-      '#input' => TRUE,
-      '#columns' => array('value', 'format'), '#delta' => 0,
-      '#process' => array('linkuri_textarea_process'),
-      '#filter_value' => FILTER_FORMAT_DEFAULT,
-    ),
-  );
-}
-
-/**
- * Implementation of hook_widget_settings().
- */
-// function linkuri_widget_settings($op, $widget) {
-//   switch ($op) {
-//     case 'form':
-//       $form = array();
-//       $rows = (isset($widget['rows']) && is_numeric($widget['rows'])) ? $widget['rows'] : 5;
-//       $size = (isset($widget['size']) && is_numeric($widget['size'])) ? $widget['size'] : 60;
-//       if ($widget['type'] == 'linkuri_textfield') {
-//         $form['rows'] = array('#type' => 'hidden', '#value' => $rows);
-//         $form['size'] = array(
-//           '#type' => 'textfield',
-//           '#title' => t('Size of textfield'),
-//           '#default_value' => $size,
-//           '#element_validate' => array('_linkuri_widget_settings_size_validate'),
-//           '#required' => TRUE,
-//         );
-//       }
-//       else {
-//         $form['rows'] = array(
-//           '#type' => 'textfield',
-//           '#title' => t('Rows'),
-//           '#default_value' => $rows,
-//           '#element_validate' => array('_linkuri_widget_settings_row_validate'),
-//           '#required' => TRUE,
-//         );
-//         $form['size'] = array('#type' => 'hidden', '#value' => $size);
-//       }
-//       return $form;
-// 
-//     case 'save':
-//       return array('rows', 'size');
-//   }
-// }
-
-// function _linkuri_widget_settings_row_validate($element, &$form_state) {
-//   $value = $form_state['values']['rows'];
-//   if (!is_numeric($value) || intval($value) != $value || $value <= 0) {
-//     form_error($element, t('"Rows" must be a positive integer.'));
-//   }
-// }
-// 
-// function _linkuri_widget_settings_size_validate($element, &$form_state) {
-//   $value = $form_state['values']['size'];
-//   if (!is_numeric($value) || intval($value) != $value || $value <= 0) {
-//     form_error($element, t('"Size" must be a positive integer.'));
-//   }
-// }
 
 /**
  * Implementation of hook_widget().
- *
- * Attach a single form element to the form. It will be built out and
- * validated in the callback(s) listed in hook_elements. We build it
- * out in the callbacks rather than here in hook_widget so it can be
- * plugged into any module that can provide it with valid
- * $field information.
- *
- * Content module will set the weight, field name and delta values
- * for each form element. This is a change from earlier CCK versions
- * where the widget managed its own multiple values.
- *
- * If there are multiple values for this field, the content module will
- * call this function as many times as needed.
- *
- * @param $form
- *   the entire form array, $form['#node'] holds node information
- * @param $form_state
- *   the form_state, $form_state['values'][$field['field_name']]
- *   holds the field's form values.
- * @param $field
- *   the field array
- * @param $items
- *   array of default values for this field
- * @param $delta
- *   the order of this item in the array of subelements (0, 1, 2, etc)
- *
- * @return
- *   the form item for a single element for this field
  */
 function linkuri_widget(&$form, &$form_state, $field, $items, $delta = 0) {
-$form['#field_info']['field_linkuri']['widget']['label'] = 'sc';
-var_dump($form['#field_info']['field_linkuri']['widget']['label']);
   $element = array(
     '#type' => $field['widget']['type'],
     '#default_value' => isset($items[$delta]) ? $items[$delta] : '',
+    '#title' => $field['widget']['label'],
+    '#weight' => $field['widget']['weight'],
+    '#description' => $field['widget']['description'],
+    '#required' => $field['required'],
+    '#field' => $field,
   );
   return $element;
 }
 
+function _linkuri_load(&$item, $delta = 0) {
+  // Unserialize the attributes array.
+  $item['attributes'] = unserialize($item['attributes']);
+}
+
+function _linkuri_process(&$item, $delta = 0, $field, $node) {
+  // Remove the target attribute if not selected.
+  if (!$item['attributes']['target'] || $item['attributes']['target'] == "default") {
+    unset($item['attributes']['target']);
+  }
+  // Trim whitespace from URL.
+  $item['uri'] = trim($item['uri']);
+  // Serialize the attributes array.
+  $item['attributes'] = serialize($item['attributes']);
+
+  // Don't save an invalid default value (e.g. 'http://').
+  if ((isset($field['widget']['default_value'][$delta]['uri']) && $item['uri'] == $field['widget']['default_value'][$delta]['uri']) && is_object($node)) {
+    if (!linkuri_validate_url($item['uri'])) {
+      unset($item['uri']);
+    }
+  }
+}
+
+function _linkuri_validate(&$item, $delta, $field, $node, &$optional_field_found) {
+  if ($item['uri'] && !(isset($field['widget']['default_value'][$delta]['uri']) && $item['uri'] == $field['widget']['default_value'][$delta]['uri'] && !$field['required'])) {
+    // Validate the link.
+    if (linkuri_validate_url(trim($item['uri'])) == FALSE) {
+      form_set_error($field['field_name'] .']['. $delta. '][uri', t('Not a valid URL.'));
+    }
+    // Require a title for the link if necessary.
+    if ($field['title'] == 'required' && strlen(trim($item['title'])) == 0) {
+      form_set_error($field['field_name'] .']['. $delta. '][title', t('Titles are required for all links.'));
+    }
+  }
+  // Require a link if we have a title.
+  if ($field['uri'] !== 'optional' && strlen($item['title']) > 0 && strlen(trim($item['uri'])) == 0) {
+    form_set_error($field['field_name'] .']['. $delta. '][uri', t('You cannot enter a title without a link url.'));
+  }
+  // In a totally bizzaro case, where URLs and titles are optional but the field is required, ensure there is at least one link.
+  if ($field['uri'] == 'optional' && $field['title'] == 'optional' && (strlen(trim($item['uri'])) != 0 || strlen(trim($item['title'])) != 0)) {
+    $optional_field_found = TRUE;
+  }
+}
+
 /**
- * Process an individual element.
+ * Cleanup user-entered values for a link field according to field settings.
+ *
+ * @param $item
+ *   A single link item, usually containing url, title, and attributes.
+ * @param $delta
+ *   The delta value if this field is one of multiple fields.
+ * @param $field
+ *   The CCK field definition.
+ * @param $node
+ *   The node containing this link.
+ */
+function _linkuri_sanitize(&$item, $delta, &$field, &$node) {
+  // Don't try to process empty links.
+  if (empty($item['uri']) && empty($item['title'])) {
+    return;
+  }
+
+  // Replace URL tokens.
+  if (module_exists('token') && $field['enable_tokens']) {
+    // Load the node if necessary for nodes in views.
+    $token_node = isset($node->nid) ? node_load($node->nid) : $node;
+    $item['uri'] = token_replace($item['uri'], 'node', $token_node);
+  }
+
+  $type = linkuri_validate_url($item['uri']);
+  $url = linkuri_cleanup_url($item['uri']);
+
+  // Separate out the anchor if any.
+  if (strpos($url, '#') !== FALSE) {
+    $item['fragment'] = substr($url, strpos($url, '#') + 1);
+    $url = substr($url, 0, strpos($url, '#'));
+  }
+  // Separate out the query string if any.
+  if (strpos($url, '?') !== FALSE) {
+    $item['query'] = substr($url, strpos($url, '?') + 1);
+    $url = substr($url, 0, strpos($url, '?'));
+  }
+  // Save the new URL without the anchor or query.
+  $item['uri'] = $url;
+
+  // Create a shortened URL for display.
+  $display_url = $type == LINK_EMAIL ? str_replace('mailto:', '', $url) : url($url, array('query' => isset($item['query']) ? $item['query'] : NULL, 'fragment' => isset($item['fragment']) ? $item['fragment'] : NULL, 'absolute' => TRUE));
+  if ($field['display']['url_cutoff'] && strlen($display_url) > $field['display']['url_cutoff']) {
+    $display_url = substr($display_url, 0, $field['display']['url_cutoff']) . "...";
+  }
+  $item['display_url'] = $display_url;
+
+  // Use the title defined at the field level.
+  if ($field['title'] == 'value' && strlen(trim($field['title_value']))) {
+    $title = $field['title_value'];
+  }
+  // Use the title defined by the user at the widget level.
+  else {
+    $title = $item['title'];
+  }
+  // Replace tokens.
+  if (module_exists('token') && ($field['title'] == 'value' || $field['enable_tokens'])) {
+    // Load the node if necessary for nodes in views.
+    $token_node = isset($node->nid) ? node_load($node->nid) : $node;
+    $title = filter_xss(token_replace($title, 'node', $token_node), array('b', 'br', 'code', 'em', 'i', 'img', 'span', 'strong', 'sub', 'sup', 'tt', 'u'));
+    $item['html'] = TRUE;
+  }
+  $item['display_title'] = empty($title) ? $item['display_url'] : $title;
+
+  // Add attributes defined at the widget level
+  $attributes = array();
+  if (!empty($item['attributes']) && is_array($item['attributes'])) {
+    foreach($item['attributes'] as $attribute => $attbvalue) {
+      if (isset($item['attributes'][$attribute]) && $field['attributes'][$attribute] == 'user') {
+        $attributes[$attribute] = $attbvalue;
+       }
+     }
+   }
+  // Add attributes defined at the field level
+  if (is_array($field['attributes'])) {
+    foreach($field['attributes'] as $attribute => $attbvalue) {
+      if (!empty($attbvalue) && $attbvalue != 'default' && $attbvalue != 'user') {
+        $attributes[$attribute] = $attbvalue;
+      }
+    }
+  }
+  // Remove the rel=nofollow for internal links.
+  if ($type != LINK_EXTERNAL && isset($attributes['rel']) && strpos($attributes['rel'], 'nofollow') !== FALSE) {
+    $attributes['rel'] = str_replace('nofollow', '', $attributes['rel']);
+    if (empty($attributes['rel'])) {
+      unset($attributes['rel']);
+    }
+  }
+  $item['attributes'] = $attributes;
+
+  // Add the widget label.
+  $item['label'] = $field['widget']['label'];
+}
+
+/**
+ * Implementation of hook_theme().
+ */
+function linkuri_theme() {
+  return array(
+    'linkuri_field_settings' => array(
+      'arguments' => array('element' => NULL),
+    ),
+    'linkuri_formatter_default' => array(
+      'arguments' => array('element' => NULL),
+    ),
+    'linkuri_formatter_plain' => array(
+      'arguments' => array('element' => NULL),
+    ),
+    'linkuri_formatter_url' => array(
+      'arguments' => array('element' => NULL),
+    ),
+    'linkuri_formatter_short' => array(
+      'arguments' => array('element' => NULL),
+    ),
+    'linkuri_formatter_label' => array(
+      'arguments' => array('element' => NULL),
+    ),
+    'linkuri_formatter_separate' => array(
+      'arguments' => array('element' => NULL),
+    ),
+    'linkuri' => array(
+      'arguments' => array('element' => NULL),
+    ),
+  );
+}
+
+/**
+ * FAPI theme for an individual text elements.
+ * in an add/edit node form.
+ */
+function theme_linkuri($element) {
+  drupal_add_css(drupal_get_path('module', 'link') .'/link.css');
+  
+//   drupal_add_css('http://dev.jquery.com/view/trunk/plugins/autocomplete/demo/main.css');
+//   drupal_add_css('http://dev.jquery.com/view/trunk/plugins/autocomplete/jquery.autocomplete.css');
+// 
+// drupal_add_js('http://dev.jquery.com/view/trunk/plugins/autocomplete/lib/jquery.bgiframe.min.js');
+// drupal_add_js('http://dev.jquery.com/view/trunk/plugins/autocomplete/lib/jquery.dimensions.js');
+// drupal_add_js('http://dev.jquery.com/view/trunk/plugins/autocomplete/jquery.autocomplete.js');
+  
+  
+var_dump($element['uri']);
+
+////////////////////
+  $form['sparql_lookup'] = array(
+    '#title' => t('SPARQL lookup'),
+    '#prefix' => '<div class="clear-block" id="sparql-lookup-wrapper">', // This is our wrapper div.
+    '#suffix' => '</div>',
+    '#tree' => TRUE,
+  );
+//var_dump(ahah_helper_path(array('sparql_lookup')));
+  $form['sparql_lookup']['keyword'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Vocabulary URI'),
+    '#required' => TRUE,
+    '#default_value' => $form_state['values']['sparql_lookup']['keyword'],
+    '#prefix' => '<div class="clear-block">',
+    '#suffix' => '</div>',
+    '#ahah' => array(
+      'event' => 'change',
+      'effect' => 'fade',
+      // This is the "magical path". Note that the parameter is an array of
+      // the parents of the form item of the wrapper div!
+      'path' => ahah_helper_path(array('sparql_lookup')),
+      'wrapper' => 'sparql-lookup-wrapper',
+      'progress' => array('type' => 'bar', 'message' => t('Please wait while suggested URIs are retrieved...')),
+    ),
+  );
+  if ($form_state['values']['sparql_lookup']['keyword'] ) {
+    $form['sparql_lookup']['uri_choices'] = array(
+			'#type' => 'radios',
+			'#title' => t('Suggested URIs'),
+			'#default_value' => '',
+			'#options' => array(
+				'status' => t('Published'),
+				'moderate' => t('In moderation queue'),
+				'promote' => t('Promoted to front page'),
+				'sticky' => t('Sticky at top of lists'),
+				'revision' => t('Create new revision'),
+			),
+			'#description' => t('Choose the URI which describes the best what you want to represent.'),
+    );
+  }
+/////////////////////////////////
+
+  // Prefix single value link fields with the name of the field.
+  if (empty($element['#field']['multiple'])) {
+    if (isset($element['uri']) && isset($element['title'])) {
+      $element['uri']['#title'] = $element['#title'] .' '. $element['uri']['#title'];
+      $element['title']['#title'] = $element['#title'] .' '. $element['title']['#title'];
+    }
+    elseif($element['uri']) {
+      $element['uri']['#title'] = $element['#title'];
+    }
+  }
+      $element['uri']['#title'] = $element['#title'];
+
+  $output = '';
+  $output .= '<div class="link-field-subrow clear-block">';
+  if (isset($element['title'])) {
+    $output .= '<div class="link-field-title link-field-column">' . theme('textfield', $element['title']) . '</div>';
+  }
+  $output .= '<div class="link-field-url' . (isset($element['title']) ? ' link-field-column' : '') . '">' . theme('textfield', $element['uri']) . '</div>';
+  $output .= '</div>';
+  if (!empty($element['attributes'])) {
+    $output .= '<div class="link-attributes">' . theme('form_element', $element['attributes'], $element['attributes']['#value']) . '</div>';
+  }
+  return $output;
+}
+
+/**
+ * Implementation of hook_elements().
+ */
+function linkuri_elements() {
+  $elements = array();
+  $elements['linkuri'] =  array(
+    '#input' => TRUE,
+    '#columns' => array('uri', 'title'),
+    '#process' => array('linkuri_process'),
+  );
+  return $elements;
+}
+
+/**
+ * Process the link type element before displaying the field.
  *
  * Build the form element. When creating a form using FAPI #process,
  * note that $element['#value'] is already set.
  *
  * The $fields array is in $form['#field_info'][$element['#field_name']].
  */
-function linkuri_textfield_process($element, $edit, $form_state, $form) {
-  $field = $form['#field_info'][$element['#field_name']];
-  $field_key = $element['#columns'][0];
-  $delta = $element['#delta'];
-  $element[$field_key] = array(
-    '#type' => 'textfield',
-    '#default_value' => isset($element['#value'][$field_key]) ? $element['#value'][$field_key] : NULL,
-    '#autocomplete_path' => $element['#autocomplete_path'],
-    '#size' => !empty($field['widget']['size']) ? $field['widget']['size'] : 60,
-    '#attributes' => array('class' => 'text'),
-    // The following values were set by the content module and need
-    // to be passed down to the nested element.
-    '#title' => $element['#title'],
-    '#description' => $element['#description'],
-    '#required' => $element['#required'],
-    '#field_name' => $element['#field_name'],
-    '#type_name' => $element['#type_name'],
-    '#delta' => $element['#delta'],
-    '#columns' => $element['#columns'],
-  );
-
-  $element[$field_key]['#maxlength'] = !empty($field['max_length']) ? $field['max_length'] : NULL;
-
-  if (!empty($field['text_processing'])) {
-    $filter_key = $element['#columns'][1];
-    $format = isset($element['#value'][$filter_key]) ? $element['#value'][$filter_key] : FILTER_FORMAT_DEFAULT;
-    $parents = array_merge($element['#parents'] , array($filter_key));
-    $element[$filter_key] = filter_form($format, 1, $parents);
-  }
-
-  // Used so that hook_field('validate') knows where to flag an error.
-  $element['_error_element'] = array(
-    '#type' => 'value',
-    '#value' => implode('][', array_merge($element['#parents'], array($field_key))),
-  );
-
-  return $element;
-}
-
-function theme_linkuri($element) {
-var_dump($element);
-return $element;
+function linkuri_process($element, $edit, $form_state, $form) {
+   $field = $form['#field_info'][$element['#field_name']];
+   $delta = $element['#delta'];
+   $element['uri'] = array(
+     '#type' => 'textfield',
+     '#maxlength' => '255',
+     '#title' => t('URL'),
+     '#description' => $element['#description'],
+     '#required' => ($delta == 0 && $field['uri'] !== 'optional') ? $element['#required'] : FALSE,
+     '#default_value' => isset($element['#value']['uri']) ? $element['#value']['uri'] : NULL,
+   );
+   if ($field['title'] != 'none' && $field['title'] != 'value') {
+     $element['title'] = array(
+       '#type' => 'textfield',
+       '#maxlength' => '255',
+       '#title' => t('Title'),
+       '#required' => ($delta == 0 && $field['title'] == 'required') ? $field['required'] : FALSE,
+       '#default_value' => isset($element['#value']['title']) ? $element['#value']['title'] : NULL,
+     );
+   }
+   if (!empty($field['attributes']['target']) && $field['attributes']['target'] == 'user') {
+     $element['attributes']['target'] = array(
+       '#type' => 'checkbox',
+       '#title' => t('Open URL in a New Window'),
+       '#return_value' => "_blank",
+     );
+   }
+   return $element;
 }
 
 /**
- * FAPI theme for an individual linkuri elements.
- *
- * The textfield or textarea is already rendered by the
- * textfield or textarea themes and the html output
- * lives in $element['#children']. Override this theme to
- * make custom changes to the output.
- *
- * $element['#field_name'] contains the field name
- * $element['#delta]  is the position of this element in the group
+ * Implementation of hook_field_formatter_info().
  */
-function theme_linkuri_textfield($element) {
-  return $element['#children'];
+function linkuri_field_formatter_info() {
+  return array(
+    'default' => array(
+      'label' => t('Title, as link (default)'),
+      'field types' => array('linkuri'),
+      'multiple values' => CONTENT_HANDLE_CORE,
+    ),
+//     'url' => array(
+//       'label' => t('URL, as link'),
+//       'field types' => array('link'),
+//       'multiple values' => CONTENT_HANDLE_CORE,
+//     ),
+//     'plain' => array(
+//       'label' => t('URL, as plain text'),
+//       'field types' => array('link'),
+//       'multiple values' => CONTENT_HANDLE_CORE,
+//     ),
+//     'short' => array(
+//       'label' => t('Short, as link with title "Link"'),
+//       'field types' => array('link'),
+//       'multiple values' => CONTENT_HANDLE_CORE,
+//     ),
+//     'label' => array(
+//       'label' => t('Label, as link with label as title'),
+//       'field types' => array('link'),
+//       'multiple values' => CONTENT_HANDLE_CORE,
+//     ),
+//     'separate' => array(
+//       'label' => t('Separate title and URL'),
+//       'field types' => array('link'),
+//       'multiple values' => CONTENT_HANDLE_CORE,
+//     ),
+  );
 }
 
-function theme_linkuri_textarea($element) {
-  return $element['#children'];
+/**
+ * Theme function for 'default' text field formatter.
+ */
+function theme_linkuri_formatter_default($element) {
+  // Display a normal link if both title and URL are available.
+  if (!empty($element['#item']['display_title']) && !empty($element['#item']['uri'])) {
+    return l($element['#item']['display_title'], $element['#item']['uri'], $element['#item']);
+  }
+  // If only a title, display the title.
+  elseif (!empty($element['#item']['display_title'])) {
+    return check_plain($element['#item']['display_title']);
+  }
+}
+
+// /**
+//  * Theme function for 'plain' text field formatter.
+//  */
+// function theme_link_formatter_plain($element) {
+//   return empty($element['#item']['url']) ? check_plain($element['#item']['title']) : check_plain($element['#item']['url']);
+// }
+// 
+// /**
+//  * Theme function for 'url' text field formatter.
+//  */
+// function theme_link_formatter_url($element) {
+//   return $element['#item']['url'] ? l($element['#item']['display_url'], $element['#item']['url'], $element['#item']) : '';
+// }
+// 
+// /**
+//  * Theme function for 'short' text field formatter.
+//  */
+// function theme_link_formatter_short($element) {
+//   return $element['#item']['url'] ? l(t('Link'), $element['#item']['url'], $element['#item']) : '';
+// }
+// 
+// /**
+//  * Theme function for 'label' text field formatter.
+//  */
+// function theme_link_formatter_label($element) {
+//   return $element['#item']['url'] ? l($element['#item']['label'], $element['#item']['url'], $element['#item']) : '';
+// }
+// 
+// /**
+//  * Theme function for 'separate' text field formatter.
+//  */
+// function theme_link_formatter_separate($element) {
+//   $class = empty($element['#item']['attributes']['class']) ? '' : ' '. $element['#item']['attributes']['class'];
+//   unset($element['#item']['attributes']['class']);
+// 
+//   $output = '';
+//   $output .= '<div class="link-item '. $class .'">';
+//   $output .= '<div class="link-title">'. (empty($element['#item']['title']) ? '' : $element['#item']['display_title']) .'</div>';
+//   $output .= '<div class="link-url">'. l($element['#item']['display_url'], $element['#item']['url'], $element['#item']) .'</div>';
+//   $output .= '</div>';
+//   return $output;
+// }
+
+function linkuri_token_list($type = 'all') {
+  if ($type == 'field' || $type == 'all') {
+    $tokens = array();
+
+    $tokens['linkuri']['uri'] = t("Link URL");
+    $tokens['linkuri']['title'] = t("Link title");
+    $tokens['linkuri']['view'] = t("Formatted html link");
+
+    return $tokens;
+  }
+}
+
+function linkuri_token_values($type, $object = NULL) {
+  if ($type == 'field') {
+    $item = $object[0];
+
+    $tokens['uri'] = $item['uri'];
+    $tokens['title'] = $item['title'];
+    $tokens['view'] = isset($item['view']) ? $item['view'] : '';
+
+    return $tokens;
+  }
+}
+
+/**
+ * Implementation of hook_views_api().
+ */
+function linkuri_views_api() {
+  return array(
+    'api' => 2,
+    'path' => drupal_get_path('module', 'link') . '/views',
+  );
+}
+
+/**
+ * Forms a valid URL if possible from an entered address.
+ * Trims whitespace and automatically adds an http:// to addresses without a protocol specified
+ *
+ * @param string $url
+ * @param string $protocol The protocol to be prepended to the url if one is not specified
+ */
+function linkuri_cleanup_url($url, $protocol = "http") {
+  $url = trim($url);
+  $type = linkuri_validate_url($url);
+
+  if ($type == LINK_EXTERNAL) {
+    // Check if there is no protocol specified.
+    $protocol_match = preg_match("/^([a-z0-9][a-z0-9\.\-_]*:\/\/)/i",$url);
+    if (empty($protocol_match)) {
+      // But should there be? Add an automatic http:// if it starts with a domain name.
+      $domain_match = preg_match('/^(([a-z0-9]([a-z0-9\-_]*\.)+)('. LINK_DOMAINS .'|[a-z]{2}))/i',$url);
+      if (!empty($domain_match)) {
+        $url = $protocol."://".$url;
+      }
+    }
+  }
+
+  return $url;
+}
+
+/**
+ * A lenient verification for URLs. Accepts all URLs following RFC 1738 standard
+ * for URL formation and all email addresses following the RFC 2368 standard for
+ * mailto address formation.
+ *
+ * @param string $text
+ * @return mixed Returns boolean FALSE if the URL is not valid. On success, returns an object with
+ * the following attributes: protocol, hostname, ip, and port.
+ */
+function linkuri_validate_url($text) {
+
+  $allowed_protocols = variable_get('filter_allowed_protocols', array('http', 'https', 'ftp', 'news', 'nntp', 'telnet', 'mailto', 'irc', 'ssh', 'sftp', 'webcal'));
+
+  $protocol = '((' . implode("|", $allowed_protocols) . '):\/\/)';
+  $authentication = '([a-z0-9]+(:[a-z0-9]+)?@)';
+  $domain = '(([a-z0-9]([a-z0-9\-_\[\]])*)(\.(([a-z0-9\-_\[\]])+\.)*('. LINK_DOMAINS .'|[a-z]{2}))?)';
+  $ipv4 = '([0-9]{1,3}(\.[0-9]{1,3}){3})';
+  $ipv6 = '([0-9a-fA-F]{1,4}(\:[0-9a-fA-F]{1,4}){7})';
+  $port = '(:([0-9]{1,5}))';
+
+  // Pattern specific to eternal links.
+  $external_pattern = '/^' . $protocol . '?' . $authentication . '?' . '(' . $domain . '|' . $ipv4 . '|' . $ipv6 . ' |localhost)' . $port . '?';
+
+  // Pattern specific to internal links.
+  $internal_pattern = "/^([a-z0-9_\-+\[\]]+)";
+
+  $directories = "(\/[a-z0-9_\-\.~+%=&,$'():;*@\[\]]*)*";
+   // Yes, four backslashes == a single backslash.
+  $query = "(\/?\?([?a-z0-9+_|\-\.\/\\\\%=&,$'():;*@\[\]]*))";
+  $anchor = "(#[a-z0-9_\-\.~+%=&,$'():;*@\[\]]*)";
+
+  // The rest of the path for a standard URL.
+  $end = $directories . '?' . $query . '?' . $anchor . '?' . '$/i';
+
+  $user = '[a-zA-Z0-9_\-\.\+\^!#\$%&*+\/\=\?\`\|\{\}~\'\[\]]+';
+  $email_pattern = '/^mailto:' . $user . '@' . '(' . $domain . '|' . $ipv4 .'|'. $ipv6 . '|localhost)' . $query . '?$/';
+
+  if (strpos($text, '<front>') === 0) {
+    return LINK_FRONT;
+  }
+  if (in_array('mailto', $allowed_protocols) && preg_match($email_pattern, $text)) {
+    return LINK_EMAIL;
+  }
+  if (preg_match($internal_pattern . $end, $text)) {
+    return LINK_INTERNAL;
+  }
+  if (preg_match($external_pattern . $end, $text)) {
+    return LINK_EXTERNAL;
+  }
+
+  return FALSE;
 }
