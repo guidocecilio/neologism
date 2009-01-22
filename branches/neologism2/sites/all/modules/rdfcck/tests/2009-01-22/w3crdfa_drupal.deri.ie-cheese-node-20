@@ -1,32 +1,32 @@
-<http://drupal.deri.ie/cheese/node/20> <http://www.w3.org/1999/xhtml/vocab#stylesheet> <http://drupal.deri.ie/cheese/modules/user/user.css?n>.
-<http://drupal.deri.ie/cheese/node/20> <http://www.w3.org/1999/xhtml/vocab#stylesheet> <http://drupal.deri.ie/cheese/sites/all/modules/cck/theme/content-module.css?n>.
-<http://drupal.deri.ie/cheese/node/20> <http://www.w3.org/1999/xhtml/vocab#stylesheet> <http://drupal.deri.ie/cheese/modules/openid/openid.css?n>.
-<http://drupal.deri.ie/cheese/node/20> <http://www.w3.org/1999/xhtml/vocab#stylesheet> <http://drupal.deri.ie/cheese/themes/garland/style.css?n>.
-<http://drupal.deri.ie/cheese/node/20> <http://www.w3.org/1999/xhtml/vocab#stylesheet> <http://drupal.deri.ie/cheese/sites/all/modules/imagefield/imagefield.css?n>.
-<http://drupal.deri.ie/cheese/node/20> <http://www.w3.org/1999/xhtml/vocab#stylesheet> <http://drupal.deri.ie/cheese/sites/all/modules/filefield/filefield.css?n>.
-<http://drupal.deri.ie/cheese/node/20> <http://www.w3.org/1999/xhtml/vocab#stylesheet> <http://drupal.deri.ie/cheese/sites/all/modules/cck/modules/fieldgroup/fieldgroup.css?n>.
-<http://drupal.deri.ie/cheese/node/20> <http://www.w3.org/1999/xhtml/vocab#stylesheet> <http://drupal.deri.ie/cheese/modules/node/node.css?n>.
-<http://drupal.deri.ie/cheese/node/20> <http://www.w3.org/1999/xhtml/vocab#stylesheet> <http://drupal.deri.ie/cheese/themes/garland/print.css?n>.
-<http://drupal.deri.ie/cheese/node/20> <http://www.w3.org/1999/xhtml/vocab#stylesheet> <http://drupal.deri.ie/cheese/modules/system/system.css?n>.
-<http://drupal.deri.ie/cheese/node/20> <http://www.w3.org/1999/xhtml/vocab#stylesheet> <http://drupal.deri.ie/cheese/modules/system/system-menus.css?n>.
-<http://drupal.deri.ie/cheese/node/20> <http://www.w3.org/1999/xhtml/vocab#stylesheet> <http://drupal.deri.ie/cheese/modules/system/defaults.css?n>.
+
+"""^^<http://www.w3.org/1999/02/22-rdf-syntax-ns#XMLLiteral>.
+"""^^<http://www.w3.org/1999/02/22-rdf-syntax-ns#XMLLiteral>.
+<http://drupal.deri.ie/cheese/node/20#self> <http://drupal.deri.ie/cheese/ns#cheese_Review> <http://drupal.deri.ie/cheese/node/24#self>.
+<http://drupal.deri.ie/cheese/node/20#self> <http://drupal.deri.ie/cheese/ns#cheese_Title> "Ardrahan Cheese"@en.
+<http://drupal.deri.ie/cheese/node/20#self> <http://drupal.deri.ie/cheese/ns#field_country_origin> "Ireland"@en.
+<http://drupal.deri.ie/cheese/node/20#self> <http://drupal.deri.ie/cheese/ns#field_description> """<p xml:lang="en" xmlns="http://www.w3.org/1999/xhtml">Ardrahan is a type of semi-soft cheese with a pungent aroma, Ardrahan cheese has buttery textured honey-coloured centre with a complex delicate flavour. It has a washed rind which grows into a golden colour, and its size and weight tend to vary slightly due to the fact that it is a hand-made product. In general the large wheel weighs about 1.5 kg. There is also a small consumer wheel which weighs 300g. It is yellow-coloured.</p>
+<http://drupal.deri.ie/cheese/node/20#self> <http://drupal.deri.ie/cheese/ns#field_picture> <http://drupal.deri.ie/cheese/sites/default/files/Ardrahan_cheese.jpg>.
+<http://drupal.deri.ie/cheese/node/20#self> <http://drupal.deri.ie/cheese/ns#field_source_milk> "cow"@en.
+<http://drupal.deri.ie/cheese/node/20#self> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://drupal.deri.ie/cheese/ns#Cheese>.
+<http://drupal.deri.ie/cheese/node/20#self> <http://www.w3.org/2000/01/rdf-schema#label> "Ardrahan Cheese"@en.
 <http://drupal.deri.ie/cheese/node/20> <http://www.w3.org/1999/xhtml/vocab#icon> <http://drupal.deri.ie/cheese/misc/favicon.ico>.
 <http://drupal.deri.ie/cheese/node/20> <http://www.w3.org/1999/xhtml/vocab#meta> <http://drupal.deri.ie/cheese/node/20/rdf>.
 <http://drupal.deri.ie/cheese/node/20> <http://www.w3.org/1999/xhtml/vocab#meta> <http://drupal.deri.ie/cheese/node/24/rdf>.
 <http://drupal.deri.ie/cheese/node/20> <http://www.w3.org/1999/xhtml/vocab#meta> <http://drupal.deri.ie/cheese/rdf>.
-<http://drupal.deri.ie/cheese/node/20#self> <http://drupal.deri.ie/cheese/ns#field_source_milk> "cow"@en.
-<http://drupal.deri.ie/cheese/node/20#self> <http://drupal.deri.ie/cheese/ns#field_picture> <http://drupal.deri.ie/cheese/sites/default/files/Ardrahan_cheese.jpg>.
-<http://drupal.deri.ie/cheese/node/20#self> <http://drupal.deri.ie/cheese/ns#field_description> """<p xml:lang="en" xmlns="http://www.w3.org/1999/xhtml">Ardrahan is a type of semi-soft cheese with a pungent aroma, Ardrahan cheese has buttery textured honey-coloured centre with a complex delicate flavour. It has a washed rind which grows into a golden colour, and its size and weight tend to vary slightly due to the fact that it is a hand-made product. In general the large wheel weighs about 1.5 kg. There is also a small consumer wheel which weighs 300g. It is yellow-coloured.</p>
-<p xml:lang="en" xmlns="http://www.w3.org/1999/xhtml">Ardrahan also develops a nutty flavour with maturity. It has a unique flavour that lingers, leaving a very pleasant after-taste. It contains only 25% fat approximately. It is hand made using traditional methods and only whole milk and vegetarian rennet are used.</p>
-"""^^<http://www.w3.org/1999/02/22-rdf-syntax-ns#XMLLiteral>.
-<http://drupal.deri.ie/cheese/node/20#self> <http://drupal.deri.ie/cheese/ns#field_country_origin> "Ireland"@en.
-<http://drupal.deri.ie/cheese/node/20#self> <http://www.w3.org/2000/01/rdf-schema#label> "Ardrahan Cheese"@en.
-<http://drupal.deri.ie/cheese/node/20#self> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://drupal.deri.ie/cheese/ns#Cheese>.
-<http://drupal.deri.ie/cheese/node/20#self> <http://drupal.deri.ie/cheese/ns#cheese_Review> <http://drupal.deri.ie/cheese/node/24#self>.
-<http://drupal.deri.ie/cheese/node/20#self> <http://drupal.deri.ie/cheese/ns#cheese_Title> "Ardrahan Cheese"@en.
-<http://drupal.deri.ie/cheese/node/24#self> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://drupal.deri.ie/cheese/ns#Cheese_review>.
-<http://drupal.deri.ie/cheese/node/24#self> <http://xmlns.com/foaf/0.1/page> <http://drupal.deri.ie/cheese/node/24>.
+<http://drupal.deri.ie/cheese/node/20> <http://www.w3.org/1999/xhtml/vocab#stylesheet> <http://drupal.deri.ie/cheese/modules/node/node.css?n>.
+<http://drupal.deri.ie/cheese/node/20> <http://www.w3.org/1999/xhtml/vocab#stylesheet> <http://drupal.deri.ie/cheese/modules/openid/openid.css?n>.
+<http://drupal.deri.ie/cheese/node/20> <http://www.w3.org/1999/xhtml/vocab#stylesheet> <http://drupal.deri.ie/cheese/modules/system/defaults.css?n>.
+<http://drupal.deri.ie/cheese/node/20> <http://www.w3.org/1999/xhtml/vocab#stylesheet> <http://drupal.deri.ie/cheese/modules/system/system-menus.css?n>.
+<http://drupal.deri.ie/cheese/node/20> <http://www.w3.org/1999/xhtml/vocab#stylesheet> <http://drupal.deri.ie/cheese/modules/system/system.css?n>.
+<http://drupal.deri.ie/cheese/node/20> <http://www.w3.org/1999/xhtml/vocab#stylesheet> <http://drupal.deri.ie/cheese/modules/user/user.css?n>.
+<http://drupal.deri.ie/cheese/node/20> <http://www.w3.org/1999/xhtml/vocab#stylesheet> <http://drupal.deri.ie/cheese/sites/all/modules/cck/modules/fieldgroup/fieldgroup.css?n>.
+<http://drupal.deri.ie/cheese/node/20> <http://www.w3.org/1999/xhtml/vocab#stylesheet> <http://drupal.deri.ie/cheese/sites/all/modules/cck/theme/content-module.css?n>.
+<http://drupal.deri.ie/cheese/node/20> <http://www.w3.org/1999/xhtml/vocab#stylesheet> <http://drupal.deri.ie/cheese/sites/all/modules/filefield/filefield.css?n>.
+<http://drupal.deri.ie/cheese/node/20> <http://www.w3.org/1999/xhtml/vocab#stylesheet> <http://drupal.deri.ie/cheese/sites/all/modules/imagefield/imagefield.css?n>.
+<http://drupal.deri.ie/cheese/node/20> <http://www.w3.org/1999/xhtml/vocab#stylesheet> <http://drupal.deri.ie/cheese/themes/garland/print.css?n>.
+<http://drupal.deri.ie/cheese/node/20> <http://www.w3.org/1999/xhtml/vocab#stylesheet> <http://drupal.deri.ie/cheese/themes/garland/style.css?n>.
 <http://drupal.deri.ie/cheese/node/24#self> <http://drupal.deri.ie/cheese/ns#cheese_review_Title> "An Irish cheese!!??!"@en.
 <http://drupal.deri.ie/cheese/node/24#self> <http://drupal.deri.ie/cheese/ns#field_review> """<p xml:lang="en" xmlns="http://www.w3.org/1999/xhtml">And here I was thinking the Irish only produced Guinness!</p>
-"""^^<http://www.w3.org/1999/02/22-rdf-syntax-ns#XMLLiteral>.
-
+<http://drupal.deri.ie/cheese/node/24#self> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://drupal.deri.ie/cheese/ns#Cheese_review>.
+<http://drupal.deri.ie/cheese/node/24#self> <http://xmlns.com/foaf/0.1/page> <http://drupal.deri.ie/cheese/node/24>.
+<p xml:lang="en" xmlns="http://www.w3.org/1999/xhtml">Ardrahan also develops a nutty flavour with maturity. It has a unique flavour that lingers, leaving a very pleasant after-taste. It contains only 25% fat approximately. It is hand made using traditional methods and only whole milk and vegetarian rennet are used.</p>
