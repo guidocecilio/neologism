@@ -1,0 +1,11 @@
+; $Id: ahah_helper_demo.info,v 1.1 2008/08/29 18:58:21 wimleers Exp $
+name = "AHAH helper demo"
+description = A demo form the AHAH helper module.
+core = 6.x
+
+; Information added by drupal.org packaging script on 2008-08-29
+version = "6.x-1.0"
+core = "6.x"
+project = "ahah_helper"
+datestamp = "1220037902"
+

@@ -1,0 +1,34 @@
+<?php
+// $Id: rdfcck.install,v 1.1.2.3 2008/10/15 20:55:14 scor Exp $
+
+/**
+ * Implementation of hook_schema().
+ */
+function rdfcck_schema() {
+  $schema['node_type_rdf'] = array(
+      'fields' => array(
+           'type' => array('type' => 'varchar', 'length' => '32', 'not null' => TRUE),
+           'class_nid' => array('type' => 'int', 'not null' => TRUE, 'disp-width' => '10')),
+      'primary key' => array('type'),
+  );
+  $schema['node_field_rdf'] = array(
+      'fields' => array(
+           'field_name' => array('type' => 'varchar', 'length' => '32', 'not null' => TRUE, 'default' => ''),
+           'node_type' => array('type' => 'varchar', 'length' => '32', 'not null' => TRUE),
+           'property_nid' => array('type' => 'int', 'not null' => TRUE, 'disp-width' => '10')),
+      'primary key' => array('field_name'),
+  );
+
+  return $schema;
+}
+  
+/**
+ * Implementation of hook_install().
+ */
+function rdfcck_install() {
+  drupal_install_schema('rdfcck');
+  //rdf_db_create_repository('rdfcck');
+}
+
+
+

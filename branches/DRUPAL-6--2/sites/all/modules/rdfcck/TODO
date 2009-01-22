@@ -1,0 +1,22 @@
+# for the release on d.o
+fix a better way to avoid patching rdf_schema. best is to have our own export path /ns in the rdfcck module. implement the export logic in the module directly.
+
+
+- rename the path /ns
+- use only the # convention
+- distinguish each property for each class, to work around shared fields
+- use ns0 instead of Drupal
+
+- use the best practise convention for classes and proerpties
+- remove dependency fix rdf_schema (schema generation + local ns declaration)
+
+- allow multiple values for RDF export text.module
+
+- create a URI for the node
+- reuse them as much as possible
+
+cons: tabulator does not read RDFa
+
+
+- there are still some drupal:field_source_milk in the RDFa output
+- how to generalize the relationship made between the master type cheese and the related nodes cheese_review? could extract the relation from views or views_attach?

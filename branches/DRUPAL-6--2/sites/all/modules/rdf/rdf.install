@@ -1,0 +1,125 @@
+<?php
+// $Id: rdf.install,v 1.6 2008/06/10 21:41:17 arto Exp $
+/**
+ * rdf.install - RDF API installation/uninstallation.
+ *
+ * @author Arto Bendiken <http://bendiken.net/>
+ * @copyright Copyright (c) 2007-2008 Arto Bendiken. All rights reserved.
+ * @license GPL <http://creativecommons.org/licenses/GPL/2.0/>
+ * @package rdf.module
+ */
+
+//////////////////////////////////////////////////////////////////////////////
+// Core API hooks
+
+/**
+ * Implementation of hook_enable().
+ */
+function rdf_enable() {
+  drupal_set_message(t('RDF API successfully installed. Please review the available <a href="@settings">configuration settings</a>.', array('@settings' => url('admin/settings/rdf'))));
+}
+
+/**
+ * Implementation of hook_install().
+ */
+function rdf_install() {
+  db_query("UPDATE {system} SET weight = -10 WHERE name = 'rdf' AND type = 'module'");
+
+  drupal_install_schema('rdf');
+  variable_set('rdf_db_repository[local]', array('dc:title' => t('Local'), 'dc:description' => ''));
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function rdf_uninstall() {
+  drupal_uninstall_schema('rdf');
+  variable_del('rdf_db_repository[local]');
+}
+
+/**
+ * Implementation of hook_requirements().
+ */
+function rdf_requirements($phase) {
+  $status = array();
+  $t = get_t(); // Ensure translations don't break at install time
+
+  if ($phase == 'runtime') {
+    $arc2 = class_exists('ARC2');
+    $status['rdf'] = array(
+      'title' => $t('RDF library'),
+      'value' => $arc2 ? $t('ARC2 @version', array('@version' => ARC2::getVersion())) : $t('Not installed'),
+      'description' => $arc2 ? '' : $t('<a href="@arc2">ARC2</a> is not available. It is recommended that you install this library in order to enable support for more RDF formats and for SPARQL queries. To install, <a href="@download">download</a> the latest version of the library and unzip it to %path under the Drupal directory. For more information please refer to the <a href="@handbook">handbook</a>.', array('@arc2' => 'http://arc.semsol.org/', '@download' => 'http://arc.semsol.org/download', '%path' => RDF_ARC2_PATH . '/', '@handbook' => 'http://drupal.org/node/219852')),
+      'severity' => $arc2 ? REQUIREMENT_OK : REQUIREMENT_WARNING,
+    );
+  }
+
+  return $status;
+}
+
+//////////////////////////////////////////////////////////////////////////////
+// Schema API hooks
+
+/**
+ * Implementation of hook_schema().
+ */
+function rdf_schema() {
+  return array(
+    'rdf_namespaces' => array(
+      'description' => t(''),
+      'fields' => array(
+        'prefix'  => array('type' => 'varchar', 'length' => 64, 'not null' => TRUE),
+        'uri'  => array('type' => 'varchar', 'length' => 255, 'not null' => TRUE, 'default' => ''),
+      ),
+      'primary key' => array('prefix'),
+      'indexes' => array('uri' => array('uri')),
+    ),
+
+    'rdf_resources' => array(
+      'description' => t(''),
+      'fields' => array(
+        'rid'  => array('type' => 'serial', 'unsigned' => TRUE, 'not null' => TRUE),
+        'uri'  => array('type' => 'varchar', 'length' => 255, 'not null' => TRUE, 'default' => ''),
+      ),
+      'primary key' => array('rid'),
+      'unique keys' => array('uri' => array('uri')),
+    ),
+
+    'rdf_data' => array(
+      'description' => t(''),
+      'fields' => array(
+        'did'  => array('type' => 'serial', 'unsigned' => TRUE, 'not null' => TRUE),
+        'gid'  => array('type' => 'int', 'unsigned' => TRUE),
+        'sid'  => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0),
+        'pid'  => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0),
+        'oid'  => array('type' => 'int', 'unsigned' => TRUE),
+        'tid'  => array('type' => 'int', 'unsigned' => TRUE),
+        'lang' => array('type' => 'varchar', 'length' => 12),
+        'data' => array('type' => 'text', 'size' => 'big'),
+      ),
+      'primary key' => array('did'),
+      'indexes' => array(
+        'gspo' => array('gid', 'sid', 'pid', 'oid'),
+        'gpos' => array('gid', 'pid', 'oid', 'sid'),
+        'gosp' => array('gid', 'oid', 'sid', 'pid'),
+      ),
+    ),
+  );
+}
+
+/**
+ * Implementation of hook_schema_alter().
+ */
+function rdf_schema_alter($schema) {
+  // This is not executed on installation/uninstallation, but only when the
+  // schema is loaded at runtime; it's needed in order for RDF repositories
+  // created by third-party modules to have a schema without them having to
+  // duplicate the definition of the {rdf_data} table, above.
+  if (function_exists('rdf_db_get_repository_tables')) {
+    foreach (rdf_db_get_repository_tables() as $table) {
+      if ($table != RDF_DB_TABLE_DEFAULT) {
+        $schema[$table] = $schema[RDF_DB_TABLE_DEFAULT];
+      }
+    }
+  }
+}

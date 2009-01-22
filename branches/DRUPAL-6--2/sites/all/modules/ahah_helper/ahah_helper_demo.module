@@ -1,0 +1,155 @@
+<?php
+// $Id: ahah_helper_demo.module,v 1.1 2008/08/29 18:58:21 wimleers Exp $
+
+
+//----------------------------------------------------------------------------
+// Drupal core hooks.
+
+/**
+ * Implementation of hook_menu().
+ */
+function ahah_helper_demo_menu() {
+  $items['ahah_helper_demo'] = array(
+    'page callback'    => 'drupal_get_form',
+    'page arguments'   => array('ahah_helper_demo_form'),
+    'access callback'  => TRUE,
+    'type'             => MENU_CALLBACK,
+  );
+
+  return $items;
+}
+
+
+//----------------------------------------------------------------------------
+// Forms API callbacks.
+
+/**
+ * Form definition; create subscription.
+ */
+function ahah_helper_demo_form($form_state) {
+  $form = array();
+
+  ahah_helper_register($form, $form_state);
+
+  $form['billing_info'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Billing information'),
+    '#prefix' => '<div id="billing-info-wrapper">', // This is our wrapper div.
+    '#suffix' => '</div>',
+    '#tree' => TRUE,
+  );
+  $form['billing_info']['usage'] = array(
+    '#type' => 'select',
+    '#title' => t('Usage'),
+    '#options' => array(
+      'private'  => t('Private'),
+      'company'  => t('Company'),
+    ),
+    '#default_value' => $form_state['values']['billing_info']['usage'],
+    '#ahah' => array(
+      'event' => 'change',
+      // This is the "magical path". Note that the parameter is an array of
+      // the parents of the form item of the wrapper div!
+      'path' => ahah_helper_path(array('billing_info')),
+      'wrapper' => 'billing-info-wrapper',
+    ),
+  );
+  $form['billing_info']['update_usage'] = array(
+    '#type' => 'submit', 
+    '#value' => t('Update usage'),
+    // Note that we can simply use the generic submit callback provided by the
+    // ahah_helper module here!
+    // All it does, is set $form_state['rebuild'] = TRUE.
+    '#submit' => array('ahah_helper_generic_submit'),
+    // We set the 'no-js' class, which means this submit button will be hidden
+    // automatically by Drupal if JS is enabled.
+    '#attributes' => array('class' => 'no-js'),
+  );
+
+
+  // If 'company' is selected, then these two form items will be displayed.
+  if ($form_state['values']['billing_info']['usage'] == 'company') {
+    $form['billing_info']['company_name'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Company name'),
+      '#required' => TRUE,
+      '#size' => 20,
+      '#maxlength' => 255,
+      '#default_value' => $form_state['values']['billing_info']['company_name'],
+    );
+    $form['billing_info']['vat'] = array(
+      '#type' => 'textfield',
+      '#title' => t('VAT number'),
+      '#description' => t('Please enter a Belgian VAT number, the format is: <em>BE0999999999</em>.'),
+      '#size' => 20,
+      '#maxlength' => 255,
+      '#default_value' => $form_state['values']['billing_info']['vat'],
+      '#ahah' => array(
+        'event' => 'blur',
+        'path' => ahah_helper_path(array('billing_info', 'vat')),
+        'wrapper' => 'edit-billing-info-vat-wrapper',
+        'effect' => 'none',
+        'method' => 'replace',
+      ),
+    );
+    if (isset($form_state['values']['billing_info']['vat']) && strlen($form_state['values']['billing_info']['vat']) > 0) {
+      $form['billing_info']['vat']['#field_suffix'] = theme('image', (preg_match('/^BE0\d{9}$/', $form_state['values']['billing_info']['vat'])) ? 'misc/watchdog-ok.png' : 'misc/watchdog-error.png');
+    }
+  }
+  // And if 'private' is selected, then these two form items will be displayed.
+  else {
+    $form['billing_info']['first_name'] = array(
+      '#type' => 'textfield',
+      '#title' => t('First name'),
+      '#required' => TRUE,
+      '#size' => 20,
+      '#maxlength' => 255,
+      '#default_value' => $form_state['values']['billing_info']['first_name'],
+    );
+    $form['billing_info']['last_name'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Last name'),
+      '#required' => TRUE,
+      '#size' => 20,
+      '#maxlength' => 255,
+      '#default_value' => $form_state['values']['billing_info']['last_name'],
+    );
+  }
+
+  $form['billing_info']['address'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Address'),
+    '#required' => TRUE,
+    '#size' => 20,
+    '#maxlength' => 255,
+    '#default_value' => $form_state['values']['billing_info']['address'],
+  );
+  $form['billing_info']['country'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Country'),
+    '#size' => 20,
+    '#maxlength' => 255,
+    '#default_value' => $form_state['values']['billing_info']['country'],
+  );
+  
+  $form['save'] = array(
+    '#type' => 'submit', 
+    '#value' => t('Save'),
+  );
+  
+
+  return $form;
+}
+
+function ahah_helper_demo_form_validate($form, &$form_state) {
+  if (isset($form['billing_info']['vat'])
+      && strlen($form_state['values']['billing_info']['vat']) > 0
+      && !isset($form['billing_info']['vat']['#first_time'])
+      && !preg_match('/^BE0\d{9}$/', $form_state['values']['billing_info']['vat'])) {
+    form_error($form['billing_info']['vat'], t('Invalid VAT number.'));
+  }
+}
+
+function ahah_helper_demo_form_submit($form, &$form_state) {
+  drupal_set_message('Congratulations, you entered valid data. Unfortunately, nothing was saved because this is a demo.');
+}
