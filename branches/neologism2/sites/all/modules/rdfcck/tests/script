@@ -1,5 +1,9 @@
-curl -s http://drupal.deri.ie/cheese/ | py /Users/stecor/htdocs/pyrdfa/pyRdfa/scripts/localRDFa.py > localrdfa_drupal.deri.ie
+curl -s http://drupal.deri.ie/cheese/ | py /Users/stecor/htdocs/pyrdfa/pyRdfa/scripts/localRDFa.py -n > localrdfa_drupal.deri.ie-cheese
 
-curl -s http://drupal.deri.ie/cheese/node/20 | py /Users/stecor/htdocs/pyrdfa/pyRdfa/scripts/localRDFa.py > localrdfa_drupal.deri.ie-node-20
+curl -s http://drupal.deri.ie/cheese/node/20 | py /Users/stecor/htdocs/pyrdfa/pyRdfa/scripts/localRDFa.py -n > localrdfa_drupal.deri.ie-cheese-node-20
 
-curl http://drupal.deri.ie/cheese/ns# > _drupal.deri.ie-ns
+curl http://drupal.deri.ie/cheese/ns# > _drupal.deri.ie-cheese-ns
+
+curl 'http://www.w3.org/2007/08/pyRdfa/extract?uri=http%3A%2F%2Fdrupal.deri.ie%2Fcheese%2F&format=nt&warnings=false&parser=lax&host=xhtml&space-preserve=true&submit=Go!' > w3crdfa_drupal.deri.ie-cheese
+
+curl 'http://www.w3.org/2007/08/pyRdfa/extract?uri=http%3A%2F%2Fdrupal.deri.ie%2Fcheese%2Fnode%2F20&format=nt&warnings=false&parser=lax&host=xhtml&space-preserve=true&submit=Go!' > w3crdfa_drupal.deri.ie-cheese-node-20
