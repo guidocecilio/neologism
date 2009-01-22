@@ -277,7 +277,6 @@ function theme_imagefield_image($file, $alt = '', $title = '', $attributes = nul
   if (!is_file($file['filepath'])) {
     return '<!-- file not found: '. $file['filepath'] .' -->';
   }
-  $attributes = array('sco' => 'sco');
   $image_attributes = array();
   if (!$getsize || (list($width, $height, $type, $image_attributes) = @getimagesize($file['filepath']))) {
     $attributes = drupal_attributes($attributes);
