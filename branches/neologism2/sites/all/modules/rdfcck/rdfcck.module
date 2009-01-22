@@ -300,24 +300,22 @@ function rdfcck_rdf_resources($context) {
 }
 
 // Only the actual node is loaded with its CCK fields.
+// This is where the RDF data is added to the RDF export at node/*/rdf.
 function rdfcck_load_node($node) {
   $node = is_object($node) ? $node : node_load((int)$node);
 
-//var_dump($node);
-
   $resources = array(
-    rdf::type         => rdf_uriref(rdf_qname_to_uri('drupal:' . _build_site_rdf_class_id($node->type))),
-    'drupal:' . _build_site_rdf_property_id('title', $node->type)      => $node->title,
-    'drupal:' . _build_site_rdf_property_id('body', $node->type)      => $node->body,
+    rdf::type         => rdf_uriref(rdf_qname_to_uri('drupal:' . _rdfcck_build_site_rdf_class_id($node->type))),
+    'drupal:' . _rdfcck_build_site_rdf_property_id('title', $node->type)      => $node->title,
+    'drupal:' . _rdfcck_build_site_rdf_property_id('body', $node->type)      => $node->body,
     'node:created'    => rdf_datetime($node->created),
     'node:changed'    => rdf_datetime($node->changed),
   );
   
   $type = content_types($node->type);
-//  var_dump($type);
   if ($type['fields']) {
     foreach ($type['fields'] as $field) {
-      $rdf_field_name = _build_site_rdf_property_id($field['field_name'], $node->type);
+      $rdf_field_name = _rdfcck_build_site_rdf_property_id($field['field_name'], $node->type);
 			switch ($field['type']) {
 				case 'nodereference' :
 					$field_values = $node->$field['field_name'];
@@ -370,5 +368,138 @@ function rdfcck_load_node($node) {
   return $resources;
 }
 
+
+
+/**
+ * Implementation of hook_rdf_classes().
+ */
+function evoc_rdf_classes() {
+  // Retrieve the content types.
+  $types = node_get_types();
+  $classes = array();
+  foreach ($types as $type) {
+    // Construct a class for each content type using the content type name a default class id.
+    // The type should be already lower case, but we use it for future compatibility reasons.
+    // TODO: maybe move this case formatting further in the worflow and centralize it?
+    $class_id = _rdfcck_build_site_rdf_class_id($type->type);
+    $classes[$class_id] = array(
+      'title' => $type->name,
+      'uri' => 'field/' . $type->type,
+      'module'  => 'content', // module necessary here to allow rdf_schema module to consider this class enable.
+      'comment' => $type->description,
+      'enabled' => TRUE,
+    
+    
+    );
+  }
+ return $classes;
+}
+
+/**
+ * Implementation of hook_rdf_properties().
+ */
+function evoc_rdf_properties() {
+  $types = node_get_types();
+  $properties = array();
+  foreach ($types as $type) {
+    // Construct a property for each content type using the content type name a default class id.
+    $type = content_types($type->type); // This contains the CCK fields definitions.
+
+    // Core node title and body.
+    if ($type['has_title']) {
+      $property_id = _rdfcck_build_site_rdf_property_id('title', $type['type']);
+      $properties[$property_id] = array(
+        'title' => 'Title',
+        'domain' => $type['type'],
+        'comment' => 'Title of the node',
+      );
+    }
+    if ($type['has_body']) {
+      $property_id = _rdfcck_build_site_rdf_property_id('body', $type['type']);
+      $properties[$property_id] = array(
+        'title' => 'Body',
+        'domain' => $type['type'],
+        'comment' => 'Body of the node',
+      );
+    }
+    
+    // CCK fields.
+    if ($type['fields']) {
+      foreach ($type['fields'] as $field) {
+        // Determine the range of the property.
+        $range = NULL;
+        // Noderefence field.
+        switch ($field['type']) {
+          case 'nodereference' :
+            if (isset($field['referenceable_types'])) {
+              // Loop through all the referencable type, and pick the first one we find.
+              // FIXME - when we have more than one referencable type, we need to make a owl union.
+              $range = NULL;
+              foreach ($field['referenceable_types'] as $referencable_type) {
+                if ($referencable_type) {
+                  $range = 'drupal:' . $referencable_type;
+                  break;
+                }
+                else {
+                  $range = 'err01:not_found'; // This should not happen (referencable type not found).
+                }
+              }
+            }
+            break;
+            
+          case 'userreference' :
+            $range = 'drupal:user';
+            break;
+            
+          case 'number_decimal' :
+            $range = 'xsd:decimal';
+            break;
+            
+          case 'number_integer' :
+            $range = 'xsd:integer';
+            break;
+            
+          case 'number_float' :
+            $range = 'xsd:float';
+            break;
+            
+          case 'link' :
+            $range = 'rdf:resource';
+            break;
+            
+          // TODO add the case 'text' ? rdfs:Literal for now (default)
+        }
+        
+        // Generate the property information.
+        $property_id = _rdfcck_build_site_rdf_property_id($field['field_name'], $field['type_name']);
+        $properties[$property_id] = array(
+          'title' => $field['widget']['label'],
+          'domain' => $field['type_name'],
+          'comment' => $field['widget']['description'],
+          'range' => isset($range) ? $range : NULL,
+        );
+      }
+    
+    
+    }
+  }
+
+  return array('drupal' => $properties);
+}
+
+// We apply a specific pattern to generated the site class ids: type.
+// The type should be already lower case, but we force it here for future compatibility reasons
+// inline with the RDF vocabulary best practises.
+function _rdfcck_build_site_rdf_class_id($type) {
+  return ucfirst(strtolower($type));
+}
+
+// We apply a specific pattern to generated the site property ids: type_Fieldname.
+// The name of the type is inserted here to work around the shared CCK fields.
+// The type should be already lower case, but we force it here for future compatibility reasons
+// inline with the RDF vocabulary best practises.
+function _rdfcck_build_site_rdf_property_id($field, $type) {
+  return strtolower($type) . '_' . ucfirst(strtolower(str_Replace('field_', '', $field)));
+}
 
 
