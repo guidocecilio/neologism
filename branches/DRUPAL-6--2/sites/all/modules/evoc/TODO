@@ -1,0 +1,3 @@
+#1
+handle the case where a different prefix is given during the import than the one defined in the system (my another module or in the db). in the case the import will fail. there should be a warning saying that another prefix has already been defined with the same base URI.
+
