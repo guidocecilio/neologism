@@ -1,16 +1,8 @@
 <?php
 // $Id: node.tpl.php,v 1.5 2007/10/11 09:51:29 goba Exp $
 ?>
+<div id="node-<?php print $node->nid; ?>" class="node<?php if ($sticky) { print ' sticky'; } ?><?php if (!$status) { print ' node-unpublished'; } ?>">
 
-<? 
-// TODOmove this somewhere else
-// build the typeof class name.
-
-$rdfa_typeof = 'drupal:' . _rdfcck_build_site_rdf_class_id($node->type);
-
-?>
-
-<div id="node-<?php print $node->nid; ?>" class="node<?php if ($sticky) { print ' sticky'; } ?><?php if (!$status) { print ' node-unpublished'; } ?>" typeof="<?php print $rdfa_typeof ?>">
 <?php print $picture ?>
 
 <?php if ($page == 0): ?>
