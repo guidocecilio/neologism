@@ -32,13 +32,13 @@ function evoc_menu() {
     'page arguments' => array('evoc_import_form'),
     'access arguments' => array('administer nodes'),
   );
-  $items['evoc/uri'] = array(
-    'title' => 'Link to a URI',
-    'description' => "",
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('evoc_uri_form'),
-    'access arguments' => array('administer nodes'),
-  );
+//   $items['evoc/uri'] = array(
+//     'title' => 'Link to a URI',
+//     'description' => "",
+//     'page callback' => 'drupal_get_form',
+//     'page arguments' => array('evoc_uri_form'),
+//     'access arguments' => array('administer nodes'),
+//   );
   $items['evoc/js'] = array(
     'title' => 'Javascript Choice Form',
     'page callback' => 'evoc_js',
@@ -196,7 +196,6 @@ function evoc_uri_form($form_state) {
 function evoc_js() {
 //$output = "<p>hi</p>";
 //sleep(1);
-//$output = "hiiiiiiiiiiiiiiiii";
 
 //$output = var_export($_POST, TRUE);
 //  drupal_json(array('status' => TRUE, 'data' => $output));
@@ -341,6 +340,13 @@ $vocabulary_prefix = 'void';
 */
 
 function evoc_import_vocabulary($vocabulary_uri, $vocabulary_prefix) {
+  $fetched_terms = evoc_fetch_vocabulary($vocabulary_uri, $vocabulary_prefix);
+  _evoc_save_rdf_terms($vocabulary_uri, $vocabulary_prefix, $fetched_terms);
+}
+
+
+// This is an API function which is used by other modules to fetch a vocabulary.
+function evoc_fetch_vocabulary($vocabulary_uri, $vocabulary_prefix, $ignore_base_ns = FALSE) {
   global $rdf_namespaces;
   rdf_get_namespaces();
 
@@ -368,7 +374,7 @@ prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 select *
 from <$vocabulary_uri>
 where {?class rdf:type rdfs:Class}
-limit 100
+limit 500
 ");
 $term_queries[] = array('type' => 'property',
                    'query' => "
@@ -377,7 +383,7 @@ prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 select *
 from <$vocabulary_uri>
 where {?property rdf:type rdf:Property}
-limit 100
+limit 500
 ");
 // for SIOC...
 $term_queries[] = array('type' => 'class',
@@ -388,7 +394,7 @@ prefix owl: <http://www.w3.org/2002/07/owl#>
 select *
 from <$vocabulary_uri>
 where {?class rdf:type owl:Class}
-limit 200
+limit 500
 ");
 $term_queries[] = array('type' => 'property',
                    'query' => "
@@ -398,7 +404,7 @@ prefix owl: <http://www.w3.org/2002/07/owl#>
 select *
 from <$vocabulary_uri>
 where {?property rdf:type owl:ObjectProperty}
-limit 200
+limit 500
 ");
 
 
@@ -407,10 +413,10 @@ limit 200
 require_once drupal_get_path('module', 'sparql') . '/sparql.client.inc';
 
 // Loop through all the various queries in order to extract as many classes and properties as possible.
-$terms_to_import = array();
+$fetched_terms = array();
 foreach ($term_queries as $query) {
 	$sparql_res = sparql_request('http://srvgal65.deri.ie:2020/sparql', $query['query']);
-	//var_dump($sparql_res);
+//	var_dump($sparql_res);
 	
 	// Parse the SPARQL results and extract the relevant terms.
 	foreach ($sparql_res as $term) {
@@ -425,9 +431,11 @@ foreach ($term_queries as $query) {
 		$term_qname_parts = explode(':', $term_qname);
 		$term_prefix = $term_qname_parts[0];
 		$term_id = $term_qname_parts[1];
-		// We only import the terms with the specified prefix.
-		if ($term_prefix == $vocabulary_prefix) {
-			$terms_to_import[] = array('type' => $type, 'id' => $term_id);
+// 		var_dump($term_prefix);
+// 		var_dump($vocabulary_prefix);
+		// We only import the terms with the specified prefix unless $ignore_base_ns is TRUE.
+		if ($term_prefix == $vocabulary_prefix || $ignore_base_ns) {
+			$fetched_terms[] = array('type' => $type, 'id' => $term_id);
 //			drupal_set_message("$term_qname selected to imported.");
 		}
 		else {
@@ -436,12 +444,12 @@ foreach ($term_queries as $query) {
 	}
 
 }
-// Clean up the terms to import and remove any duplicate.
-//var_dump($terms_to_import);
+// @TODO Clean up the terms to import and remove any duplicate? SPARQL should have done that already.
 
-_evoc_save_rdf_terms($vocabulary_uri, $vocabulary_prefix, $terms_to_import);
+//var_dump($fetched_terms);
 
-return '';
+
+return $fetched_terms;
 }
 
 
