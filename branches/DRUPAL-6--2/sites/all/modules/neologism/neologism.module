@@ -118,14 +118,14 @@ function neologism_menu() {
 			'access arguments' => array('view', 1),			
 			'type' => MENU_CALLBACK,
 	);
-	$items['node/%neologism_vocabulary/diagram'] = array(
-			'title' => 'Overview Diagram',
-			'page callback' => 'neologism_show_diagram',
-			'page arguments' => array(1),
-			'access callback' => 'node_access',
-			'access arguments' => array('view', 1),			
-			'type' => MENU_LOCAL_TASK,
-	);
+// 	$items['node/%neologism_vocabulary/diagram'] = array(
+// 			'title' => 'Overview Diagram',
+// 			'page callback' => 'neologism_show_diagram',
+// 			'page arguments' => array(1),
+// 			'access callback' => 'node_access',
+// 			'access arguments' => array('view', 1),			
+// 			'type' => MENU_LOCAL_TASK,
+// 	);
   $items['neologism/import'] = array(
     'title' => 'Import vocabulary in Neologism',
     'description' => 'Import an RDF vocabulary and use Neologism to author it.',
