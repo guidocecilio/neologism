@@ -374,7 +374,7 @@ prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 select *
 from <$vocabulary_uri>
 where {?class rdf:type rdfs:Class}
-limit 500
+limit 2
 ");
 $term_queries[] = array('type' => 'property',
                    'query' => "
@@ -383,7 +383,7 @@ prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 select *
 from <$vocabulary_uri>
 where {?property rdf:type rdf:Property}
-limit 500
+limit 2
 ");
 // for SIOC...
 $term_queries[] = array('type' => 'class',
@@ -393,7 +393,11 @@ prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 prefix owl: <http://www.w3.org/2002/07/owl#>
 select *
 from <$vocabulary_uri>
-where {?class rdf:type owl:Class}
+where {
+?class rdf:type owl:Class.
+OPTIONAL {?class rdfs:label ?label}.
+OPTIONAL {?class rdfs:subClassOf ?superclass}.
+}
 limit 500
 ");
 $term_queries[] = array('type' => 'property',
@@ -403,7 +407,12 @@ prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 prefix owl: <http://www.w3.org/2002/07/owl#>
 select *
 from <$vocabulary_uri>
-where {?property rdf:type owl:ObjectProperty}
+where {
+?property rdf:type owl:ObjectProperty.
+OPTIONAL {?property rdfs:label ?label}.
+OPTIONAL {?property rdfs:domain ?domain}.
+OPTIONAL {?property rdfs:range ?range}.
+}
 limit 500
 ");
 
@@ -416,26 +425,43 @@ require_once drupal_get_path('module', 'sparql') . '/sparql.client.inc';
 $fetched_terms = array();
 foreach ($term_queries as $query) {
 	$sparql_res = sparql_request('http://srvgal65.deri.ie:2020/sparql', $query['query']);
-//	var_dump($sparql_res);
+	//var_dump($sparql_res);
 	
 	// Parse the SPARQL results and extract the relevant terms.
-	foreach ($sparql_res as $term) {
-	  if (isset($term['class'])) {
+	foreach ($sparql_res as $res_term) {
+	  if (isset($res_term['class'])) {
 	    $type = 'class';
 	  }
-	  elseif (isset($term['property'])) {
+	  elseif (isset($res_term['property'])) {
 	    $type = 'property';
 	  };
 	  
-		$term_qname = rdf_uri_to_qname($term[$type]->uri);
+		$term_qname = rdf_uri_to_qname($res_term[$type]->uri);
 		$term_qname_parts = explode(':', $term_qname);
 		$term_prefix = $term_qname_parts[0];
-		$term_id = $term_qname_parts[1];
+
+	  $term = array();
+		$term['id'] = $term_qname_parts[1];
+		$term['type'] = $type;
+    $term['label'] = $res_term['label']->value;
+		switch ($type) {
+		  case 'class' :
+        $term['superclass'] = _evoc_extract_term_id($res_term['superclass']->uri);
+		    break;
+		  
+		  case 'property' :
+		    // Extract some information like domain and range.
+        $term['domain'] = _evoc_extract_term_id($res_term['domain']->uri);
+        $term['range'] = _evoc_extract_term_id($res_term['range']->uri);
+        break;
+
+		}
 // 		var_dump($term_prefix);
 // 		var_dump($vocabulary_prefix);
 		// We only import the terms with the specified prefix unless $ignore_base_ns is TRUE.
+		// API CHANGE: $term_id becomes $term['id'] and $term will contain information about the term.
 		if ($term_prefix == $vocabulary_prefix || $ignore_base_ns) {
-			$fetched_terms[] = array('type' => $type, 'id' => $term_id);
+			$fetched_terms[] = $term;
 //			drupal_set_message("$term_qname selected to imported.");
 		}
 		else {
@@ -452,7 +478,12 @@ foreach ($term_queries as $query) {
 return $fetched_terms;
 }
 
+function _evoc_extract_term_id($uri) {
+	$term_qname = rdf_uri_to_qname($uri);
+	$term_qname_parts = explode(':', $term_qname);
+	return $term_qname_parts[1];
 
+}
 
 
 /**
