@@ -126,9 +126,22 @@ function neologism_menu() {
 			'access arguments' => array('view', 1),			
 			'type' => MENU_LOCAL_TASK,
 	);
+  $items['neologism/import'] = array(
+    'title' => 'Import vocabulary in Neologism',
+    'description' => 'Import an RDF vocabulary and use Neologism to author it.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('neologism_import_form'),
+    'access arguments' => array('administer nodes'),
+    'file' => 'neologism.import.inc',
+  );
 
   return $items;
 }
+
+
+
+
+
 
 function neologism_vocabulary_load($nid) {
   if ($nid) {
@@ -142,10 +155,30 @@ function neologism_vocabulary_load($nid) {
   }
 }
 
+
+
+
+
+
+
+
 /**
  * Output the HTML version of the vocabulary specified as input.
  */
 function neologism_export_html($node) {
+
+
+
+//my_create_node();
+
+
+
+
+
+
+
+
+
 
     $classes = get_all_classes($node);
     $properties = get_all_properties($node);
@@ -808,4 +841,6 @@ function neologism_get_preferred_uri($uri, $accept) {
     else
         return $uri . "/" . $preferred;
 }
+
+
 
