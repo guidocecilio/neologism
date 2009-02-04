@@ -14,7 +14,7 @@ function rdfcck_schema() {
         'unsigned' => TRUE,
         'description' => t('Mapping ID. Used here to allow one content type to n RDF classes mappings.'),
       ),
-      'type'  => array(
+      'type_name'  => array(
         'type' => 'varchar',
         'length' => 32,
         'not null' => TRUE,
@@ -40,17 +40,17 @@ function rdfcck_schema() {
         'unsigned' => TRUE,
         'description' => t('Mapping ID. Used here to allow one field to n RDF properties mappings.'),
       ),
+      'type_name'  => array(
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+        'description' => t('Name of the content this mapping will belong to. Each couple (field_name, content_type) can have its own set of properties. This is work around the shared fields issue.'),
+      ),
       'field_name'  => array(
         'type' => 'varchar',
         'length' => 32,
         'not null' => TRUE,
         'description' => t('Name of the CCK field'),
-      ),
-      'content_type'  => array(
-        'type' => 'varchar',
-        'length' => 32,
-        'not null' => TRUE,
-        'description' => t('Name of the content this mapping will belong to. Each couple (field_name, content_type) can have its own set of properties. This is work around the shared fields issue.'),
       ),
       'property'  => array(
         'type' => 'varchar',
