@@ -216,19 +216,19 @@ function rdfcck_admin_rdf_overview_form_submit($form, &$form_state) {
   foreach ($form_values as $key => $values) {
     if ($key == 'rdf_class') {
       // Delete the class mapping.
-      db_query("DELETE FROM {node_type_rdf} WHERE type = '%s'", $form['#type_name']);
+      db_query("DELETE FROM {rdfcck_content_types} WHERE type = '%s'", $form['#type_name']);
       // Update the RDF class mapping if a class id is provided.
       if ($class_nid = $values) {
-        db_query("INSERT INTO {node_type_rdf} (type, class_nid) VALUES ('%s', %d)", $form['#type_name'], $class_nid);
+        db_query("INSERT INTO {rdfcck_content_types} (type, class_nid) VALUES ('%s', %d)", $form['#type_name'], $class_nid);
       }
       drupal_set_message(t('Updated RDF class mapping.'));
     }
     elseif (in_array($key, $form['#rdf_fields'])) {
       // Delete the property mapping.
-      db_query("DELETE FROM {node_field_rdf} WHERE field_name = '%s'", $key);
+      db_query("DELETE FROM {rdfcck_fields} WHERE field_name = '%s'", $key);
       // Update the mapping if specified.
       if ($value = $values['rdf_property']) {
-        db_query("INSERT INTO {node_field_rdf} (field_name, node_type, property_nid) VALUES ('%s', '%s', %d)", $key, $form['#type_name'], $value);
+        db_query("INSERT INTO {rdfcck_fields} (field_name, node_type, property_nid) VALUES ('%s', '%s', %d)", $key, $form['#type_name'], $value);
       }
       $msg = TRUE;
     }
@@ -241,7 +241,7 @@ function rdfcck_admin_rdf_overview_form_submit($form, &$form_state) {
 }
 
 function _rdfcck_get_default_property($type_name, $field_name) {
-  $property = db_query(db_rewrite_sql("SELECT property_nid FROM {node_field_rdf} WHERE field_name = '%s' AND node_type = '%s'"), $field_name, $type_name);
+  $property = db_query(db_rewrite_sql("SELECT property_nid FROM {rdfcck_fields} WHERE field_name = '%s' AND node_type = '%s'"), $field_name, $type_name);
 
   while ($item = db_fetch_object($property)) {
     $property_nid = $item->property_nid;
@@ -251,7 +251,7 @@ function _rdfcck_get_default_property($type_name, $field_name) {
 }
 
 function _rdfcck_get_default_class($field_name) {
-  $class = db_query(db_rewrite_sql('SELECT class_nid FROM {node_type_rdf} WHERE type="%s" '), $field_name);
+  $class = db_query(db_rewrite_sql('SELECT class_nid FROM {rdfcck_content_types} WHERE type="%s" '), $field_name);
 
   while ($item = db_fetch_object($class)) {
     $class_nid = $item->class_nid;
