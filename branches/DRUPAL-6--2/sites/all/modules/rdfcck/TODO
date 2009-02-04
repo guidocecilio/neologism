@@ -5,9 +5,9 @@ fix a better way to avoid patching rdf_schema. best is to have our own export pa
 - rename the path /ns
 - use only the # convention
 - distinguish each property for each class, to work around shared fields
-- use ns0 instead of Drupal
+- use ns0 or site instead of Drupal
 
-- use the best practise convention for classes and proerpties
+- use the best practise convention for classes and properties
 - remove dependency fix rdf_schema (schema generation + local ns declaration)
 
 - allow multiple values for RDF export text.module
