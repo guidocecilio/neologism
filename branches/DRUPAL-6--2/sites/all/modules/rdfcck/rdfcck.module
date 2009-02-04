@@ -346,8 +346,10 @@ function rdfcck_load_node($node) {
 				case 'text' :
 					$field_value = $node->$field['field_name'];
 					$resources['site:' . $rdf_field_name] = $field_value[0]['value'];
-					$p = _rdfcck_get_default_property($node->type, $field['field_name']);
-					$resources[$p] = $field_value[0]['value'];
+					// Only export the external mapping if it is defined.
+					if ($p = _rdfcck_get_default_property($node->type, $field['field_name'])) {
+					  $resources[$p] = $field_value[0]['value'];
+					};
 					break;
 
 				case 'number_decimal' :
