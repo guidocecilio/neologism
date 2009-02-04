@@ -9,9 +9,9 @@ function rdfcck_schema() {
     'description' => t('Contains the RDF mappings between content types and RDF classes'),
     'fields' => array(
       'mid'  => array(
-        'type' => 'varchar',
-        'length' => 32,
+        'type' => 'serial',
         'not null' => TRUE,
+        'unsigned' => TRUE,
         'description' => t('Mapping ID. Used here to allow one content type to n RDF classes mappings.'),
       ),
       'type'  => array(
@@ -35,9 +35,9 @@ function rdfcck_schema() {
     'description' => t('Contains the RDF mappings between CCK fields and RDF properties'),
     'fields' => array(
       'mid'  => array(
-        'type' => 'varchar',
-        'length' => 32,
+        'type' => 'serial',
         'not null' => TRUE,
+        'unsigned' => TRUE,
         'description' => t('Mapping ID. Used here to allow one field to n RDF properties mappings.'),
       ),
       'field_name'  => array(
