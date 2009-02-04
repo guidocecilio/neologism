@@ -5,18 +5,63 @@
  * Implementation of hook_schema().
  */
 function rdfcck_schema() {
-  $schema['node_type_rdf'] = array(
-      'fields' => array(
-           'type' => array('type' => 'varchar', 'length' => '32', 'not null' => TRUE),
-           'class_nid' => array('type' => 'int', 'not null' => TRUE, 'disp-width' => '10')),
-      'primary key' => array('type'),
+  $schema['rdfcck_content_types'] = array(
+    'description' => t('Contains the RDF mappings between content types and RDF classes'),
+    'fields' => array(
+      'mid'  => array(
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+        'description' => t('Mapping ID. Used here to allow one content type to n RDF classes mappings.'),
+      ),
+      'type'  => array(
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+        'description' => t('Content type'),
+      ),
+      'class'  => array(
+        'type' => 'varchar',
+        'length' => 64,
+        'not null' => TRUE,
+        'description' => t('RDF class in CURIE format'),
+      ),
+    ),
+    'primary key' => array(
+      'mid',
+    ),
   );
-  $schema['node_field_rdf'] = array(
-      'fields' => array(
-           'field_name' => array('type' => 'varchar', 'length' => '32', 'not null' => TRUE, 'default' => ''),
-           'node_type' => array('type' => 'varchar', 'length' => '32', 'not null' => TRUE),
-           'property_nid' => array('type' => 'int', 'not null' => TRUE, 'disp-width' => '10')),
-      'primary key' => array('field_name'),
+  $schema['rdfcck_fields'] = array(
+    'description' => t('Contains the RDF mappings between CCK fields and RDF properties'),
+    'fields' => array(
+      'mid'  => array(
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+        'description' => t('Mapping ID. Used here to allow one field to n RDF properties mappings.'),
+      ),
+      'field_name'  => array(
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+        'description' => t('Name of the CCK field'),
+      ),
+      'content_type'  => array(
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+        'description' => t('Name of the content this mapping will belong to. Each couple (field_name, content_type) can have its own set of properties. This is work around the shared fields issue.'),
+      ),
+      'property'  => array(
+        'type' => 'varchar',
+        'length' => 64,
+        'not null' => TRUE,
+        'description' => t('RDF property in CURIE format'),
+      ),
+    ),
+    'primary key' => array(
+      'mid',
+    ),
   );
 
   return $schema;
@@ -30,5 +75,9 @@ function rdfcck_install() {
   //rdf_db_create_repository('rdfcck');
 }
 
-
-
+/**
+ * Implementation of hook_uninstall()
+ */
+function rdfcck_uninstall() {
+  drupal_uninstall_schema('rdfcck');
+}
