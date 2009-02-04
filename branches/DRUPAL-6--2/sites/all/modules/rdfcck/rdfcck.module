@@ -309,10 +309,17 @@ function rdfcck_load_node($node) {
   $node = is_object($node) ? $node : node_load((int)$node);
 
   $resources = array(
-    rdf::type         => rdf_uriref(rdf_qname_to_uri('site:' . _rdfcck_build_site_rdf_class_id($node->type))),
-    'site:' . _rdfcck_build_site_rdf_property_id('title', $node->type)      => $node->title,
-    'site:' . _rdfcck_build_site_rdf_property_id('body', $node->type)      => $node->body,
-    // FIXME
+    rdf::type         => array(
+      // Mapping to the local schema.
+      rdf_uriref(rdf_qname_to_uri('site:' . _rdfcck_build_site_rdf_class_id($node->type))),
+      // Mapping to the external classes.
+      rdf_uriref(rdf_qname_to_uri(_rdfcck_get_default_class($node->type))),
+    ),
+    // TODO normalize the order of the parameters in _rdfcck_build_site_rdf_property_id().
+    'site:' . _rdfcck_build_site_rdf_property_id('title', $node->type)  => $node->title,
+    _rdfcck_get_default_property($node->type, 'title')                  => $node->title,
+    'site:' . _rdfcck_build_site_rdf_property_id('body', $node->type)   => $node->body,
+    _rdfcck_get_default_property($node->type, 'body_field')                   => $node->body,
     'site:created'    => rdf_datetime($node->created),
     'site:changed'    => rdf_datetime($node->changed),
   );
@@ -339,6 +346,8 @@ function rdfcck_load_node($node) {
 				case 'text' :
 					$field_value = $node->$field['field_name'];
 					$resources['site:' . $rdf_field_name] = $field_value[0]['value'];
+					$p = _rdfcck_get_default_property($node->type, $field['field_name']);
+					$resources[$p] = $field_value[0]['value'];
 					break;
 
 				case 'number_decimal' :
