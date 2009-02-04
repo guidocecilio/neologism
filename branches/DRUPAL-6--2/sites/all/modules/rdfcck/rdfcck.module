@@ -242,7 +242,7 @@ function rdfcck_admin_rdf_overview_form_submit($form, &$form_state) {
 }
 
 function _rdfcck_get_default_property($type_name, $field_name) {
-  $property = db_query(db_rewrite_sql("SELECT property FROM {rdfcck_fields} WHERE field_name = '%s' AND type_name = '%s'"), $field_name, $type_name);
+  $property = db_query(db_rewrite_sql("SELECT property FROM {rdfcck_fields} WHERE type_name = '%s' AND field_name = '%s'"), $type_name, $field_name);
 
   while ($item = db_fetch_object($property)) {
     $property_curie = $item->property;
