@@ -91,17 +91,17 @@ function evoc_form_alter(&$form, $form_state, $form_id) {
 //   );
 //   if ($form_state['values']['sparql_lookup']['keyword'] ) {
 //     $form['sparql_lookup']['uri_choices'] = array(
-// 			'#type' => 'radios',
-// 			'#title' => t('Suggested URIs'),
-// 			'#default_value' => '',
-// 			'#options' => array(
-// 				'status' => t('Published'),
-// 				'moderate' => t('In moderation queue'),
-// 				'promote' => t('Promoted to front page'),
-// 				'sticky' => t('Sticky at top of lists'),
-// 				'revision' => t('Create new revision'),
-// 			),
-// 			'#description' => t('Choose the URI which describes the best what you want to represent.'),
+//      '#type' => 'radios',
+//      '#title' => t('Suggested URIs'),
+//      '#default_value' => '',
+//      '#options' => array(
+//        'status' => t('Published'),
+//        'moderate' => t('In moderation queue'),
+//        'promote' => t('Promoted to front page'),
+//        'sticky' => t('Sticky at top of lists'),
+//        'revision' => t('Create new revision'),
+//      ),
+//      '#description' => t('Choose the URI which describes the best what you want to represent.'),
 //     );
 //   }
 // //var_dump($form);
@@ -145,17 +145,17 @@ function evoc_uri_form($form_state) {
   if ($form_state['values']['sparql_lookup']['keyword'] ) {
   sleep(2);
     $form['sparql_lookup']['uri_choices'] = array(
-			'#type' => 'radios',
-			'#title' => t('Suggested URIs'),
-			'#default_value' => '',
-			'#options' => array(
-				'status' => t('Published'),
-				'moderate' => t('In moderation queue'),
-				'promote' => t('Promoted to front page'),
-				'sticky' => t('Sticky at top of lists'),
-				'revision' => t('Create new revision'),
-			),
-			'#description' => t('Choose the URI which describes the best what you want to represent.'),
+      '#type' => 'radios',
+      '#title' => t('Suggested URIs'),
+      '#default_value' => '',
+      '#options' => array(
+        'status' => t('Published'),
+        'moderate' => t('In moderation queue'),
+        'promote' => t('Promoted to front page'),
+        'sticky' => t('Sticky at top of lists'),
+        'revision' => t('Create new revision'),
+      ),
+      '#description' => t('Choose the URI which describes the best what you want to represent.'),
     );
   }
 
@@ -445,51 +445,51 @@ require_once drupal_get_path('module', 'sparql') . '/sparql.client.inc';
 // Loop through all the various queries in order to extract as many classes and properties as possible.
 $fetched_terms = array();
 foreach ($term_queries as $query) {
-	$sparql_res = sparql_request('http://srvgal65.deri.ie:2020/sparql', $query['query']);
-//	var_dump($sparql_res);
+  $sparql_res = sparql_request('http://www.sparql.org/sparql', $query['query']);
+//  var_dump($sparql_res);
 
-	// Parse the SPARQL results and extract the relevant terms.
-	foreach ($sparql_res as $res_term) {
-	  if (isset($res_term['class'])) {
-	    $type = 'class';
-	  }
-	  elseif (isset($res_term['property'])) {
-	    $type = 'property';
-	  };
+  // Parse the SPARQL results and extract the relevant terms.
+  foreach ($sparql_res as $res_term) {
+    if (isset($res_term['class'])) {
+      $type = 'class';
+    }
+    elseif (isset($res_term['property'])) {
+      $type = 'property';
+    };
 
-		$term_qname = rdf_uri_to_qname($res_term[$type]->uri);
-		$term_qname_parts = explode(':', $term_qname);
-		$term_prefix = $term_qname_parts[0];
+    $term_qname = rdf_uri_to_qname($res_term[$type]->uri);
+    $term_qname_parts = explode(':', $term_qname);
+    $term_prefix = $term_qname_parts[0];
 
-	  $term = array();
-		$term['id'] = $term_qname_parts[1];
-		$term['type'] = $type;
+    $term = array();
+    $term['id'] = $term_qname_parts[1];
+    $term['type'] = $type;
     $term['label'] = $res_term['label']->value ? $res_term['label']->value : $res_term['label'];
     $term['comment'] = $res_term['comment']->value ? $res_term['comment']->value : $res_term['comment'];
-		switch ($type) {
-		  case 'class' :
+    switch ($type) {
+      case 'class' :
         $term['superclass'] = _evoc_extract_term_id($res_term['superclass']->uri);
-		    break;
+        break;
 
-		  case 'property' :
-		    // Extract some information like domain and range.
+      case 'property' :
+        // Extract some information like domain and range.
         $term['domain'] = _evoc_extract_term_id($res_term['domain']->uri);
         $term['range'] = _evoc_extract_term_id($res_term['range']->uri);
         break;
 
-		}
-// 		var_dump($term_prefix);
-// 		var_dump($vocabulary_prefix);
-		// We only import the terms with the specified prefix unless $ignore_base_ns is TRUE.
-		// API CHANGE: $term_id becomes $term['id'] and $term will contain information about the term.
-		if ($term_prefix == $vocabulary_prefix || $ignore_base_ns) {
-			$fetched_terms[] = $term;
-//			drupal_set_message("$term_qname selected to imported.");
-		}
-		else {
-//			drupal_set_message("$term_qname discarded.");
-		}
-	}
+    }
+//    var_dump($term_prefix);
+//    var_dump($vocabulary_prefix);
+    // We only import the terms with the specified prefix unless $ignore_base_ns is TRUE.
+    // API CHANGE: $term_id becomes $term['id'] and $term will contain information about the term.
+    if ($term_prefix == $vocabulary_prefix || $ignore_base_ns) {
+      $fetched_terms[] = $term;
+//      drupal_set_message("$term_qname selected to imported.");
+    }
+    else {
+//      drupal_set_message("$term_qname discarded.");
+    }
+  }
 
 }
 // @TODO Clean up the terms to import and remove any duplicate? SPARQL should have done that already.
@@ -501,9 +501,9 @@ return $fetched_terms;
 }
 
 function _evoc_extract_term_id($uri) {
-	$term_qname = rdf_uri_to_qname($uri);
-	$term_qname_parts = explode(':', $term_qname);
-	return $term_qname_parts[1];
+  $term_qname = rdf_uri_to_qname($uri);
+  $term_qname_parts = explode(':', $term_qname);
+  return $term_qname_parts[1];
 
 }
 
