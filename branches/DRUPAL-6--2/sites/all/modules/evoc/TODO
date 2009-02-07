@@ -6,3 +6,13 @@ when importing a voc and using an existing prefix, there is an error
 user warning: Duplicate entry 'bir' for key 1 query: INSERT INTO rdf_namespaces (prefix, uri) VALUES ('bir', 'http://srvgal65.deri.ie/birf/birf_v3.owl') in /Applications/MAMP/htdocs/neo-6--2/sites/all/modules/evoc/evoc.module on line 477.
 
 we should warn that the prefix is already defined, and that its terms will be overwritten.
+
+#3 
+this break the superclass. from FOAF:
+  <rdfs:Class rdf:about="http://xmlns.com/foaf/0.1/Project" rdfs:label="Project" rdfs:comment="A project.">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf><owl:Class rdf:about="http://xmlns.com/wordnet/1.6/Project"/></rdfs:subClassOf>
+    <rdfs:isDefinedBy rdf:resource="http://xmlns.com/foaf/0.1/"/>
+  </rdfs:Class>
+
+#4 autocomplete with "rdf:" returns terms from rdfs voc
