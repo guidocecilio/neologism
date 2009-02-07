@@ -39,228 +39,9 @@ function evoc_menu() {
     'page arguments' => array('evoc_import_form'),
     'access arguments' => array('administer nodes'),
   );
-//   $items['evoc/uri'] = array(
-//     'title' => 'Link to a URI',
-//     'description' => "",
-//     'page callback' => 'drupal_get_form',
-//     'page arguments' => array('evoc_uri_form'),
-//     'access arguments' => array('administer nodes'),
-//   );
-  $items['evoc/js'] = array(
-    'title' => 'Javascript Choice Form',
-    'page callback' => 'evoc_js',
-    'access arguments' => array('access content'),
-    'type' => MENU_CALLBACK,
-  );
 
   return $items;
 }
-
-// Add the SPARQL lookup in the node add/edit form.
-function evoc_form_alter(&$form, $form_state, $form_id) {
-  if ($form['#id'] == 'node-form') {
-
-
-// $form['field_link'][0]['#description'] = 'scor';
-// //var_dump($form['field_link']);
-//
-//
-//   $form['sparql_lookup'] = array(
-//     '#title' => t('SPARQL lookup'),
-//     '#prefix' => '<div class="clear-block" id="sparql-lookup-wrapper">', // This is our wrapper div.
-//     '#suffix' => '</div>',
-//     '#tree' => TRUE,
-//   );
-// //var_dump(ahah_helper_path(array('sparql_lookup')));
-//   $form['sparql_lookup']['keyword'] = array(
-//     '#type' => 'textfield',
-//     '#title' => t('Vocabulary URI'),
-//     '#required' => TRUE,
-//     '#default_value' => $form_state['values']['sparql_lookup']['keyword'],
-//     '#prefix' => '<div class="clear-block">',
-//     '#suffix' => '</div>',
-//     '#ahah' => array(
-//       'event' => 'change',
-//       'effect' => 'fade',
-//       // This is the "magical path". Note that the parameter is an array of
-//       // the parents of the form item of the wrapper div!
-//       'path' => ahah_helper_path(array('sparql_lookup')),
-//       'wrapper' => 'sparql-lookup-wrapper',
-//       'progress' => array('type' => 'bar', 'message' => t('Please wait while suggested URIs are retrieved...')),
-//     ),
-//   );
-//   if ($form_state['values']['sparql_lookup']['keyword'] ) {
-//     $form['sparql_lookup']['uri_choices'] = array(
-//      '#type' => 'radios',
-//      '#title' => t('Suggested URIs'),
-//      '#default_value' => '',
-//      '#options' => array(
-//        'status' => t('Published'),
-//        'moderate' => t('In moderation queue'),
-//        'promote' => t('Promoted to front page'),
-//        'sticky' => t('Sticky at top of lists'),
-//        'revision' => t('Create new revision'),
-//      ),
-//      '#description' => t('Choose the URI which describes the best what you want to represent.'),
-//     );
-//   }
-// //var_dump($form);
-//
-
-
-  }
-
-
-return $form;
-
-
-}
-
-function evoc_uri_form($form_state) {
-  $form['sparql_lookup'] = array(
-    '#title' => t('SPARQL lookup'),
-    '#prefix' => '<div class="clear-block" id="sparql-lookup-wrapper">', // This is our wrapper div.
-    '#suffix' => '</div>',
-    '#tree' => TRUE,
-  );
-  $form['sparql_lookup']['keyword'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Vocabulary URI'),
-    '#required' => TRUE,
-    '#default_value' => $form_state['values']['sparql_lookup']['keyword'],
-    '#prefix' => '<div class="clear-block">', // This is our wrapper div.
-    '#suffix' => '</div>',
-    '#ahah' => array(
-      'event' => 'change',
-      'effect' => 'fade',
-      // This is the "magical path". Note that the parameter is an array of
-      // the parents of the form item of the wrapper div!
-      'path' => ahah_helper_path(array('sparql_lookup')),
-      'wrapper' => 'sparql-lookup-wrapper',
-      'progress' => array('type' => 'bar', 'message' => t('Please wait while suggested URIs are retrieved...')),
-    ),
-  );
-
-  // If 'company' is selected, then these two form items will be displayed.
-  if ($form_state['values']['sparql_lookup']['keyword'] ) {
-  sleep(2);
-    $form['sparql_lookup']['uri_choices'] = array(
-      '#type' => 'radios',
-      '#title' => t('Suggested URIs'),
-      '#default_value' => '',
-      '#options' => array(
-        'status' => t('Published'),
-        'moderate' => t('In moderation queue'),
-        'promote' => t('Promoted to front page'),
-        'sticky' => t('Sticky at top of lists'),
-        'revision' => t('Create new revision'),
-      ),
-      '#description' => t('Choose the URI which describes the best what you want to represent.'),
-    );
-  }
-
-
-  $form['submit'] = array(
-    '#type' => 'submit',
-    '#value' => 'Submit',
-  );
-  return $form;
-
-/*
-  // Add a wrapper for the choices and more button.
-  $form['choice_wrapper'] = array(
-    '#tree' => FALSE,
-    '#prefix' => '<div class="clear-block" id="poll-choice-wrapper">',
-    '#suffix' => '</div>',
-  );
-  // Container for just the poll choices.
-  $form['choice_wrapper']['choice'] = array(
-    '#prefix' => '<div id="poll-choices">',
-    '#suffix' => '</div>',
-    '#theme' => 'poll_choices',
-  );
-
-  // We name our button 'poll_more' to avoid conflicts with other modules using
-  // AHAH-enabled buttons with the id 'more'.
-  $form['choice_wrapper']['poll_more'] = array(
-    '#type' => 'submit',
-    '#value' => t('More choices'),
-    '#description' => t("If the amount of boxes above isn't enough, click here to add more choices."),
-    '#weight' => 1,
-    '#submit' => array('poll_more_choices_submit'), // If no javascript action.
-    '#ahah' => array(
-      'path' => 'evoc/js',
-      'wrapper' => 'poll-choices',
-      'method' => 'replace',
-      'effect' => 'fade',
-    ),
-  );
-*/
-
-}
-
-
-function evoc_js() {
-//$output = "<p>hi</p>";
-//sleep(1);
-
-//$output = var_export($_POST, TRUE);
-//  drupal_json(array('status' => TRUE, 'data' => $output));
-//return;
-
-  // Build our new form element.
-//  $form_element = _poll_choice_form($delta);
-  $form_element = array(
-    '#tree' => TRUE,
-  );
-
-  // We'll manually set the #parents property of these fields so that
-  // their values appear in the $form_state['values']['choice'] array.
-  $form_element['chtext'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Choice @n', array('@n' => ($delta + 1))),
-    '#default_value' => $value,
-    '#parents' => array('choice', $delta, 'chtext'),
-  );
-
-  drupal_alter('form', $form_element, array(), 'poll_choice_js');
-
-  // Build the new form.
-  $form_state = array('submitted' => FALSE);
-  $form_build_id = $_POST['form_build_id'];
-  // Add the new element to the stored form. Without adding the element to the
-  // form, Drupal is not aware of this new elements existence and will not
-  // process it. We retreive the cached form, add the element, and resave.
-  if (!$form = form_get_cache($form_build_id, $form_state)) {
-    exit();
-  }
-  $form['choice_wrapper']['choice'][$delta] = $form_element;
-  form_set_cache($form_build_id, $form, $form_state);
-  $form += array(
-    '#post' => $_POST,
-    '#programmed' => FALSE,
-  );
-
-  // Rebuild the form.
-  $form = form_builder('poll_node_form', $form, $form_state);
-
-  // Render the new output.
-  $choice_form = $form['choice_wrapper']['choice'];
-  unset($choice_form['#prefix'], $choice_form['#suffix']); // Prevent duplicate wrappers.
-  $choice_form[$delta]['#attributes']['class'] = empty($choice_form[$delta]['#attributes']['class']) ? 'ahah-new-content' : $choice_form[$delta]['#attributes']['class'] .' ahah-new-content';
-  $choice_form[$delta]['chvotes']['#value'] = 0;
-  $output = theme('status_messages') . drupal_render($choice_form);
-
-  drupal_json(array('status' => TRUE, 'data' => $output));
-}
-
-
-function evoc_uri_form_submit($form, &$form_state) {
-  $form_state['storage']['values'] = $form_state['values'];
-  $form_state['rebuild'] = true;
-
-}
-
 
 function evoc_import_form($form_state) {
   $form['ns_uri'] = array(
@@ -283,6 +64,7 @@ function evoc_import_form($form_state) {
   );
   return $form;
 }
+
 function evoc_import_form_submit($form, &$form_state) {
   $form_state['storage']['values'] = $form_state['values'];
   $form_state['rebuild'] = true;
@@ -291,26 +73,6 @@ function evoc_import_form_submit($form, &$form_state) {
 }
 
 /*
-/////////////////////////
-// Example of input
-$ns = 'http://xmlns.com/foaf/0.1/';
-$prefix = 'foaf';
-$terms = array();
-$terms[] = array('type' => 'class', 'id' => 'Project');
-$terms[] = array('type' => 'class', 'id' => 'Organization');
-$terms[] = array('type' => 'class', 'id' => 'OnlineAccount');
-$terms[] = array('type' => 'property', 'id' => 'made');
-$terms[] = array('type' => 'property', 'id' => 'knows');
-$terms[] = array('type' => 'property', 'id' => 'gender');
-/////////////////////////
-
-
-
-
-// typical input data given by the user via a form.
-//$vocabulary_uri = '';
-//$vocabulary_prefix = '';
-
 $vocabulary_uri = 'http://xmlns.com/foaf/0.1/';
 $vocabulary_prefix = 'foaf';
 
@@ -332,6 +94,9 @@ $vocabulary_prefix = 'dcterms';
 $vocabulary_uri = 'http://purl.org/dc/dcmitype/';
 $vocabulary_prefix = 'dcmitype';
 
+$vocabulary_uri = 'http://rdfs.org/ns/void#';
+$vocabulary_prefix = 'void';
+
 // not working because the uri for the voc is not the same as http://ramonantonio.net/doac/0.1/
 // note also weird URIs like http://ramonantonio.net/doac/0.1/#Skill (double /#)
 $vocabulary_uri = 'http://ramonantonio.net/content/xml/doac01';
@@ -341,25 +106,24 @@ $vocabulary_prefix = 'doac';
 // points to 2 differents documents:
 // 1.
 
-$vocabulary_uri = 'http://rdfs.org/ns/void#';
-$vocabulary_prefix = 'void';
-
 */
 
+/*
+ * Import callback function for the evoc module.
+ */
 function evoc_import_vocabulary($vocabulary_uri, $vocabulary_prefix) {
   $fetched_terms = evoc_fetch_vocabulary($vocabulary_uri, $vocabulary_prefix);
 var_dump($fetched_terms);
   _evoc_save_rdf_terms($vocabulary_uri, $vocabulary_prefix, $fetched_terms);
 }
 
-
-// This is an API function which is used by other modules to fetch a vocabulary.
+/*
+ * Fetch an external vocabulary.
+ * This is an API function which is used by other modules like Neologism.
+ */
 function evoc_fetch_vocabulary($vocabulary_uri, $vocabulary_prefix, $ignore_base_ns = FALSE) {
   global $rdf_namespaces;
   rdf_get_namespaces();
-
-
-
 
 // TODO make sure the URI is valid either finishing with / or #
 // TODO make sure the prefix and the terms are not containing any forbidden characters.
@@ -569,55 +333,4 @@ function evoc_write_property($property) {
       drupal_set_message($property['prefix'] . ":" . $property['id'] . " already exists in the system.");
     }
 }
-
-/**
-* Implementation of hook_rdf_repositories().
-*/
-function evoc_rdf_repositories() {
-  $repos = array();
-    $repos['evoc'] = array(
-      'title'      => 'evoc CCK',
-      'type'       => 'local',
-      'persistent' => TRUE,
-      'mutable'    => TRUE,
-      'enabled'    => TRUE,
-      'statements' => 0,
-      'callbacks'  => array(
-        'insert'   => array(
-          'function' => 'evoc_rdf_insert',
-          'arguments' => array($table)
-        ),
-        'delete'   => array(
-          'function' => 'evoc_rdf_delete',
-          'arguments' => array($table)
-        ),
-        'query'    => array(
-          'function' => 'evoc_rdf_query',
-          'arguments' => array($table)
-        ),
-      ),
-    );
-  return $repos;
-}
-
-
-/**
- * Implementation of hook_rdf_query().
- */
-function evoc_rdf_query($table, $subject, $predicate, $object, array $options = array()) {
-//echo 'enter evoc_rdf_query';
-//var_dump($table);
-//  $result = db_query(_rdf_db_sql_select($table, $subject, $predicate, $object, $options));
-//var_dump(func_get_args());
-//   $data = array();
-//   while ($row = db_fetch_object($result)) {
-//     $object = $row->o ? rdf_uriref($row->o) : rdf_literal($row->data, $row->lang, $row->type);
-//     $data[] = array($row->s, $row->p, $object);
-//   }
-//   $data[] = array('a', rdf_qname_to_uriref('rdfs:Resource'), rdf_literal('e'));
-//   return $data;
-}
-
-// rdf_qname_to_uriref('rdfs:Resource')
-
 
