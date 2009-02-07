@@ -5,19 +5,37 @@
  * Implementation of hook_schema().
  */
 function evoc_schema() {
-  $schema['evoc_rdf_terms'] = array(
-      'fields' => array(
-           'tid' => array('type' => 'serial', 'not null' => TRUE, 'unsigned' => TRUE),
-           'type' => array('type' => 'varchar', 'length' => '32', 'not null' => TRUE),
-           'prefix' => array('type' => 'varchar', 'length' => '32', 'not null' => TRUE),
-           'id' => array('type' => 'varchar', 'length' => '32', 'not null' => TRUE),
-      ),
-      'primary key' => array('tid'),
+  $schema['evoc_rdf_classes'] = array(
+    'fields' => array(
+      'prefix' => array('type' => 'varchar', 'length' => '32', 'not null' => TRUE),
+      'id' => array('type' => 'varchar', 'length' => '32', 'not null' => TRUE),
+      'label' => array('type' => 'varchar', 'length' => '32', 'not null' => TRUE),
+      'comment' => array('type' => 'text', 'not null' => TRUE),
+      'superclass' => array('type' => 'text', 'not null' => TRUE),
+  ),
+    'primary key' => array(
+      'prefix',
+      'id',
+    ),
+  );
+  $schema['evoc_rdf_properties'] = array(
+    'fields' => array(
+      'prefix' => array('type' => 'varchar', 'length' => '32', 'not null' => TRUE),
+      'id' => array('type' => 'varchar', 'length' => '32', 'not null' => TRUE),
+      'label' => array('type' => 'varchar', 'length' => '32', 'not null' => TRUE),
+      'comment' => array('type' => 'text', 'not null' => TRUE),
+      'domain' => array('type' => 'varchar', 'length' => '32', 'not null' => TRUE),
+      'range' => array('type' => 'varchar', 'length' => '32', 'not null' => TRUE),
+    ),
+    'primary key' => array(
+      'prefix',
+      'id',
+    ),
   );
 
   return $schema;
 }
-  
+
 /**
  * Implementation of hook_install().
  */
