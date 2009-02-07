@@ -63,8 +63,8 @@ function evoc_form_alter(&$form, $form_state, $form_id) {
 
 // $form['field_link'][0]['#description'] = 'scor';
 // //var_dump($form['field_link']);
-// 
-// 
+//
+//
 //   $form['sparql_lookup'] = array(
 //     '#title' => t('SPARQL lookup'),
 //     '#prefix' => '<div class="clear-block" id="sparql-lookup-wrapper">', // This is our wrapper div.
@@ -105,9 +105,9 @@ function evoc_form_alter(&$form, $form_state, $form_id) {
 //     );
 //   }
 // //var_dump($form);
-// 
-  
-  
+//
+
+
   }
 
 
@@ -269,14 +269,14 @@ function evoc_import_form($form_state) {
     '#required' => TRUE,
     '#default_value' => $form_state['values']['ns_uri'],
     '#description' => "Enter the URI of the vocabulary to import. Make sure it finishes by either / or #.",
-  ); 
+  );
   $form['prefix'] = array(
     '#type' => 'textfield',
     '#title' => t('Prefix'),
     '#required' => TRUE,
     '#default_value' => $form_state['values']['prefix'],
     '#description' => "Choose a prefix for this vocabulary.",
-  ); 
+  );
   $form['submit'] = array(
     '#type' => 'submit',
     '#value' => 'Submit',
@@ -339,7 +339,7 @@ $vocabulary_prefix = 'doac';
 
 // http://rdfs.org/resume-rdf/
 // points to 2 differents documents:
-// 1. 
+// 1.
 
 $vocabulary_uri = 'http://rdfs.org/ns/void#';
 $vocabulary_prefix = 'void';
@@ -447,7 +447,7 @@ $fetched_terms = array();
 foreach ($term_queries as $query) {
 	$sparql_res = sparql_request('http://srvgal65.deri.ie:2020/sparql', $query['query']);
 //	var_dump($sparql_res);
-	
+
 	// Parse the SPARQL results and extract the relevant terms.
 	foreach ($sparql_res as $res_term) {
 	  if (isset($res_term['class'])) {
@@ -456,7 +456,7 @@ foreach ($term_queries as $query) {
 	  elseif (isset($res_term['property'])) {
 	    $type = 'property';
 	  };
-	  
+
 		$term_qname = rdf_uri_to_qname($res_term[$type]->uri);
 		$term_qname_parts = explode(':', $term_qname);
 		$term_prefix = $term_qname_parts[0];
@@ -470,7 +470,7 @@ foreach ($term_queries as $query) {
 		  case 'class' :
         $term['superclass'] = _evoc_extract_term_id($res_term['superclass']->uri);
 		    break;
-		  
+
 		  case 'property' :
 		    // Extract some information like domain and range.
         $term['domain'] = _evoc_extract_term_id($res_term['domain']->uri);
@@ -512,12 +512,12 @@ function _evoc_extract_term_id($uri) {
  * Handle the creation or update of a set of RDF terms of a given namespace.
  */
 function _evoc_save_rdf_terms($ns, $prefix, $terms) {
-  // Namespace management.  
+  // Namespace management.
   // Get the existing namespaces stored in the system.
   // Here we want to make sure we have the namespace stored in the db in case
   // the module defining this ns in hook_rdf_namespaces() is disabled.
   $rdf_namespaces = rdf_db_rdf_namespaces();
-  
+
   //var_dump($rdf_namespaces);
   if (!in_array($ns, $rdf_namespaces)) { //FIXME: check also the prefix and raise a warning
     db_query("INSERT INTO {rdf_namespaces} (prefix, uri) VALUES ('%s', '%s')", $prefix, $ns);
@@ -527,26 +527,56 @@ function _evoc_save_rdf_terms($ns, $prefix, $terms) {
     db_query("UPDATE {rdf_namespaces} SET prefix = '%s', uri = '%s' WHERE prefix = '%s'", $prefix, $uri, $key);
     drupal_set_message(t('The namespace has been updated.'));
   }
-  
+
   // RDF terms management.
   foreach ($terms as $term) {
-    // Check whether this term is already in the system.
-    // TODO optimize this by loading the whole prefix terms from the db and then check against it in memory
-    $res = db_query(db_rewrite_sql('SELECT tid FROM {evoc_rdf_terms} WHERE prefix="%s" AND id = "%s"'), $prefix, $term['id']);
-
-    if (!db_fetch_object($res)) {
-      db_query("INSERT INTO {evoc_rdf_terms} (type, prefix, id, comment) VALUES ('%s', '%s', '%s', '%s')", $term['type'], $prefix, $term['id'], $term['comment']);  
-      drupal_set_message("$prefix:" . $term['id'] . " successfully imported.");
+    if ($term['type'] == 'class') {
+      $term['prefix'] = $prefix;
+      evoc_write_class($term);
     }
-    else {
-      drupal_set_message("$prefix:" . $term['id'] . " already exists in the system.");
+    elseif ($term['type'] == 'property') {
+      $term['prefix'] = $prefix;
+      evoc_write_property($term);
     }
-
   }
-
 }
 
 
+/**
+ * Store an external RDF class in the database.
+ */
+function evoc_write_class($class) {
+    // Check whether this class is already in the system.
+    // TODO optimize this by loading the whole prefix terms from the db and then check against it in memory
+    $res = db_query(db_rewrite_sql('SELECT * FROM {evoc_rdf_classes} WHERE prefix="%s" AND id = "%s"'), $class['prefix'], $class['id']);
+
+    if (!db_fetch_object($res)) {
+        //db_query("INSERT INTO {evoc_rdf_classes} (prefix, id, comment) VALUES ('%s', '%s', '%s')", $class['prefix'], $class['id'], $class['comment']);
+        drupal_write_record('evoc_rdf_classes', $class);
+        drupal_set_message($class['prefix'] . ":" . $class['id'] . " successfully imported.");
+    }
+    else {
+      drupal_set_message($class['prefix'] . ":" . $class['id'] . " already exists in the system.");
+    }
+}
+
+/**
+ * Store an external RDF property in the database.
+ */
+function evoc_write_property($property) {
+    // Check whether this class is already in the system.
+    // TODO optimize this by loading the whole prefix terms from the db and then check against it in memory
+    $res = db_query(db_rewrite_sql('SELECT * FROM {evoc_rdf_properties} WHERE prefix="%s" AND id = "%s"'), $property['prefix'], $property['id']);
+
+    if (!db_fetch_object($res)) {
+        //db_query("INSERT INTO {evoc_rdf_properties} (prefix, id, comment) VALUES ('%s', '%s', '%s')", $property['prefix'], $property['id'], $property['comment']);
+        drupal_write_record('evoc_rdf_properties', $property);
+        drupal_set_message($property['prefix'] . ":" . $property['id'] . " successfully imported.");
+    }
+    else {
+      drupal_set_message($property['prefix'] . ":" . $property['id'] . " already exists in the system.");
+    }
+}
 
 /**
 * Implementation of hook_rdf_repositories().
