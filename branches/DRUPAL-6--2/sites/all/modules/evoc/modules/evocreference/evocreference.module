@@ -62,7 +62,7 @@ function evocreference_field_settings($op, $field) {
   switch ($op) {
     case 'form':
       $form = array();
-      
+
       // no particular setting for now.
       // ideas:
       // referenceable vocabularies or terms
@@ -77,7 +77,7 @@ function evocreference_field_settings($op, $field) {
 //       return $settings;
 
     case 'database columns':
-      // We store the ns_prefix:term_id 
+      // We store the ns_prefix:term_id
       // This might have a caveat when changing a ns/prefix or term id.
       // But it is what the user will see and it is the most common notation.
       // An alternative is to store the full URI, but this would be more verbose in the db with redundant information stored.
@@ -609,20 +609,20 @@ function _evocreference_potential_references_standard($field, $string = '', $mat
     $string_parts = explode(':', $string);
     if (isset($string_parts[1])) {
       // CURIE pattern.
-			$where[] = 't.prefix '. (isset($match_operators[$match]) ? $match_operators[$match] : $match_operators['contains']);
-			$args[] = $string_parts[0];
-			$where[] = 't.id '. (isset($match_operators[$match]) ? $match_operators[$match] : $match_operators['contains']);
-			$args[] = $string_parts[1];
+      $where[] = 't.prefix '. (isset($match_operators[$match]) ? $match_operators[$match] : $match_operators['contains']);
+      $args[] = $string_parts[0];
+      $where[] = 't.id '. (isset($match_operators[$match]) ? $match_operators[$match] : $match_operators['contains']);
+      $args[] = $string_parts[1];
       $where_type = 'AND';
     }
     else {
-			$where[] = 't.prefix '. (isset($match_operators[$match]) ? $match_operators[$match] : $match_operators['contains']);
-			$args[] = $string_parts[0];
-			$where[] = 't.id '. (isset($match_operators[$match]) ? $match_operators[$match] : $match_operators['contains']);
-			$args[] = $string_parts[0];
-			$where[] = 't.comment '. (isset($match_operators[$match]) ? $match_operators[$match] : $match_operators['contains']);
-			$args[] = $string_parts[0];
-      $where_type = 'OR';    
+      $where[] = 't.prefix '. (isset($match_operators[$match]) ? $match_operators[$match] : $match_operators['contains']);
+      $args[] = $string_parts[0];
+      $where[] = 't.id '. (isset($match_operators[$match]) ? $match_operators[$match] : $match_operators['contains']);
+      $args[] = $string_parts[0];
+      $where[] = 't.comment '. (isset($match_operators[$match]) ? $match_operators[$match] : $match_operators['contains']);
+      $args[] = $string_parts[0];
+      $where_type = 'OR';
     }
 //    watchdog('e',var_export($string_parts, TRUE) . var_export($where_type, TRUE));
 
