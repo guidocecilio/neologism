@@ -328,56 +328,56 @@ function rdfcck_load_node($node) {
   if ($type['fields']) {
     foreach ($type['fields'] as $field) {
       $rdf_field_name = _rdfcck_build_site_rdf_property_id($field['field_name'], $node->type);
-			switch ($field['type']) {
-				case 'nodereference' :
-					$field_values = $node->$field['field_name'];
-					// Generate a triple for each different values.
-					$uris = array();
-					foreach ($field_values as $value) {
-  					$uris[] = rdf_uriref(url('node/' . $value['nid'], array('absolute' => TRUE)));
-					}
-					$resources['site:' . $rdf_field_name] = $uris;
-					break;
+      switch ($field['type']) {
+        case 'nodereference' :
+          $field_values = $node->$field['field_name'];
+          // Generate a triple for each different values.
+          $uris = array();
+          foreach ($field_values as $value) {
+            $uris[] = rdf_uriref(url('node/' . $value['nid'], array('absolute' => TRUE)));
+          }
+          $resources['site:' . $rdf_field_name] = $uris;
+          break;
 
-				case 'userreference' :
-				  // TODO
-					break;
+        case 'userreference' :
+          // TODO
+          break;
 
-				case 'text' :
-					$field_value = $node->$field['field_name'];
-					$resources['site:' . $rdf_field_name] = $field_value[0]['value'];
-					// Only export the external mapping if it is defined.
-					if ($p = _rdfcck_get_default_property($node->type, $field['field_name'])) {
-					  $resources[$p] = $field_value[0]['value'];
-					};
-					break;
+        case 'text' :
+          $field_value = $node->$field['field_name'];
+          $resources['site:' . $rdf_field_name] = $field_value[0]['value'];
+          // Only export the external mapping if it is defined.
+          if ($p = _rdfcck_get_default_property($node->type, $field['field_name'])) {
+            $resources[$p] = $field_value[0]['value'];
+          };
+          break;
 
-				case 'number_decimal' :
-				  // TODO
-					$range = 'xsd:decimal';
-					break;
+        case 'number_decimal' :
+          // TODO
+          $range = 'xsd:decimal';
+          break;
 
-				case 'number_integer' :
-				  // TODO
-					$range = 'xsd:integer';
-					break;
+        case 'number_integer' :
+          // TODO
+          $range = 'xsd:integer';
+          break;
 
-				case 'number_float' :
-				  // TODO
-					$range = 'xsd:float';
-					break;
+        case 'number_float' :
+          // TODO
+          $range = 'xsd:float';
+          break;
 
-				case 'link' :
-					$field_values = $node->$field['field_name'];
-					// Generate a triple for each different values.
-					$uris = array();
-					foreach ($field_values as $value) {
-  					$uris[] = rdf_uriref($value['url']);
-					}
-					$resources['site:' . $rdf_field_name] = $uris;
-					break;
+        case 'link' :
+          $field_values = $node->$field['field_name'];
+          // Generate a triple for each different values.
+          $uris = array();
+          foreach ($field_values as $value) {
+            $uris[] = rdf_uriref($value['url']);
+          }
+          $resources['site:' . $rdf_field_name] = $uris;
+          break;
 
-			}
+      }
     }
   }
 
