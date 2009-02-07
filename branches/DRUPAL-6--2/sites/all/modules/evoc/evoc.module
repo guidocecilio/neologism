@@ -113,7 +113,7 @@ $vocabulary_prefix = 'doac';
  */
 function evoc_import_vocabulary($vocabulary_uri, $vocabulary_prefix) {
   $fetched_terms = evoc_fetch_vocabulary($vocabulary_uri, $vocabulary_prefix);
-var_dump($fetched_terms);
+//var_dump($fetched_terms);
   _evoc_save_rdf_terms($vocabulary_uri, $vocabulary_prefix, $fetched_terms);
 }
 
@@ -125,143 +125,129 @@ function evoc_fetch_vocabulary($vocabulary_uri, $vocabulary_prefix, $ignore_base
   global $rdf_namespaces;
   rdf_get_namespaces();
 
-// TODO make sure the URI is valid either finishing with / or #
-// TODO make sure the prefix and the terms are not containing any forbidden characters.
+  // TODO make sure the URI is valid either finishing with / or #
+  // TODO make sure the prefix and the terms are not containing any forbidden characters.
 
 
-if (!in_array($vocabulary_uri, $rdf_namespaces)) {
-  // Add momentarily the namespace in memory to be able to convert the URIs to QNames.
-  $rdf_namespaces[$vocabulary_prefix] = $vocabulary_uri;
-}
-//var_dump($rdf_namespaces);
-
-
-// SPARQL queries are stored in an array.
-$term_queries = array();
-// Typical SPARQL queries to retrieve properties/classes, working for at least FOAF...
-$term_queries[] = array('type' => 'class',
-                   'query' => "
-prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-select *
-from <$vocabulary_uri>
-where {
-?class rdf:type rdfs:Class.
-OPTIONAL {?class rdfs:label ?label}.
-OPTIONAL {?class rdfs:subClassOf ?superclass}.
-OPTIONAL {?class rdfs:comment ?comment}.
-}
-limit 1000
-");
-$term_queries[] = array('type' => 'property',
-                   'query' => "
-prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-select *
-from <$vocabulary_uri>
-where {
-?property rdf:type rdf:Property.
-OPTIONAL {?property rdfs:label ?label}.
-OPTIONAL {?property rdfs:domain ?domain}.
-OPTIONAL {?property rdfs:range ?range}.
-OPTIONAL {?property rdfs:comment ?comment}.
-}
-limit 1000
-");
-// for SIOC...
-$term_queries[] = array('type' => 'class',
-                   'query' => "
-prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-prefix owl: <http://www.w3.org/2002/07/owl#>
-select *
-from <$vocabulary_uri>
-where {
-?class rdf:type owl:Class.
-OPTIONAL {?class rdfs:label ?label}.
-OPTIONAL {?class rdfs:subClassOf ?superclass}.
-OPTIONAL {?class rdfs:comment ?comment}.
-}
-limit 1000
-");
-$term_queries[] = array('type' => 'property',
-                   'query' => "
-prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-prefix owl: <http://www.w3.org/2002/07/owl#>
-select *
-from <$vocabulary_uri>
-where {
-?property rdf:type owl:ObjectProperty.
-OPTIONAL {?property rdfs:label ?label}.
-OPTIONAL {?property rdfs:domain ?domain}.
-OPTIONAL {?property rdfs:range ?range}.
-OPTIONAL {?property rdfs:comment ?comment}.
-}
-limit 1000
-");
-
-
-
-// FIXME in sparql module.
-require_once drupal_get_path('module', 'sparql') . '/sparql.client.inc';
-
-// Loop through all the various queries in order to extract as many classes and properties as possible.
-$fetched_terms = array();
-foreach ($term_queries as $query) {
-  $sparql_res = sparql_request('http://www.sparql.org/sparql', $query['query']);
-//  var_dump($sparql_res);
-
-  // Parse the SPARQL results and extract the relevant terms.
-  foreach ($sparql_res as $res_term) {
-    if (isset($res_term['class'])) {
-      $type = 'class';
-    }
-    elseif (isset($res_term['property'])) {
-      $type = 'property';
-    };
-
-    $term_qname = rdf_uri_to_qname($res_term[$type]->uri);
-    $term_qname_parts = explode(':', $term_qname);
-    $term_prefix = $term_qname_parts[0];
-
-    $term = array();
-    $term['id'] = $term_qname_parts[1];
-    $term['type'] = $type;
-    $term['label'] = $res_term['label']->value ? $res_term['label']->value : $res_term['label'];
-    $term['comment'] = $res_term['comment']->value ? $res_term['comment']->value : $res_term['comment'];
-    switch ($type) {
-      case 'class' :
-        $term['superclass'] = rdf_uri_to_qname($res_term['superclass']->uri);
-        break;
-
-      case 'property' :
-        // Extract some information like domain and range.
-        $term['domain'] = rdf_uri_to_qname($res_term['domain']->uri);
-        $term['range'] = rdf_uri_to_qname($res_term['range']->uri);
-        break;
-
-    }
-//    var_dump($term_prefix);
-//    var_dump($vocabulary_prefix);
-    // We only import the terms with the specified prefix unless $ignore_base_ns is TRUE.
-    // API CHANGE: $term_id becomes $term['id'] and $term will contain information about the term.
-    if ($term_prefix == $vocabulary_prefix || $ignore_base_ns) {
-      $fetched_terms[] = $term;
-//      drupal_set_message("$term_qname selected to imported.");
-    }
-    else {
-//      drupal_set_message("$term_qname discarded.");
-    }
+  if (!in_array($vocabulary_uri, $rdf_namespaces)) {
+    // Add momentarily the namespace in memory to be able to convert the URIs to QNames.
+    $rdf_namespaces[$vocabulary_prefix] = $vocabulary_uri;
   }
 
-}
-// @TODO Clean up the terms to import and remove any duplicate? SPARQL should have done that already.
+  // SPARQL queries are stored in an array.
+  $term_queries = array();
+  // Typical SPARQL queries to retrieve properties/classes, working for all major vocabularies...
+  $term_queries[] = array('type' => 'class',
+                     'query' => "
+  prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+  prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+  select *
+  from <$vocabulary_uri>
+  where {
+  ?class rdf:type rdfs:Class.
+  OPTIONAL {?class rdfs:label ?label}.
+  OPTIONAL {?class rdfs:subClassOf ?superclass}.
+  OPTIONAL {?class rdfs:comment ?comment}.
+  }
+  limit 1000
+  ");
+  $term_queries[] = array('type' => 'property',
+                     'query' => "
+  prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+  prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+  select *
+  from <$vocabulary_uri>
+  where {
+  ?property rdf:type rdf:Property.
+  OPTIONAL {?property rdfs:label ?label}.
+  OPTIONAL {?property rdfs:domain ?domain}.
+  OPTIONAL {?property rdfs:range ?range}.
+  OPTIONAL {?property rdfs:comment ?comment}.
+  }
+  limit 1000
+  ");
+  // for SIOC...
+  $term_queries[] = array('type' => 'class',
+                     'query' => "
+  prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+  prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+  prefix owl: <http://www.w3.org/2002/07/owl#>
+  select *
+  from <$vocabulary_uri>
+  where {
+  ?class rdf:type owl:Class.
+  OPTIONAL {?class rdfs:label ?label}.
+  OPTIONAL {?class rdfs:subClassOf ?superclass}.
+  OPTIONAL {?class rdfs:comment ?comment}.
+  }
+  limit 1000
+  ");
+  $term_queries[] = array('type' => 'property',
+                     'query' => "
+  prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+  prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+  prefix owl: <http://www.w3.org/2002/07/owl#>
+  select *
+  from <$vocabulary_uri>
+  where {
+  ?property rdf:type owl:ObjectProperty.
+  OPTIONAL {?property rdfs:label ?label}.
+  OPTIONAL {?property rdfs:domain ?domain}.
+  OPTIONAL {?property rdfs:range ?range}.
+  OPTIONAL {?property rdfs:comment ?comment}.
+  }
+  limit 1000
+  ");
 
-//var_dump($fetched_terms);
+  // FIXME in sparql module.
+  require_once drupal_get_path('module', 'sparql') . '/sparql.client.inc';
 
+  // Loop through all the various queries in order to extract as many classes and properties as possible.
+  $fetched_terms = array();
+  foreach ($term_queries as $query) {
+    $sparql_res = sparql_request('http://www.sparql.org/sparql', $query['query']);
 
-return $fetched_terms;
+    // Parse the SPARQL results and extract the relevant terms.
+    foreach ($sparql_res as $res_term) {
+      if (isset($res_term['class'])) {
+        $type = 'class';
+      }
+      elseif (isset($res_term['property'])) {
+        $type = 'property';
+      };
+
+      $term_qname = rdf_uri_to_qname($res_term[$type]->uri);
+      $term_qname_parts = explode(':', $term_qname);
+      $term_prefix = $term_qname_parts[0];
+
+      $term = array();
+      $term['id'] = $term_qname_parts[1];
+      $term['type'] = $type;
+      $term['label'] = $res_term['label']->value ? $res_term['label']->value : $res_term['label'];
+      $term['comment'] = $res_term['comment']->value ? $res_term['comment']->value : $res_term['comment'];
+      switch ($type) {
+        case 'class' :
+          $term['superclass'] = rdf_uri_to_qname($res_term['superclass']->uri);
+          break;
+
+        case 'property' :
+          // Extract some information like domain and range.
+          $term['domain'] = rdf_uri_to_qname($res_term['domain']->uri);
+          $term['range'] = rdf_uri_to_qname($res_term['range']->uri);
+          break;
+
+      }
+
+      // We only import the terms with the specified prefix unless $ignore_base_ns is TRUE.
+      if ($term_prefix == $vocabulary_prefix || $ignore_base_ns) {
+        $fetched_terms[] = $term;
+      }
+    }
+
+  }
+  // @TODO Clean up the terms to import and remove any duplicate? SPARQL should have done that already.
+
+  return $fetched_terms;
 }
 
 /**
