@@ -264,7 +264,7 @@ function _rdfcck_get_default_class($type_name) {
 function _rdfcck_get_properties() {
   $properties_options = array();
   $properties_options[0] = '<none>';
-  $properties = db_query(db_rewrite_sql("SELECT * FROM {evoc_rdf_terms} WHERE type = 'property'"));
+  $properties = db_query(db_rewrite_sql("SELECT * FROM {evoc_rdf_properties}"));
 
   while ($item = db_fetch_object($properties)) {
     $term_curie = $item->prefix . ':' . $item->id;
@@ -277,7 +277,7 @@ function _rdfcck_get_properties() {
 function _rdfcck_get_classes() {
   $classes_options = array();
   $classes_options[0] = '<none>';
-  $classes = db_query(db_rewrite_sql("SELECT * FROM {evoc_rdf_terms} WHERE type = 'class'"));
+  $classes = db_query(db_rewrite_sql("SELECT * FROM {evoc_rdf_classes}"));
 
   while ($item = db_fetch_object($classes)) {
     $term_curie = $item->prefix . ':' . $item->id;
@@ -323,7 +323,7 @@ function rdfcck_load_node($node) {
     'site:created'    => rdf_datetime($node->created),
     'site:changed'    => rdf_datetime($node->changed),
   );
-  
+
   $type = content_types($node->type);
   if ($type['fields']) {
     foreach ($type['fields'] as $field) {
@@ -338,11 +338,11 @@ function rdfcck_load_node($node) {
 					}
 					$resources['site:' . $rdf_field_name] = $uris;
 					break;
-					
+
 				case 'userreference' :
 				  // TODO
 					break;
-					
+
 				case 'text' :
 					$field_value = $node->$field['field_name'];
 					$resources['site:' . $rdf_field_name] = $field_value[0]['value'];
@@ -356,17 +356,17 @@ function rdfcck_load_node($node) {
 				  // TODO
 					$range = 'xsd:decimal';
 					break;
-					
+
 				case 'number_integer' :
 				  // TODO
 					$range = 'xsd:integer';
 					break;
-					
+
 				case 'number_float' :
 				  // TODO
 					$range = 'xsd:float';
 					break;
-					
+
 				case 'link' :
 					$field_values = $node->$field['field_name'];
 					// Generate a triple for each different values.
@@ -376,11 +376,11 @@ function rdfcck_load_node($node) {
 					}
 					$resources['site:' . $rdf_field_name] = $uris;
 					break;
-					
+
 			}
-    }  
+    }
   }
-  
+
   return $resources;
 }
 
@@ -389,7 +389,7 @@ function rdfcck_load_node($node) {
 /**
  * Implementation of hook_rdf_classes().
  */
-function evoc_rdf_classes() {
+function rdfcck_rdf_classes() {
   // Retrieve the content types.
   $types = node_get_types();
   $classes = array();
@@ -404,8 +404,8 @@ function evoc_rdf_classes() {
       'module'  => 'content', // module necessary here to allow rdf_schema module to consider this class enable.
       'comment' => $type->description,
       'enabled' => TRUE,
-    
-    
+
+
     );
   }
  return $classes;
@@ -414,7 +414,7 @@ function evoc_rdf_classes() {
 /**
  * Implementation of hook_rdf_properties().
  */
-function evoc_rdf_properties() {
+function rdfcck_rdf_properties() {
   $types = node_get_types();
   $properties = array();
   foreach ($types as $type) {
@@ -438,7 +438,7 @@ function evoc_rdf_properties() {
         'comment' => 'Body of the node',
       );
     }
-    
+
     // CCK fields.
     if ($type['fields']) {
       foreach ($type['fields'] as $field) {
@@ -462,30 +462,30 @@ function evoc_rdf_properties() {
               }
             }
             break;
-            
+
           case 'userreference' :
             $range = 'site:user';
             break;
-            
+
           case 'number_decimal' :
             $range = 'xsd:decimal';
             break;
-            
+
           case 'number_integer' :
             $range = 'xsd:integer';
             break;
-            
+
           case 'number_float' :
             $range = 'xsd:float';
             break;
-            
+
           case 'link' :
             $range = 'rdf:resource';
             break;
-            
+
           // TODO add the case 'text' ? rdfs:Literal for now (default)
         }
-        
+
         // Generate the property information.
         $property_id = _rdfcck_build_site_rdf_property_id($field['field_name'], $field['type_name']);
         $properties[$property_id] = array(
@@ -495,8 +495,8 @@ function evoc_rdf_properties() {
           'range' => isset($range) ? $range : NULL,
         );
       }
-    
-    
+
+
     }
   }
 
