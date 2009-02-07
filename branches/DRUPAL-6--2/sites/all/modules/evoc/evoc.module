@@ -468,13 +468,13 @@ foreach ($term_queries as $query) {
     $term['comment'] = $res_term['comment']->value ? $res_term['comment']->value : $res_term['comment'];
     switch ($type) {
       case 'class' :
-        $term['superclass'] = _evoc_extract_term_id($res_term['superclass']->uri);
+        $term['superclass'] = rdf_uri_to_qname($res_term['superclass']->uri);
         break;
 
       case 'property' :
         // Extract some information like domain and range.
-        $term['domain'] = _evoc_extract_term_id($res_term['domain']->uri);
-        $term['range'] = _evoc_extract_term_id($res_term['range']->uri);
+        $term['domain'] = rdf_uri_to_qname($res_term['domain']->uri);
+        $term['range'] = rdf_uri_to_qname($res_term['range']->uri);
         break;
 
     }
@@ -499,14 +499,6 @@ foreach ($term_queries as $query) {
 
 return $fetched_terms;
 }
-
-function _evoc_extract_term_id($uri) {
-  $term_qname = rdf_uri_to_qname($uri);
-  $term_qname_parts = explode(':', $term_qname);
-  return $term_qname_parts[1];
-
-}
-
 
 /**
  * Handle the creation or update of a set of RDF terms of a given namespace.
