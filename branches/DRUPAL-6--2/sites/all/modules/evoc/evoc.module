@@ -7,12 +7,6 @@
  */
 
 /**
- * Implementation of hook_perm().
- */
-function evoc_perm() {
-}
-
-/**
  * Implementation of hook_init().
  */
 function evoc_init() {
@@ -25,19 +19,12 @@ function evoc_init() {
 function evoc_menu() {
   $items = array();
 
-  $items['evoc'] = array(
-    'title' => 'evoc',
-    'description' => "View, edit, and delete your site's content.",
-    'page callback' => 'evoc_evoc',
-    'access arguments' => array('administer nodes'),
-    'type' => MENU_CALLBACK,
-  );
   $items['evoc/import'] = array(
     'title' => 'Import vocabulary',
     'description' => "Import RDF terms of an external vocabulary.",
     'page callback' => 'drupal_get_form',
     'page arguments' => array('evoc_import_form'),
-    'access arguments' => array('administer nodes'),
+    'access arguments' => array('administer content types'),
   );
 
   return $items;
