@@ -72,7 +72,6 @@ function rdfcck_schema() {
  */
 function rdfcck_install() {
   drupal_install_schema('rdfcck');
-  //rdf_db_create_repository('rdfcck');
 }
 
 /**
