@@ -1,5 +1,5 @@
 <?php
-// $Id: rdfcck.module,v 1.1.2.8 2008/11/07 20:03:31 scor Exp $
+// $Id: evoc.module,v 1.1 2009/01/30 07:30:00 scor Exp $
 
 /**
  * @file
@@ -280,7 +280,6 @@ function evoc_write_class($class) {
     $res = db_query(db_rewrite_sql('SELECT * FROM {evoc_rdf_classes} WHERE prefix="%s" AND id = "%s"'), $class['prefix'], $class['id']);
 
     if (!db_fetch_object($res)) {
-        //db_query("INSERT INTO {evoc_rdf_classes} (prefix, id, comment) VALUES ('%s', '%s', '%s')", $class['prefix'], $class['id'], $class['comment']);
         drupal_write_record('evoc_rdf_classes', $class);
         drupal_set_message($class['prefix'] . ":" . $class['id'] . " successfully imported.");
     }
@@ -298,7 +297,6 @@ function evoc_write_property($property) {
     $res = db_query(db_rewrite_sql('SELECT * FROM {evoc_rdf_properties} WHERE prefix="%s" AND id = "%s"'), $property['prefix'], $property['id']);
 
     if (!db_fetch_object($res)) {
-        //db_query("INSERT INTO {evoc_rdf_properties} (prefix, id, comment) VALUES ('%s', '%s', '%s')", $property['prefix'], $property['id'], $property['comment']);
         drupal_write_record('evoc_rdf_properties', $property);
         drupal_set_message($property['prefix'] . ":" . $property['id'] . " successfully imported.");
     }
