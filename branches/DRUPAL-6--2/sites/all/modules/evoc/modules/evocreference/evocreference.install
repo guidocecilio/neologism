@@ -37,19 +37,3 @@ function evocreference_disable() {
   drupal_load('module', 'content');
   content_notify('disable', 'evocreference');
 }
-
-function evocreference_update_last_removed() {
-  return 4;
-}
-
-/**
- * Placeholder update to set newly installed versions to the latest update number.
- */
-function evocreference_update_6000() {
-  if ($abort = content_check_update('evocreference')) {
-    return $abort;
-  }
-
-  $ret = array();
-  return $ret;
-}

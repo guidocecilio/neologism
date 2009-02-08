@@ -1,5 +1,5 @@
 <?php
-// $Id: evocreference.module,v 1.106.2.29 2008/11/07 15:18:39 yched Exp $
+// $Id: Exp $
 
 /**
  * @file
@@ -64,17 +64,8 @@ function evocreference_field_settings($op, $field) {
       $form = array();
 
       // no particular setting for now.
-      // ideas:
-      // referenceable vocabularies or terms
+      // idea: referenceable vocabularies or terms
       return $form;
-
-//     case 'save':
-//       $settings = array('referenceable_roles', 'referenceable_status');
-//       if (module_exists('views')) {
-//         $settings[] = 'advanced_view';
-//         $settings[] = 'advanced_view_args';
-//       }
-//       return $settings;
 
     case 'database columns':
       // We store the ns_prefix:term_id
