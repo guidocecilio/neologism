@@ -2,6 +2,7 @@
 name = RDF CCK
 description = Allows to define mappings between CCK fields and RDF and export nodes as RDF.
 dependencies[] = content
+dependencies[] = rdf
 dependencies[] = evoc
 package = CCK
 core = 6.x
