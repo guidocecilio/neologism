@@ -1,0 +1,164 @@
+<?php
+// $Id: sparql.install,v 1.4 2008/06/07 20:07:14 arto Exp $
+/**
+ * sparql.install - SPARQL API installation/uninstallation.
+ *
+ * @author Arto Bendiken <http://bendiken.net/>
+ * @copyright Copyright (c) 2007-2008 Arto Bendiken. All rights reserved.
+ * @license GPL <http://creativecommons.org/licenses/GPL/2.0/>
+ * @package sparql.module
+ */
+
+//////////////////////////////////////////////////////////////////////////////
+// Core API hooks
+
+/**
+ * Implementation of hook_enable().
+ */
+function sparql_enable() {
+  drupal_set_message(t('SPARQL API successfully installed. Please review the available <a href="@settings">configuration settings</a>.', array('@settings' => url('admin/settings/sparql'))));
+}
+
+/**
+ * Implementation of hook_install().
+ */
+function sparql_install() {
+  drupal_install_schema('sparql');
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function sparql_uninstall() {
+  drupal_uninstall_schema('sparql');
+
+  db_query("DELETE FROM {variable} WHERE name LIKE 'sparql_%'");
+  cache_clear_all('variables', 'cache');
+}
+
+/**
+ * Implementation of hook_requirements().
+ */
+function sparql_requirements($phase) {
+  $requirements = array();
+  $t = get_t(); // Ensure translations don't break at install time
+
+  if ($phase == 'install') {
+    if (!class_exists('ARC2')) {
+      $requirements['arc2'] = array(
+        'title' => '',
+        'value' => '',
+        'description' => $t('The ARC2 library is not installed. See the <a href="@status-report">status report</a> for information on how to install this library.', array('@status-report' => url('admin/reports/status'))),
+        'severity' => REQUIREMENT_ERROR,
+      );
+    }
+  }
+
+  return $requirements;
+}
+
+//////////////////////////////////////////////////////////////////////////////
+// Schema API hooks
+
+/**
+ * Implementation of hook_schema().
+ */
+function sparql_schema() {
+  return array(
+    'sparql_nodes' => array(
+      'description' => t('Stores SPARQL node data.'),
+      'fields' => array(
+        'nid' => array(
+          'description' => t("The node's ID from {node}.nid."),
+          'type' => 'int',
+          'unsigned' => TRUE,
+          'not null' => TRUE,
+          'default' => 0,
+        ),
+        'vid' => array(
+          'description' => t("The node's version ID from {node}.vid."),
+          'type' => 'int',
+          'unsigned' => TRUE,
+          'not null' => TRUE,
+          'default' => 0,
+        ),
+        'endpoint' => array(
+          'description' => t("The SPARQL endpoint's URL."),
+          'type' => 'text',
+        ),
+        'query' => array(
+          'description' => t("The SPARQL query."),
+          'type' => 'text',
+          'size' => 'big',
+        ),
+      ),
+      'primary key' => array('nid', 'vid'),
+    ),
+  );
+}
+
+//////////////////////////////////////////////////////////////////////////////
+// Schema API updates
+
+/**
+ * Installs the database schema; this is necessary when upgrading from any
+ * version prior to 6.x-1.0-alpha2.
+ *
+ * @see http://drupal.org/node/150215
+ * @see http://drupal.org/node/150220
+ */
+function sparql_update_6000() {
+  $updates = array();
+
+  db_create_table($updates, 'sparql_nodes', array(
+    'description' => t('Stores SPARQL node data.'),
+    'fields' => array(
+      'nid' => array(
+        'description' => t("The node's ID from {node}.nid."),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'vid' => array(
+        'description' => t("The node's version ID from {node}.vid."),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'endpoint' => array(
+        'description' => t("The SPARQL endpoint's URL."),
+        'type' => 'text',
+      ),
+      'query' => array(
+        'description' => t("The SPARQL query."),
+        'type' => 'text',
+        'size' => 'big',
+      ),
+    ),
+    'primary key' => array('nid', 'vid'),
+  ));
+
+  return $updates;
+}
+
+/**
+ * Converts SPARQL node data from early 6.x-dev format to 6.x-1.0-alpha2.
+ */
+function sparql_update_6001() {
+  $updates = array();
+
+  $result = db_query("SELECT nid, vid FROM {node} WHERE type = 'sparql' ORDER BY nid ASC");
+  while ($node = db_fetch_object($result)) {
+    $query    = variable_get('sparql_node_' . $node->nid . '_query', '');
+    $endpoint = variable_get('sparql_node_' . $node->nid . '_endpoint', '');
+
+    if (db_query("INSERT INTO {sparql_nodes} (nid, vid, endpoint, query) VALUES (%d, %d, '%s', '%s')", $node->nid, $node->vid, $endpoint, $query)) {
+      variable_del('sparql_node_' . $node->nid . '_query');
+      variable_del('sparql_node_' . $node->nid . '_endpoint');
+    }
+  }
+
+  return $updates;
+}
