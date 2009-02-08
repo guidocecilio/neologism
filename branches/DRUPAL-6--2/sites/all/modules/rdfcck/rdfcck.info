@@ -1,0 +1,8 @@
+; $Id: rdfcck.info,v 1.2.2.1 2009/02/08 02:04:57 scor Exp $
+name = RDF CCK
+description = Allows to define mappings between CCK fields and RDF and export nodes as RDF.
+dependencies[] = content
+dependencies[] = rdf
+dependencies[] = evoc
+package = CCK
+core = 6.x
