@@ -63,69 +63,69 @@ function neologism_enable () {
 function neologism_menu() {
   $items = array();
 
-	$items[NEOLOGISM] = array(
-		'title' => 'Neologism Vocabularies',
-		'description' => "Show a list of vocabularies.",
-		'page callback' => 'neologism_view_index',
-		'access arguments' => TRUE,
-		'type' => MENU_LOCAL_TASK,
+  $items[NEOLOGISM] = array(
+    'title' => 'Neologism Vocabularies',
+    'description' => "Show a list of vocabularies.",
+    'page callback' => 'neologism_view_index',
+    'access arguments' => TRUE,
+    'type' => MENU_LOCAL_TASK,
   );
-	$items['node/%neologism_vocabulary/' . HTML] = array(
-			'title' => 'View HTML',
-			'page callback' => 'neologism_export_html',
-			'page arguments' => array(1),
-			'access callback' => 'node_access',
-			'access arguments' => array('view', 1),
-			'type' => MENU_LOCAL_TASK,
-	);
-	$items['node/%neologism_vocabulary/' . RDF] = array(
-			'title' => 'View RDF/XML',
-			'page callback' => 'neologism_export_rdf',
-			'page arguments' => array(1),
-			'access callback' => 'node_access',
-			'access arguments' => array('view', 1),
-			'type' => MENU_LOCAL_TASK,
-	);
-	$items['node/%neologism_vocabulary/' . N3] = array(
-			'title' => 'View N3',
-			'page callback' => 'neologism_export_n3',
-			'page arguments' => array(1),
-			'access callback' => 'node_access',
-			'access arguments' => array('view', 1),
-			'type' => MENU_LOCAL_TASK,
-	);
-	$items['node/%neologism_vocabulary/' . XML] = array(
-			'title' => 'View XML',
-			'page callback' => 'neologism_export_xml',
-			'page arguments' => array(1),
-			'access callback' => 'node_access',
-			'access arguments' => array('view', 1),
-			'type' => MENU_CALLBACK,
-	);
-	$items['node/%neologism_vocabulary/layout'] = array(
-			'title' => 'Diagram Layout',
-			'page callback' => 'neologism_layout',
-			'page arguments' => array(1),
-			'access callback' => 'node_access',
-			'access arguments' => array('view', 1),
-			'type' => MENU_CALLBACK,
-	);
-	$items['node/%neologism_vocabulary/image'] = array(
-			'title' => 'Diagram Image',
-			'page callback' => 'neologism_image',
-			'page arguments' => array(1),
-			'access callback' => 'node_access',
-			'access arguments' => array('view', 1),
-			'type' => MENU_CALLBACK,
-	);
-// 	$items['node/%neologism_vocabulary/diagram'] = array(
-// 			'title' => 'Overview Diagram',
-// 			'page callback' => 'neologism_show_diagram',
-// 			'page arguments' => array(1),
-// 			'access callback' => 'node_access',
-// 			'access arguments' => array('view', 1),
-// 			'type' => MENU_LOCAL_TASK,
-// 	);
+  $items['node/%neologism_vocabulary/' . HTML] = array(
+      'title' => 'View HTML',
+      'page callback' => 'neologism_export_html',
+      'page arguments' => array(1),
+      'access callback' => 'node_access',
+      'access arguments' => array('view', 1),
+      'type' => MENU_LOCAL_TASK,
+  );
+  $items['node/%neologism_vocabulary/' . RDF] = array(
+      'title' => 'View RDF/XML',
+      'page callback' => 'neologism_export_rdf',
+      'page arguments' => array(1),
+      'access callback' => 'node_access',
+      'access arguments' => array('view', 1),
+      'type' => MENU_LOCAL_TASK,
+  );
+  $items['node/%neologism_vocabulary/' . N3] = array(
+      'title' => 'View N3',
+      'page callback' => 'neologism_export_n3',
+      'page arguments' => array(1),
+      'access callback' => 'node_access',
+      'access arguments' => array('view', 1),
+      'type' => MENU_LOCAL_TASK,
+  );
+  $items['node/%neologism_vocabulary/' . XML] = array(
+      'title' => 'View XML',
+      'page callback' => 'neologism_export_xml',
+      'page arguments' => array(1),
+      'access callback' => 'node_access',
+      'access arguments' => array('view', 1),
+      'type' => MENU_CALLBACK,
+  );
+  $items['node/%neologism_vocabulary/layout'] = array(
+      'title' => 'Diagram Layout',
+      'page callback' => 'neologism_layout',
+      'page arguments' => array(1),
+      'access callback' => 'node_access',
+      'access arguments' => array('view', 1),
+      'type' => MENU_CALLBACK,
+  );
+  $items['node/%neologism_vocabulary/image'] = array(
+      'title' => 'Diagram Image',
+      'page callback' => 'neologism_image',
+      'page arguments' => array(1),
+      'access callback' => 'node_access',
+      'access arguments' => array('view', 1),
+      'type' => MENU_CALLBACK,
+  );
+//  $items['node/%neologism_vocabulary/diagram'] = array(
+//      'title' => 'Overview Diagram',
+//      'page callback' => 'neologism_show_diagram',
+//      'page arguments' => array(1),
+//      'access callback' => 'node_access',
+//      'access arguments' => array('view', 1),
+//      'type' => MENU_LOCAL_TASK,
+//  );
   $items['neologism/import'] = array(
     'title' => 'Import vocabulary in Neologism',
     'description' => 'Import an RDF vocabulary and use Neologism to author it.',
@@ -304,9 +304,9 @@ function neologism_get_rdf_model($node, $uri, $document) {
         if ($oneclass["disjoint"] != NULL)
             $model->add(new Statement($classresource, new Resource($ns["owl"], "disjointWith"), new Resource($uri.$oneclass["disjoint"])));
 
-		// if ($oneclass["superclassOf"] != NULL) {
+    // if ($oneclass["superclassOf"] != NULL) {
             // $model->add(new Statement(new Resource($uri.$oneclass["superclassOf"]), new Resource($ns["rdfs"], "subClassOf"), $classresource));
-			//}
+      //}
     }
 
     //export all properties
@@ -314,12 +314,12 @@ function neologism_get_rdf_model($node, $uri, $document) {
     foreach ($properties as $oneprop) {
         $propresource = new Resource($uri . $oneprop["title"]);
         $model->add(new Statement($propresource, new Resource($ns["rdf"], "type"), new Resource($ns["rdf"], "Property")));
-		if ($oneprop["ifp"] == true) {
-			$ifp_uri="http://www.w3.org/2002/07/owl#InverseFunctionalProperty";
-            $model->add(new Statement($propresource, new Resource($ns["rdf"], "type"), new Resource($ifp_uri))); 	}
-		if ($oneprop["fp"] == true) {
-			$ifp_uri="http://www.w3.org/2002/07/owl#FunctionalProperty";
-            $model->add(new Statement($propresource, new Resource($ns["rdf"], "type"), new Resource($ifp_uri))); 	}
+    if ($oneprop["ifp"] == true) {
+      $ifp_uri="http://www.w3.org/2002/07/owl#InverseFunctionalProperty";
+            $model->add(new Statement($propresource, new Resource($ns["rdf"], "type"), new Resource($ifp_uri)));  }
+    if ($oneprop["fp"] == true) {
+      $ifp_uri="http://www.w3.org/2002/07/owl#FunctionalProperty";
+            $model->add(new Statement($propresource, new Resource($ns["rdf"], "type"), new Resource($ifp_uri)));  }
         $model->add(new Statement($propresource, new Resource($ns["rdfs"], "isDefinedBy"), $doc));
         $model->add(new Statement($propresource, new Resource($ns["rdfs"], "label"), new Literal($oneprop["label"])));
         if ($oneprop["comment_rdfs"] != NULL)
@@ -395,9 +395,9 @@ function neologism_export_xml($node) {
         $class->addAttribute("label", $oneclass["label"]);
         if ($oneclass["subclass"] != NULL)
             $class->addAttribute("subclass", $oneclass["subclass"]);
-		// if ($oneclass["superclassOf"] != NULL)
+    // if ($oneclass["superclassOf"] != NULL)
             // $class->addAttribute("superclassOf", $oneclass["superclassOf"]);
-		// TODO also show IFPs/FPs in a special way?
+    // TODO also show IFPs/FPs in a special way?
     }
 
     //export all properties
@@ -496,36 +496,36 @@ function neologism_show_diagram($node) {
   // TODO The vocabulary parameter is not used anymore and could be removed from the flex viewer.
   $flex_params = "vocabulary=&editMode=$edit_mode&prefix=$prefix&token=$token";
 
-	$output = <<<EXCERPT
+  $output = <<<EXCERPT
 
 <div id="flex_diagram">
 
-		<object classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000"
-				id="Neologism" width="800px" height="600px"
-				codebase="http://fpdownload.macromedia.com/get/flashplayer/current/swflash.cab">
-						<param name="movie" value="$swf" />
-						<param name="quality" value="high" />
-						<param name="bgcolor" value="#869ca7" />
-						<param name='flashVars' value='$flex_params'/>
-						<param name="allowScriptAccess" value="sameDomain" />
-						<embed src="$swf" quality="high" bgcolor="#869ca7"
-								width="800px"
-								height="600px"
-								name="Neologism"
-								align="middle"
-								play="true"
-								loop="false"
-								quality="high"
-								allowScriptAccess="sameDomain"
-								type="application/x-shockwave-flash"
-								pluginspage="http://www.adobe.com/go/getflashplayer"
-								flashVars='$flex_params'>
-						</embed>
-		</object>
+    <object classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000"
+        id="Neologism" width="800px" height="600px"
+        codebase="http://fpdownload.macromedia.com/get/flashplayer/current/swflash.cab">
+            <param name="movie" value="$swf" />
+            <param name="quality" value="high" />
+            <param name="bgcolor" value="#869ca7" />
+            <param name='flashVars' value='$flex_params'/>
+            <param name="allowScriptAccess" value="sameDomain" />
+            <embed src="$swf" quality="high" bgcolor="#869ca7"
+                width="800px"
+                height="600px"
+                name="Neologism"
+                align="middle"
+                play="true"
+                loop="false"
+                quality="high"
+                allowScriptAccess="sameDomain"
+                type="application/x-shockwave-flash"
+                pluginspage="http://www.adobe.com/go/getflashplayer"
+                flashVars='$flex_params'>
+            </embed>
+    </object>
 
-		<img src="$img_legend"
-				 alt="green arrows mean property, red inheritance"
-				 width="226" height="80" id="legend" />
+    <img src="$img_legend"
+         alt="green arrows mean property, red inheritance"
+         width="226" height="80" id="legend" />
 
 </div>
 
@@ -566,11 +566,11 @@ function neologism_link($type, $node = NULL, $teaser = FALSE) {
     $property_url_str = str_replace('_', '-', NEOLOGISM_CT_PROPERTY);
 
     if (user_access('edit neologism') && $node->type == NEOLOGISM_CT_CLASS) {
-			$links['neologism_edit_class'] = array(
-				'title' => t('Edit'),
-				'href' => "node/$node->nid/edit",
-				'query' => $destination,
-			);
+      $links['neologism_edit_class'] = array(
+        'title' => t('Edit'),
+        'href' => "node/$node->nid/edit",
+        'query' => $destination,
+      );
       $links['neologism_add_subclass'] = array(
         'title' => t('Add subclass'),
         'href' => "node/add/" . $class_url_str . "/parent/$node->nid"
@@ -582,11 +582,11 @@ function neologism_link($type, $node = NULL, $teaser = FALSE) {
     }
 
     if (user_access('edit neologism') && $node->type == NEOLOGISM_CT_PROPERTY) {
-			$links['neologism_edit_property'] = array(
-				'title' => t('Edit'),
-				'href' => "node/$node->nid/edit",
-				'query' => $destination,
-			);
+      $links['neologism_edit_property'] = array(
+        'title' => t('Edit'),
+        'href' => "node/$node->nid/edit",
+        'query' => $destination,
+      );
       $links['neologism_add_subproperty'] = array(
         'title' => t('Add subproperty'),
         'href' => "node/add/" . $property_url_str . "/parent/$node->nid"
@@ -706,26 +706,26 @@ function neologism_nodeapi(&$node, $op, $teaser, $page) {
 }
 
 function _neologism_set_aliases($node) {
-	$path = $node->path ? $node->path : check_plain($node->title);
-	path_set_alias("node/$node->nid", $path);
-	path_set_alias("node/$node->nid/" . HTML, $path . '/' . HTML);
-	path_set_alias("node/$node->nid/" . RDF, $path . '/' . RDF);
-	path_set_alias("node/$node->nid/" . N3, $path . '/' . N3);
-	path_set_alias("node/$node->nid/" . XML, $path . '/' . XML);
-	path_set_alias("node/$node->nid/layout", $path . '/layout');
-	path_set_alias("node/$node->nid/diagram", $path . '/diagram');
-	path_set_alias("node/$node->nid/image", $path . '/image');
+  $path = $node->path ? $node->path : check_plain($node->title);
+  path_set_alias("node/$node->nid", $path);
+  path_set_alias("node/$node->nid/" . HTML, $path . '/' . HTML);
+  path_set_alias("node/$node->nid/" . RDF, $path . '/' . RDF);
+  path_set_alias("node/$node->nid/" . N3, $path . '/' . N3);
+  path_set_alias("node/$node->nid/" . XML, $path . '/' . XML);
+  path_set_alias("node/$node->nid/layout", $path . '/layout');
+  path_set_alias("node/$node->nid/diagram", $path . '/diagram');
+  path_set_alias("node/$node->nid/image", $path . '/image');
 }
 function _neologism_unset_aliases($node) {
-	$path = $node->path ? $node->path : check_plain($node->title);
-	path_set_alias("node/$node->nid");
-	path_set_alias("node/$node->nid/" . HTML);
-	path_set_alias("node/$node->nid/" . RDF);
-	path_set_alias("node/$node->nid/" . N3);
-	path_set_alias("node/$node->nid/" . XML);
-	path_set_alias("node/$node->nid/layout");
-	path_set_alias("node/$node->nid/diagram");
-	path_set_alias("node/$node->nid/image");
+  $path = $node->path ? $node->path : check_plain($node->title);
+  path_set_alias("node/$node->nid");
+  path_set_alias("node/$node->nid/" . HTML);
+  path_set_alias("node/$node->nid/" . RDF);
+  path_set_alias("node/$node->nid/" . N3);
+  path_set_alias("node/$node->nid/" . XML);
+  path_set_alias("node/$node->nid/layout");
+  path_set_alias("node/$node->nid/diagram");
+  path_set_alias("node/$node->nid/image");
 }
 
 
