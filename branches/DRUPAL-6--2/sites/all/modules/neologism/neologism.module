@@ -22,7 +22,7 @@ define("NEOLOGISM_CT_PROPERTY", "neo_property");
 function neologism_init() {
   drupal_add_css(drupal_get_path('module', NEOLOGISM) .'/neologism.css');
   drupal_add_js(drupal_get_path('module', 'neologism') . '/neologism.js');
-  
+
   $ct = content_types();
 
   if (!isset($ct['neo_vocabulary'])) {
@@ -37,7 +37,7 @@ function neologism_init() {
     module_load_include('install', 'neologism', 'neologism');
     _neologism_create_content('property');
   }
-  
+
 }
 
 /**
@@ -75,7 +75,7 @@ function neologism_menu() {
 			'page callback' => 'neologism_export_html',
 			'page arguments' => array(1),
 			'access callback' => 'node_access',
-			'access arguments' => array('view', 1),			
+			'access arguments' => array('view', 1),
 			'type' => MENU_LOCAL_TASK,
 	);
 	$items['node/%neologism_vocabulary/' . RDF] = array(
@@ -83,7 +83,7 @@ function neologism_menu() {
 			'page callback' => 'neologism_export_rdf',
 			'page arguments' => array(1),
 			'access callback' => 'node_access',
-			'access arguments' => array('view', 1),			
+			'access arguments' => array('view', 1),
 			'type' => MENU_LOCAL_TASK,
 	);
 	$items['node/%neologism_vocabulary/' . N3] = array(
@@ -91,7 +91,7 @@ function neologism_menu() {
 			'page callback' => 'neologism_export_n3',
 			'page arguments' => array(1),
 			'access callback' => 'node_access',
-			'access arguments' => array('view', 1),			
+			'access arguments' => array('view', 1),
 			'type' => MENU_LOCAL_TASK,
 	);
 	$items['node/%neologism_vocabulary/' . XML] = array(
@@ -99,7 +99,7 @@ function neologism_menu() {
 			'page callback' => 'neologism_export_xml',
 			'page arguments' => array(1),
 			'access callback' => 'node_access',
-			'access arguments' => array('view', 1),			
+			'access arguments' => array('view', 1),
 			'type' => MENU_CALLBACK,
 	);
 	$items['node/%neologism_vocabulary/layout'] = array(
@@ -107,7 +107,7 @@ function neologism_menu() {
 			'page callback' => 'neologism_layout',
 			'page arguments' => array(1),
 			'access callback' => 'node_access',
-			'access arguments' => array('view', 1),			
+			'access arguments' => array('view', 1),
 			'type' => MENU_CALLBACK,
 	);
 	$items['node/%neologism_vocabulary/image'] = array(
@@ -115,7 +115,7 @@ function neologism_menu() {
 			'page callback' => 'neologism_image',
 			'page arguments' => array(1),
 			'access callback' => 'node_access',
-			'access arguments' => array('view', 1),			
+			'access arguments' => array('view', 1),
 			'type' => MENU_CALLBACK,
 	);
 // 	$items['node/%neologism_vocabulary/diagram'] = array(
@@ -123,7 +123,7 @@ function neologism_menu() {
 // 			'page callback' => 'neologism_show_diagram',
 // 			'page arguments' => array(1),
 // 			'access callback' => 'node_access',
-// 			'access arguments' => array('view', 1),			
+// 			'access arguments' => array('view', 1),
 // 			'type' => MENU_LOCAL_TASK,
 // 	);
   $items['neologism/import'] = array(
@@ -186,7 +186,7 @@ function neologism_export_html($node) {
     $output = '';
     drupal_set_title('Vocabulary '. check_plain($node->title));
 
-    // Last update date         
+    // Last update date
     $output .= '<div id="last_update" class="neologism field"><div class="field-label-inline-first">Last update:&nbsp;</div> ' . format_date($node->changed, 'large') . ' </div>';
 
     // Authors TODO: loop among the author to display their name
@@ -200,9 +200,9 @@ function neologism_export_html($node) {
       $output .= '<div class="field-item"><div class="field-label-inline'. $first_class .'">Authors:&nbsp;</div>';
       $output .= l($author->name, 'user/'. $author->uid);
       $output .= '</div>';
-      $first_class = '';      
+      $first_class = '';
     }
-    
+
     // Abstract
     $output .= '<div id="abstract" class="neologism field"><div class="field-label-inline-first">Abstract:&nbsp;</div> ' . check_plain($node->field_abstract[0]['value']) . ' </div>';
 
@@ -218,7 +218,7 @@ function neologism_export_html($node) {
     if (user_access('edit neologism')) {
       $output .= '<p id="add_terms_link" class="neologism">' . l('Add class', 'node/add/'.$class_url_str, array('query' => "v=$node->nid")) .' '. l('Add property', 'node/add/'.$property_url_str, array('query' => "v=$node->nid")) . ' </p>';
     }
-    
+
     //Vocabulary at glance
     $output .= '<h2 id="sec_glance" class="neologism">' . check_plain($node->title) . ' at a glance</h2>';
     $output .= '<div id="atglance">';
@@ -266,7 +266,7 @@ function neologism_export_html($node) {
  * seeAlso http://www4.wiwiss.fu-berlin.de/bizer/rdfapi/
  */
 function neologism_get_rdf_model($node, $uri, $document) {
-    
+
     include_once(RDFAPI_INCLUDE_DIR . "RdfAPI.php");
 
     $ns = array(
@@ -302,8 +302,8 @@ function neologism_get_rdf_model($node, $uri, $document) {
         if ($oneclass["subclass"] != NULL)
             $model->add(new Statement($classresource, new Resource($ns["rdfs"], "subClassOf"), new Resource($uri.$oneclass["subclass"])));
         if ($oneclass["disjoint"] != NULL)
-            $model->add(new Statement($classresource, new Resource($ns["owl"], "disjointWith"), new Resource($uri.$oneclass["disjoint"]))); 
-		
+            $model->add(new Statement($classresource, new Resource($ns["owl"], "disjointWith"), new Resource($uri.$oneclass["disjoint"])));
+
 		// if ($oneclass["superclassOf"] != NULL) {
             // $model->add(new Statement(new Resource($uri.$oneclass["superclassOf"]), new Resource($ns["rdfs"], "subClassOf"), $classresource));
 			//}
@@ -333,7 +333,7 @@ function neologism_get_rdf_model($node, $uri, $document) {
         if ($oneprop["inverse"] != NULL)
             $model->add(new Statement($propresource, new Resource($ns["owl"], "inverseOf"), new Resource($uri.$oneprop["inverse"])));
     }
-    
+
     return $model;
 }
 
@@ -361,7 +361,7 @@ function neologism_export_rdf($node) {
  * Output the N3 version of the vocabulary specified as input
  */
 function neologism_export_n3($node) {
-    
+
     include(RDFAPI_INCLUDE_DIR . "RdfAPI.php");
     include(RDFAPI_INCLUDE_DIR . "syntax/N3Serializer.php");
 
@@ -449,7 +449,7 @@ function neologism_get_layout($node) {
  * Generate a random layout for this vocabulary
  */
 function neologism_generate_layout($node) {
-    $xml = simplexml_load_string('<layout/>');        
+    $xml = simplexml_load_string('<layout/>');
     $classes = get_all_classes($node);
     $y = 0;
     foreach ($classes as $oneclass) {
@@ -495,7 +495,7 @@ function neologism_show_diagram($node) {
   $token = drupal_get_token();
   // TODO The vocabulary parameter is not used anymore and could be removed from the flex viewer.
   $flex_params = "vocabulary=&editMode=$edit_mode&prefix=$prefix&token=$token";
-		
+
 	$output = <<<EXCERPT
 
 <div id="flex_diagram">
@@ -509,9 +509,9 @@ function neologism_show_diagram($node) {
 						<param name='flashVars' value='$flex_params'/>
 						<param name="allowScriptAccess" value="sameDomain" />
 						<embed src="$swf" quality="high" bgcolor="#869ca7"
-								width="800px" 
-								height="600px" 
-								name="Neologism" 
+								width="800px"
+								height="600px"
+								name="Neologism"
 								align="middle"
 								play="true"
 								loop="false"
@@ -523,7 +523,7 @@ function neologism_show_diagram($node) {
 						</embed>
 		</object>
 
-		<img src="$img_legend" 
+		<img src="$img_legend"
 				 alt="green arrows mean property, red inheritance"
 				 width="226" height="80" id="legend" />
 
@@ -602,7 +602,7 @@ function neologism_link($type, $node = NULL, $teaser = FALSE) {
 //TODO check the new form_alter
 function neologism_form_alter(&$form, &$form_state, $form_id) {
   // Select the vocabulary when adding a class or a property from a vocabulary page
-  if (($form_id == NEOLOGISM_CT_CLASS.'_node_form' || $form_id == NEOLOGISM_CT_PROPERTY.'_node_form') 
+  if (($form_id == NEOLOGISM_CT_CLASS.'_node_form' || $form_id == NEOLOGISM_CT_PROPERTY.'_node_form')
       && isset($_GET['v']) && isset($form['field_vocabulary']['#default_value'])) {
     $vocabulary_id = (int)$_GET['v'];
     $form['field_vocabulary']['#default_value'][0]['nid'] = $vocabulary_id;
@@ -620,7 +620,7 @@ function neologism_form_alter(&$form, &$form_state, $form_id) {
     $form['field_subpropertyof']['#default_value'][0]['nid'] = arg(4);
   }
 
-  // Hide the menu settings fieldset in class and property forms 
+  // Hide the menu settings fieldset in class and property forms
   // as it is not likely to be used here and also steps in the middle of the form flow.
   if (($form_id == NEOLOGISM_CT_CLASS.'_node_form' || $form_id == NEOLOGISM_CT_PROPERTY.'_node_form') && isset($form['menu'])) {
     unset($form['menu']);
@@ -658,15 +658,15 @@ function neologism_nodeapi(&$node, $op, $teaser, $page) {
     if (module_exists('path')) {
         switch ($op) {
 
-            case 'load': 
+            case 'load':
                             if ($node->type == NEOLOGISM_CT_VOCABULARY and arg(0) == TRUE and arg(1) == TRUE and arg(2) == FALSE) {
                                 //vocabulary root, so content negotiation, provide an appropiate representation
                                 $request_uri = $_SERVER["REQUEST_URI"];
                                 $accept = $_SERVER["HTTP_ACCEPT"];
-                                $redirect_uri = neologism_get_preferred_uri($request_uri, $accept);                         
+                                $redirect_uri = neologism_get_preferred_uri($request_uri, $accept);
                                 header("HTTP/1.1 303");
-                                header("Vary: Accept");  
-                                header("Location: " . $redirect_uri);    
+                                header("Vary: Accept");
+                                header("Location: " . $redirect_uri);
                             }
                             break;
 
@@ -706,9 +706,9 @@ function neologism_nodeapi(&$node, $op, $teaser, $page) {
 }
 
 function _neologism_set_aliases($node) {
-	$path = $node->path ? $node->path : check_plain($node->title);  
+	$path = $node->path ? $node->path : check_plain($node->title);
 	path_set_alias("node/$node->nid", $path);
-	path_set_alias("node/$node->nid/" . HTML, $path . '/' . HTML);        
+	path_set_alias("node/$node->nid/" . HTML, $path . '/' . HTML);
 	path_set_alias("node/$node->nid/" . RDF, $path . '/' . RDF);
 	path_set_alias("node/$node->nid/" . N3, $path . '/' . N3);
 	path_set_alias("node/$node->nid/" . XML, $path . '/' . XML);
@@ -717,7 +717,7 @@ function _neologism_set_aliases($node) {
 	path_set_alias("node/$node->nid/image", $path . '/image');
 }
 function _neologism_unset_aliases($node) {
-	$path = $node->path ? $node->path : check_plain($node->title);  
+	$path = $node->path ? $node->path : check_plain($node->title);
 	path_set_alias("node/$node->nid");
 	path_set_alias("node/$node->nid/" . HTML);
 	path_set_alias("node/$node->nid/" . RDF);
@@ -730,7 +730,7 @@ function _neologism_unset_aliases($node) {
 
 
 /**
- * Get all properties in a vocabulary 
+ * Get all properties in a vocabulary
  */
 function get_all_properties($node, $domain='') {
   $properties_ids = db_query(db_rewrite_sql("SELECT n.nid, n.title FROM {content_field_vocabulary} c INNER JOIN {node} n ON c.nid = n.nid WHERE c.field_vocabulary_nid = %d AND n.type = '%s'"), $node->nid, NEOLOGISM_CT_PROPERTY);
@@ -742,7 +742,7 @@ function get_all_properties($node, $domain='') {
   while ($item = db_fetch_object($properties_ids)) {
   $properies_data[$i]['id']=$item->nid;
   $properies_data[$i]['title']=$item->title;
-  
+
   $prop_stuff = db_fetch_array(db_query(db_rewrite_sql('SELECT field_range_nid, field_domain_nid, field_inverse_nid, field_subpropertyof_nid FROM {content_type_'.NEOLOGISM_CT_PROPERTY.'} WHERE nid = %d'), $item->nid));
 
   $range = db_fetch_array(db_query(db_rewrite_sql('SELECT title FROM {node} WHERE nid = %d '), $prop_stuff[field_range_nid]));
@@ -753,14 +753,14 @@ function get_all_properties($node, $domain='') {
   $properies_data[$i]['inverse']=$inverse[title];
   $subproperty = db_fetch_array(db_query(db_rewrite_sql('SELECT title FROM {node} WHERE nid = %d '), $prop_stuff[field_subpropertyof_nid]));
   $properies_data[$i]['subproperty']=$subproperty[title];
-  
+
   $label = db_fetch_array(db_query(db_rewrite_sql('SELECT field_label_value FROM {content_field_label} WHERE nid = %d'), $item->nid));
   $properies_data[$i]['label']=$label[field_label_value];
 
   // TODO fix the name of the field in the CCK definition to be consistent with the one used for classes
   $comment_rdfs = db_fetch_array(db_query(db_rewrite_sql('SELECT field_comment_value FROM {content_field_comment} WHERE nid = %d'), $item->nid));
   $properies_data[$i]['comment_rdfs']=$comment_rdfs[field_comment_value];
-  
+
   $ifp_value = db_fetch_array(db_query(db_rewrite_sql('SELECT field_ifp_value FROM {content_type_'.NEOLOGISM_CT_PROPERTY.'} WHERE nid = %d'), $item->nid));
   $properies_data[$i]['ifp']=$ifp_value[field_ifp_value];
   $fp_value = db_fetch_array(db_query(db_rewrite_sql('SELECT field_fp_value FROM {content_type_'.NEOLOGISM_CT_PROPERTY.'} WHERE nid = %d'), $item->nid));
@@ -778,15 +778,15 @@ function get_all_properties($node, $domain='') {
 function get_all_classes($node) {
   $class_ids = db_query(db_rewrite_sql("SELECT n.nid, n.title FROM {content_field_vocabulary} c INNER JOIN {node} n ON c.nid = n.nid WHERE c.field_vocabulary_nid = %d AND n.type = '%s'"), $node->nid, NEOLOGISM_CT_CLASS);
   $i=0;
-  
+
   while ($item = db_fetch_object($class_ids)) {
   $class_data[$i]['id']=$item->nid;
   $class_data[$i]['title']=$item->title;
-  
+
   $disjoint_id = db_fetch_array(db_query(db_rewrite_sql('SELECT field_disjointwith_nid FROM {content_field_disjointwith} WHERE nid = %d'), $item->nid));
   $disjoint = db_fetch_array(db_query(db_rewrite_sql('SELECT title FROM {node} WHERE nid = %d'), $disjoint_id[field_disjointwith_nid]));
   $class_data[$i]['disjoint']=$disjoint[title];
-  
+
   $subclass_id = db_fetch_array(db_query(db_rewrite_sql('SELECT field_subclassof_nid FROM {content_type_'.NEOLOGISM_CT_CLASS.'} WHERE nid = %d'), $item->nid));
   $subclass = db_fetch_array(db_query(db_rewrite_sql('SELECT title FROM {node} WHERE nid = %d'), $subclass_id[field_subclassof_nid]));
   $class_data[$i]['subclass']=$subclass[title];
@@ -794,16 +794,16 @@ function get_all_classes($node) {
   // $superclass_id = db_fetch_array(db_query(db_rewrite_sql('SELECT field_superclassof_nid FROM {content_type_'.NEOLOGISM_CT_CLASS.'} WHERE nid = %d'), $item->nid));
   // $superclass = db_fetch_array(db_query(db_rewrite_sql('SELECT title FROM {node} WHERE nid = %d'), $superclass_id[field_superclassof_nid]));
   // $class_data[$i]['superclassOf']=$superclass[title];
-  
+
   $label = db_fetch_array(db_query(db_rewrite_sql('SELECT field_label_value FROM {content_field_label} WHERE nid = %d'), $item->nid));
   $class_data[$i]['label']=$label[field_label_value];
-  
+
   $comment_rdfs = db_fetch_array(db_query(db_rewrite_sql('SELECT field_comment_value FROM {content_field_comment} WHERE nid = %d'), $item->nid));
   $class_data[$i]['comment_rdfs']=$comment_rdfs[field_comment_value];
-    
+
   // $title = db_fetch_array(db_query(db_rewrite_sql('SELECT title FROM {node} WHERE nid = %d'), $item->nid));
   // $class_data[$i]['title']=$title[title];
-  
+
   $i++;
   }
   // var_dump($class_data);

@@ -27,9 +27,8 @@ function neologism_update_1() {
   $ret = array();
 
 
-   return $ret; 
+   return $ret;
 }
-
 
 
 
