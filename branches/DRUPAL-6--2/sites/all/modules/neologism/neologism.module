@@ -118,6 +118,7 @@ function neologism_menu() {
       'access arguments' => array('view', 1),
       'type' => MENU_CALLBACK,
   );
+// TODO find a way to enable the diagram on smaller vocabulary (crashes on big vocabularies)
 //  $items['node/%neologism_vocabulary/diagram'] = array(
 //      'title' => 'Overview Diagram',
 //      'page callback' => 'neologism_show_diagram',
