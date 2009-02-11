@@ -618,10 +618,6 @@ function _evocreference_potential_references_standard($field, $string = '', $mat
 //    watchdog('e',var_export($string_parts, TRUE) . var_export($where_type, TRUE));
 
   }
-  else {
-    // FIXME - empty here
-    $where[] = '';
-  }
 
   $terms = array();
   $where_clause = $where ? 'WHERE ('. implode(') ' . $where_type . ' (', $where) .')' : '';
