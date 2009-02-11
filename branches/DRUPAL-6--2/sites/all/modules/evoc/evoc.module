@@ -1,5 +1,5 @@
 <?php
-// $Id: evoc.module,v 1.1.2.1 2009/02/07 23:57:41 scor Exp $
+// $Id: evoc.module,v 1.1.2.4 2009/02/09 13:50:10 scor Exp $
 
 /**
  * @file
@@ -20,7 +20,7 @@ function evoc_menu() {
   $items = array();
 
   $items['evoc/import'] = array(
-    'title' => 'Import vocabulary',
+    'title' => 'Import external RDF vocabulary',
     'description' => "Import RDF terms of an external vocabulary.",
     'page callback' => 'drupal_get_form',
     'page arguments' => array('evoc_import_form'),
@@ -31,19 +31,31 @@ function evoc_menu() {
 }
 
 function evoc_import_form($form_state) {
+  $form['help'] = array(
+    '#value' => 'This form allows you to import external RDF vocabularies into your site.
+    These can later be used by other modules such as <a href="http://drupal.org/project/rdfcck">RDF CCK</a> or <a href="http://drupal.org/project/neologism">Neologism</a>. Popular vocabularies include:<br />
+    dc : http://purl.org/dc/elements/1.1/<br />
+    dcterms : http://purl.org/dc/terms/<br />
+    dcmitype : http://purl.org/dc/dcmitype/<br />
+    foaf : http://xmlns.com/foaf/0.1/<br />
+    sioc : http://rdfs.org/sioc/ns#<br />
+    skos : http://www.w3.org/2008/05/skos#<br />
+    doap : http://usefulinc.com/ns/doap#<br />
+    ',
+  );
   $form['ns_uri'] = array(
     '#type' => 'textfield',
     '#title' => t('Vocabulary URI'),
     '#required' => TRUE,
-    '#default_value' => $form_state['values']['ns_uri'],
+    '#default_value' => isset($form_state['values']['ns_uri']) ? $form_state['values']['ns_uri'] : NULL,
     '#description' => "Enter the URI of the vocabulary to import. Make sure it finishes by either / or #.",
   );
   $form['prefix'] = array(
     '#type' => 'textfield',
     '#title' => t('Prefix'),
     '#required' => TRUE,
-    '#default_value' => $form_state['values']['prefix'],
-    '#description' => "Choose a prefix for this vocabulary.",
+    '#default_value' => isset($form_state['values']['prefix']) ? $form_state['values']['prefix'] : NULL,
+    '#description' => "Choose a prefix for this vocabulary. Example: dc, foaf, sioc etc. This prefix will later be used in the system to refer to this vocabulary.",
   );
   $form['submit'] = array(
     '#type' => 'submit',
@@ -60,38 +72,41 @@ function evoc_import_form_submit($form, &$form_state) {
 }
 
 /*
-$vocabulary_uri = 'http://xmlns.com/foaf/0.1/';
-$vocabulary_prefix = 'foaf';
+foaf
+http://xmlns.com/foaf/0.1/
 
-$vocabulary_uri = 'http://rdfs.org/sioc/ns#';
-$vocabulary_prefix = 'sioc';
+sioc
+http://rdfs.org/sioc/ns#
 
-$vocabulary_uri = 'http://www.w3.org/2008/05/skos#';
-$vocabulary_prefix = 'skos';
+skos
+http://www.w3.org/2008/05/skos#
 
-$vocabulary_uri = 'http://usefulinc.com/ns/doap#';
-$vocabulary_prefix = 'doap';
+doap
+http://usefulinc.com/ns/doap#
 
-$vocabulary_uri = 'http://purl.org/dc/elements/1.1/';
-$vocabulary_prefix = 'dc';
+dc
+http://purl.org/dc/elements/1.1/
 
-$vocabulary_uri = 'http://purl.org/dc/terms/';
-$vocabulary_prefix = 'dcterms';
+dcterms
+http://purl.org/dc/terms/
 
-$vocabulary_uri = 'http://purl.org/dc/dcmitype/';
-$vocabulary_prefix = 'dcmitype';
+dcmitype
+http://purl.org/dc/dcmitype/
 
-$vocabulary_uri = 'http://rdfs.org/ns/void#';
-$vocabulary_prefix = 'void';
+void
+http://rdfs.org/ns/void#
 
 // not working because the uri for the voc is not the same as http://ramonantonio.net/doac/0.1/
 // note also weird URIs like http://ramonantonio.net/doac/0.1/#Skill (double /#)
-$vocabulary_uri = 'http://ramonantonio.net/content/xml/doac01';
-$vocabulary_prefix = 'doac';
+doac
+http://ramonantonio.net/content/xml/doac01
 
 // http://rdfs.org/resume-rdf/
 // points to 2 differents documents:
 // 1.
+
+vcard
+http://www.w3.org/2001/vcard-rdf/3.0#
 
 */
 
@@ -192,8 +207,14 @@ function evoc_fetch_vocabulary($vocabulary_uri, $vocabulary_prefix, $ignore_base
   // Loop through all the various queries in order to extract as many classes and properties as possible.
   $fetched_terms = array();
   foreach ($term_queries as $query) {
-    $sparql_res = sparql_request('http://www.sparql.org/sparql', $query['query']);
+    //$endpoint = 'http://demo.openlinksw.com/sparql/';
+    //$endpoint = 'http://www.sparql.org/sparql';
+    $endpoint = 'http://jena.hpl.hp.com:2020/sparql';
+    $sparql_res = sparql_request($endpoint, $query['query']);
 
+    if ($sparql_res === FALSE) {
+      drupal_set_message("The SPARQL endpoint <a href=\"$endpoint\">$endpoint</a> returned an error. Please check it and make sure it allows to load from URIs via FROM clauses.", $type = 'warning', $repeat = FALSE);
+    }
     // Parse the SPARQL results and extract the relevant terms.
     foreach ($sparql_res as $res_term) {
       if (isset($res_term['class'])) {
@@ -280,11 +301,15 @@ function evoc_write_class($class) {
     $res = db_query(db_rewrite_sql('SELECT * FROM {evoc_rdf_classes} WHERE prefix="%s" AND id = "%s"'), $class['prefix'], $class['id']);
 
     if (!db_fetch_object($res)) {
-        drupal_write_record('evoc_rdf_classes', $class);
+      if (drupal_write_record('evoc_rdf_classes', $class)) {
         drupal_set_message($class['prefix'] . ":" . $class['id'] . " successfully imported.");
+      }
+      else {
+        drupal_set_message($class['prefix'] . ":" . $class['id'] . " could not be saved.", 'warning');
+      }
     }
     else {
-      drupal_set_message($class['prefix'] . ":" . $class['id'] . " already exists in the system.");
+      drupal_set_message($class['prefix'] . ":" . $class['id'] . " already exists in the system.", 'status', FALSE);
     }
 }
 
@@ -297,11 +322,15 @@ function evoc_write_property($property) {
     $res = db_query(db_rewrite_sql('SELECT * FROM {evoc_rdf_properties} WHERE prefix="%s" AND id = "%s"'), $property['prefix'], $property['id']);
 
     if (!db_fetch_object($res)) {
-        drupal_write_record('evoc_rdf_properties', $property);
+      if (drupal_write_record('evoc_rdf_properties', $property)) {
         drupal_set_message($property['prefix'] . ":" . $property['id'] . " successfully imported.");
+      }
+      else {
+        drupal_set_message($property['prefix'] . ":" . $property['id'] . " could not be saved.", 'warning');
+      }
     }
     else {
-      drupal_set_message($property['prefix'] . ":" . $property['id'] . " already exists in the system.");
+      drupal_set_message($property['prefix'] . ":" . $property['id'] . " already exists in the system.", 'status', FALSE);
     }
 }
 

@@ -1,5 +1,5 @@
 <?php
-// $Id: evoc.install,v 1.1.2.1 2009/02/07 23:57:41 scor Exp $
+// $Id: evoc.install,v 1.1.2.2 2009/02/08 14:59:10 scor Exp $
 
 /**
  * Implementation of hook_schema().
@@ -43,3 +43,24 @@ function evoc_install() {
   drupal_install_schema('evoc');
 }
 
+/**
+ * Implementation of hook_uninstall().
+ */
+function evoc_uninstall() {
+  drupal_uninstall_schema('evoc');
+}
+
+/**
+ * Implementation of hook_enable().
+ */
+function evoc_enable() {
+  // Import a few popular vocabularies.
+  drupal_load('module', 'rdf');
+  drupal_load('module', 'sparql');
+  drupal_load('module', 'evoc');
+  // Force schema rebuild, see http://drupal.org/node/200931
+  drupal_get_schema(NULL, TRUE);
+  evoc_import_vocabulary('http://purl.org/dc/elements/1.1/', 'dc');
+  evoc_import_vocabulary('http://xmlns.com/foaf/0.1/', 'foaf');
+  evoc_import_vocabulary('http://rdfs.org/sioc/ns#', 'sioc');
+  }
