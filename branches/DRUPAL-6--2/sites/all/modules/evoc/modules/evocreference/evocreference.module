@@ -620,7 +620,7 @@ function _evocreference_potential_references_standard($field, $string = '', $mat
   }
   else {
     // FIXME - empty here
-    $where[] = "t.tid > 0";
+    $where[] = '';
   }
 
   $terms = array();

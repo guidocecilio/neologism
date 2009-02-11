@@ -16,3 +16,5 @@ this break the superclass. from FOAF:
   </rdfs:Class>
 
 #4 autocomplete with "rdf:" returns terms from rdfs voc
+
+#5 update the SPARQL queries
