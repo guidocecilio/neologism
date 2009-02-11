@@ -628,14 +628,14 @@ function _evocreference_potential_references_standard($field, $string = '', $mat
   // TODO remove join here
   $result = db_query('SELECT t.prefix, t.id, t.comment FROM {evoc_rdf_classes} t '. implode(' ', $join) ." $where_clause ORDER BY t.prefix ASC LIMIT 100", $args);
   while ($term = db_fetch_object($result)) {
-    $terms[$term->id] = array(
+    $terms[] = array(
       'title' => $term->prefix . ':' . $term->id,
       'rendered' => $term->prefix . ':' . $term->id . ' <span class="description">' . $term->comment . '</span>',
     );
   }
   $result = db_query('SELECT t.prefix, t.id, t.comment FROM {evoc_rdf_properties} t '. implode(' ', $join) ." $where_clause ORDER BY t.prefix ASC LIMIT 100", $args);
   while ($term = db_fetch_object($result)) {
-    $terms[$term->id] = array(
+    $terms[] = array(
       'title' => $term->prefix . ':' . $term->id,
       'rendered' => $term->prefix . ':' . $term->id . ' <span class="description">' . $term->comment . '</span>',
     );
