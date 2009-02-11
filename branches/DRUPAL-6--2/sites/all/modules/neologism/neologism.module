@@ -7,7 +7,7 @@
 
 define("NEOLOGISM", "neologism");
 define("HTML", "html");
-define("RDF", "rdf");
+define("RDF", "rdfxml");
 define("N3", "n3");
 define("XML", "xml");
 define("RDFAPI_INCLUDE_DIR", drupal_get_path('module', 'neologism') ."/includes/rap/");
@@ -80,7 +80,7 @@ function neologism_menu() {
   );
   $items['node/%neologism_vocabulary/' . RDF] = array(
       'title' => 'View RDF/XML',
-      'page callback' => 'neologism_export_rdf',
+      'page callback' => 'neologism_export_rdfxml',
       'page arguments' => array(1),
       'access callback' => 'node_access',
       'access arguments' => array('view', 1),
@@ -341,7 +341,7 @@ function neologism_get_rdf_model($node, $uri, $document) {
 /**
  * Output the RDF/XML version of the vocabulary specified as input
  */
-function neologism_export_rdf($node) {
+function neologism_export_rdfxml($node) {
     include(RDFAPI_INCLUDE_DIR . "RdfAPI.php");
     include(RDFAPI_INCLUDE_DIR . "syntax/RdfSerializer.php");
 
