@@ -1,5 +1,5 @@
 <?php
-// $Id: evoc.module,v 1.1.2.4 2009/02/09 13:50:10 scor Exp $
+// $Id: evoc.module,v 1.1.2.5 2009/02/12 17:25:44 scor Exp $
 
 /**
  * @file
@@ -123,7 +123,7 @@ function evoc_import_vocabulary($vocabulary_uri, $vocabulary_prefix) {
  * Fetch an external vocabulary.
  * This is an API function which is used by other modules like Neologism.
  */
-function evoc_fetch_vocabulary($vocabulary_uri, $vocabulary_prefix, $ignore_base_ns = FALSE) {
+function evoc_fetch_vocabulary($vocabulary_uri, $vocabulary_prefix, $ignore_base_ns = FALSE, $ns_uri) {
   global $rdf_namespaces;
   rdf_get_namespaces();
 
@@ -134,6 +134,10 @@ function evoc_fetch_vocabulary($vocabulary_uri, $vocabulary_prefix, $ignore_base
   if (!in_array($vocabulary_uri, $rdf_namespaces)) {
     // Add momentarily the namespace in memory to be able to convert the URIs to QNames.
     $rdf_namespaces[$vocabulary_prefix] = $vocabulary_uri;
+  }
+  if (!in_array($ns_uri, $rdf_namespaces)) {
+    // Add momentarily the namespace in memory to be able to convert the URIs to QNames.
+    $rdf_namespaces[$vocabulary_prefix] = $ns_uri;
   }
 
   // SPARQL queries are stored in an array.
