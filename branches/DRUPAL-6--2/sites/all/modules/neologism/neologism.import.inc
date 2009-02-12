@@ -1,11 +1,11 @@
 <?php
 
 function neologism_import_form($form_state) {
-  $form['ns_uri'] = array(
+  $form['vocabulary_uri'] = array(
     '#type' => 'textfield',
     '#title' => t('Vocabulary URI'),
     '#required' => TRUE,
-    '#default_value' => $form_state['values']['ns_uri'],
+    '#default_value' => $form_state['values']['vocabulary_uri'],
     '#description' => "Enter the URI of the vocabulary to import in Neologism. Make sure it finishes by either / or #.",
   );
   $form['prefix'] = array(
@@ -14,6 +14,13 @@ function neologism_import_form($form_state) {
     '#required' => TRUE,
     '#default_value' => $form_state['values']['prefix'],
     '#description' => "Choose a prefix for this vocabulary. This prefix will be used by default in Neologism.",
+  );
+  $form['ns_uri'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Namespace URI'),
+    '#required' => FALSE,
+    '#default_value' => isset($form_state['values']['ns_uri']) ? $form_state['values']['ns_uri'] : NULL,
+    '#description' => "Do not use unless the vocabulary defines a different namespace than the one above. Make sure it finishes by either / or #.",
   );
   $form['vocabulary_id'] = array(
     '#type' => 'select',
@@ -33,17 +40,11 @@ function neologism_import_form($form_state) {
 function neologism_import_form_submit($form, &$form_state) {
   $form_state['storage']['values'] = $form_state['values'];
   $form_state['rebuild'] = true;
-  $fetched_terms = evoc_fetch_vocabulary($form_state['values']['ns_uri'], $form_state['values']['prefix'], TRUE);
+
+  $fetched_terms = evoc_fetch_vocabulary($form_state['values']['vocabulary_uri'], $form_state['values']['prefix'], TRUE, $form_state['values']['ns_uri']);
 
   // TODO auto create a new vocab and the options in the form to alter an existing voc.
-  if (!$form_state['values']['vocabulary_id']) {
-
-  }
-  else {
-    $vocabulary_id = '34';
-  }
-
-//var_dump($fetched_terms);
+$vocabulary_id = '1';
 
   // A vocabulary representation is built in memory.
   $voc = array();
@@ -57,7 +58,9 @@ function neologism_import_form_submit($form, &$form_state) {
 //     if ($term['label'] == $tid) {
 //       $term['label'] = NULL;
 //     }
+    // TODO this might not be necessary since evoc does it.
     $term['label'] = $term['label'] ? $term['label'] : $term['id'];
+    // TODO check this, looks we are losing the term if TRUE
     if ($voc[$tid] && $term['label']) {
       // Concatenate the label information (BIRF).
       $voc[$tid]['label'] .= '. ' . $term['label'];
@@ -111,15 +114,10 @@ function neologism_create_vocabulary ($vocabulary_id, $voc) {
 
 
 function neologism_create_node($node_type, $node_values) {
-  // If you're building them from scratch you would
-  // want to use:
-  // $node = array('type' => 'story'),
-  // where 'story' is the type of node you want to create.
-
   module_load_include('inc', 'node', 'node.pages');
   $node = array('type' => $node_type);
-//  $node = node_load(12);
-
+// when editing a node, use
+// $node = node_load(12);
 
   if (is_array($node_values)) {
     $node_values['values']['op'] = t('Save');
