@@ -21,7 +21,10 @@ define("NEOLOGISM_CT_PROPERTY", "neo_property");
  */
 function neologism_init() {
   drupal_add_css(drupal_get_path('module', NEOLOGISM) .'/neologism.css');
-  drupal_add_js(drupal_get_path('module', 'neologism') . '/neologism.js');
+  drupal_add_css(drupal_get_path('module', NEOLOGISM) .'/js/jquery-treeview/jquery.treeview.css');
+  drupal_add_js(drupal_get_path('module', 'neologism') . '/js/jquery-treeview/jquery.cookie.js');
+  drupal_add_js(drupal_get_path('module', 'neologism') . '/js/jquery-treeview/jquery.treeview.js');
+  drupal_add_js(drupal_get_path('module', 'neologism') . '/js/neologism.js');
 
   $ct = content_types();
 
@@ -45,6 +48,17 @@ function neologism_init() {
  */
 function neologism_perm() {
     return array('edit neologism');
+}
+
+/**
+ * Implementation of hook_theme().
+ */
+function neologism_theme() {
+  return array(
+    'neologism_item_list' => array(
+      'arguments' => array('items' => array(), 'title' => NULL, 'type' => 'ul', 'attribute' => NULL),
+    ),
+  );
 }
 
 /**
@@ -157,10 +171,18 @@ function neologism_vocabulary_load($nid) {
 }
 
 
-
-
-
-
+function get_children($array, $parent_id) {
+  $children = array();
+  foreach ($array as $id => $item) {
+    // Check if is child of parent_id
+    if ($item['superclass'] == $parent_id) {
+      $children[$id] = $item;
+      unset($array[$id]);
+      continue;
+    }
+  }
+  return $children;
+}
 
 
 /**
@@ -168,24 +190,11 @@ function neologism_vocabulary_load($nid) {
  */
 function neologism_export_html($node) {
 
-
-
-//my_create_node();
-
-
-
-
-
-
-
-
-
+    $output = '';
+    drupal_set_title('Vocabulary '. check_plain($node->title));
 
     $classes = get_all_classes($node);
     $properties = get_all_properties($node);
-
-    $output = '';
-    drupal_set_title('Vocabulary '. check_plain($node->title));
 
     // Last update date
     $output .= '<div id="last_update" class="neologism field"><div class="field-label-inline-first">Last update:&nbsp;</div> ' . format_date($node->changed, 'large') . ' </div>';
@@ -245,16 +254,65 @@ function neologism_export_html($node) {
   }
     $output .= '</div>';
 
+//// Treeview
+    // Treeview
+    $output .= '<h2 id="sec_treeview" class="neologism">' . check_plain($node->title) . ' treeview</h2>';
+
+    // Tweak the classes for later HTML list output
+    foreach ($classes as $id => $class) {
+      $classes[$id]['data'] = '<a href="#' . $class['id'] . '" title="class ' . check_plain($node->title) . ':'. check_plain($class['title']) . '">' . check_plain($class['title']) . '</a>';
+    }
+
+    // We'll use a temporary array which will be emptied as we build the tree.
+    $classes_flat = $classes;
+    // Find parents.
+    foreach ($classes_flat as $class) {
+      if ($class['superclass'] == NULL) {
+        $tree[$node->title . ':' . $class['id']] = $class;
+        unset($classes_flat[$class['id']]);
+      }
+    }
+    ksort($tree);
+    // TODO use recursive function here.
+    // Children.
+    foreach ($tree as $id => $class) {
+      if ($children = get_children($classes_flat, $id)) {
+        $tree[$id]['children'] = $children;
+      }
+    }
+    // Children depth 2.
+    foreach ($tree as $id => $class) {
+      if (isset($class['children']) && is_array($class['children'])) {
+        foreach ($class['children'] as $id2 => $class2) {
+          if ($children = get_children($classes_flat, 'birf:' . $id2)) {
+            $tree[$id]['children'][$id2]['children'] = $children;
+          }
+        }
+        ksort($tree[$id]['children']);
+      }
+    }
+
+    $output .= <<<END
+   <div id="treecontrol">
+        <a title="Collapse the entire tree below" href="#">Collapse All</a>
+        <a title="Expand the entire tree below" href="#">Expand All</a>
+        <a title="Toggle the tree below, opening closed branches, closing open branches" href="#">Toggle All</a>
+    </div>
+END;
+
+  $output .= theme('neologism_item_list', $tree, NULL, 'ul', array('id' => 'tree'));
+//// End Treeview
+
     //Display complete reference
     $output .= '<h2 id="sec_reference" class="neologism">' . check_plain($node->title) . ' classes and properties</h2>';
   if ($classes) {
       foreach ($classes as $class) {
-          $output .= node_view(node_load($class['id']), 1, check_plain($node->title));
+          $output .= node_view(node_load($class['nid']), 1, check_plain($node->title));
       }
   }
   if ($properties) {
       foreach ($properties as $property) {
-          $output .= node_view(node_load($property['id']), 1, check_plain($node->title));
+          $output .= node_view(node_load($property['nid']), 1, check_plain($node->title));
       }
     }
     $output .= theme('pager', NULL, variable_get('default_nodes_main', 10));
@@ -741,7 +799,8 @@ function get_all_properties($node, $domain='') {
   }
   $i=0;
   while ($item = db_fetch_object($properties_ids)) {
-  $properies_data[$i]['id']=$item->nid;
+  $properies_data[$i]['id']=$item->title;
+  $properies_data[$i]['nid']=$item->nid;
   $properies_data[$i]['title']=$item->title;
 
   $prop_stuff = db_fetch_array(db_query(db_rewrite_sql('SELECT field_range_nid, field_domain_nid, field_inverse_nid, field_subpropertyof_nid FROM {content_type_'.NEOLOGISM_CT_PROPERTY.'} WHERE nid = %d'), $item->nid));
@@ -781,26 +840,34 @@ function get_all_classes($node) {
   $i=0;
 
   while ($item = db_fetch_object($class_ids)) {
-  $class_data[$i]['id']=$item->nid;
-  $class_data[$i]['title']=$item->title;
+  $class_data[$item->title]['id']=$item->title;
+  $class_data[$item->title]['nid']=$item->nid;
+  $class_data[$item->title]['title']=$item->title;
+
+  // for later use in the tree display.
+  //$class_data[$item->title]['data']=$item->title;
 
   $disjoint_id = db_fetch_array(db_query(db_rewrite_sql('SELECT field_disjointwith_nid FROM {content_field_disjointwith} WHERE nid = %d'), $item->nid));
   $disjoint = db_fetch_array(db_query(db_rewrite_sql('SELECT title FROM {node} WHERE nid = %d'), $disjoint_id[field_disjointwith_nid]));
-  $class_data[$i]['disjoint']=$disjoint[title];
+  $class_data[$item->title]['disjoint']=$disjoint[title];
 
-  $subclass_id = db_fetch_array(db_query(db_rewrite_sql('SELECT field_subclassof_nid FROM {content_type_'.NEOLOGISM_CT_CLASS.'} WHERE nid = %d'), $item->nid));
-  $subclass = db_fetch_array(db_query(db_rewrite_sql('SELECT title FROM {node} WHERE nid = %d'), $subclass_id[field_subclassof_nid]));
-  $class_data[$i]['subclass']=$subclass[title];
+  //TODO remove me
+//  $subclass_id = db_fetch_array(db_query(db_rewrite_sql('SELECT field_subclassof_nid FROM {content_type_'.NEOLOGISM_CT_CLASS.'} WHERE nid = %d'), $item->nid));
+//  $subclass = db_fetch_array(db_query(db_rewrite_sql('SELECT title FROM {node} WHERE nid = %d'), $subclass_id[field_subclassof_nid]));
+//  $class_data[$i]['subclass']=$subclass[title];
+
+  $comment_rdfs = db_fetch_array(db_query(db_rewrite_sql('SELECT field_superclass_value FROM {content_type_'.NEOLOGISM_CT_CLASS.'} WHERE nid = %d'), $item->nid));
+  $class_data[$item->title]['superclass']=$comment_rdfs['field_superclass_value'];
 
   // $superclass_id = db_fetch_array(db_query(db_rewrite_sql('SELECT field_superclassof_nid FROM {content_type_'.NEOLOGISM_CT_CLASS.'} WHERE nid = %d'), $item->nid));
   // $superclass = db_fetch_array(db_query(db_rewrite_sql('SELECT title FROM {node} WHERE nid = %d'), $superclass_id[field_superclassof_nid]));
   // $class_data[$i]['superclassOf']=$superclass[title];
 
   $label = db_fetch_array(db_query(db_rewrite_sql('SELECT field_label_value FROM {content_field_label} WHERE nid = %d'), $item->nid));
-  $class_data[$i]['label']=$label[field_label_value];
+  $class_data[$item->title]['label']=$label[field_label_value];
 
   $comment_rdfs = db_fetch_array(db_query(db_rewrite_sql('SELECT field_comment_value FROM {content_field_comment} WHERE nid = %d'), $item->nid));
-  $class_data[$i]['comment_rdfs']=$comment_rdfs[field_comment_value];
+  $class_data[$item->title]['comment_rdfs']=$comment_rdfs[field_comment_value];
 
   // $title = db_fetch_array(db_query(db_rewrite_sql('SELECT title FROM {node} WHERE nid = %d'), $item->nid));
   // $class_data[$i]['title']=$title[title];
@@ -843,5 +910,52 @@ function neologism_get_preferred_uri($uri, $accept) {
         return $uri . "/" . $preferred;
 }
 
+
+/*
+ * Clone of the core theme_item_list but without the <div> which messes up the treeview plugin.
+ */
+function theme_neologism_item_list($items = array(), $title = NULL, $type = 'ul', $attributes = NULL) {
+  $output = '';
+
+  if (!empty($items)) {
+    $output .= "<$type". drupal_attributes($attributes) .'>';
+    // We empty $attributes here as we want a clean nested list without the ids.
+    $attributes = NULL;
+    $num_items = count($items);
+    foreach ($items as $i => $item) {
+      $attributes = array();
+      $children = array();
+      if (is_array($item)) {
+        foreach ($item as $key => $value) {
+          if ($key == 'data') {
+            $data = $value;
+          }
+          elseif ($key == 'children') {
+            $children = $value;
+          }
+          else {
+            $attributes[$key] = $value;
+          }
+        }
+      }
+      else {
+        $data = $item;
+      }
+      if (count($children) > 0) {
+        $data .= theme_neologism_item_list($children, NULL, $type, $attributes); // Render nested list
+      }
+      if ($i == 0) {
+        $attributes['class'] = empty($attributes['class']) ? 'first' : ($attributes['class'] .' first');
+      }
+      if ($i == $num_items - 1) {
+        $attributes['class'] = empty($attributes['class']) ? 'last' : ($attributes['class'] .' last');
+      }
+      // drupal_attributes($attributes) has been removed here to prevent useless attributes.
+      $output .= '<li>'. $data ."</li>\n";
+    }
+    $output .= "</$type>";
+  }
+  return $output;
+}
 
 

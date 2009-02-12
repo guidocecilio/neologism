@@ -9,3 +9,16 @@ if (Drupal.jsEnabled) {
     }
   );
 }
+
+if (Drupal.jsEnabled) {
+  $(document).ready(
+      function(){
+	    $("#tree").treeview({
+          persist: "location",
+          collapsed: true,
+          control: "#treecontrol",
+          animated: "fast",
+        });
+      }
+  );
+}
