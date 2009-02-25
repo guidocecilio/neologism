@@ -1,9 +1,0 @@
-; $Id:  $
-name = Evoc Reference
-description = Defines a field type for referencing an RDF class or property from a node.
-dependencies[] = evoc
-dependencies[] = content
-dependencies[] = text
-dependencies[] = optionwidgets
-package = CCK
-core = 6.x
