@@ -150,7 +150,20 @@
  *     'database' => 'databasefilename',
  *   );
  */
-$databases = array();
+$databases = array (
+  'default' => 
+  array (
+    'default' => 
+    array (
+      'driver' => 'mysql',
+      'database' => 'd73',
+      'username' => 'root',
+      'password' => 'root',
+      'host' => 'localhost',
+      'port' => '',
+    ),
+  ),
+);
 $db_prefix = '';
 
 /**

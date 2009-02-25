@@ -428,6 +428,28 @@ function system_theme_settings(&$form_state, $key = '') {
     $form['theme_settings']['#access'] = FALSE;
   }
 
+  // RDFa settings
+  if ((!$key) || in_array('rdfa', $features)) {
+    $form['rdfa'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Toggle RDFa annotation'),
+      '#description' => t('Enable or disable the RDFa annotation of certain page elements.'),
+      '#attributes' => array('class' => 'theme-settings-bottom'),
+    );
+    $form['rdfa']['rdfa_date'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Date on posts and comments'),
+      '#default_value' => $settings['rdfa_date'],
+      '#tree' => FALSE,
+    );
+    $form['rdfa']['rdfa_author'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Author on posts and comments'),
+      '#default_value' => $settings['rdfa_author'],
+      '#tree' => FALSE,
+    );
+  }
+
   // Logo settings
   if ((!$key) || in_array('logo', $features)) {
     $form['logo'] = array(

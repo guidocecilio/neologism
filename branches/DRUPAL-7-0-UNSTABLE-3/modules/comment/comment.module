@@ -1843,10 +1843,17 @@ function template_preprocess_comment_wrapper(&$variables) {
  * @ingroup themeable
  */
 function theme_comment_submitted($comment) {
-  return t('Submitted by !username on @datetime.',
+  if (theme_get_setting('rdfa_date')) {
+    $date_iso8601 = format_date($comment->timestamp, 'custom', 'c');
+    $datetime = '<span property="dcterms:created" content="' . $date_iso8601 . '">' . format_date($comment->timestamp) . '</span>';
+  }
+  else {
+    $datetime = format_date($comment->timestamp);
+  }
+  return t('Submitted by !username on !datetime.',
     array(
       '!username' => theme('username', $comment),
-      '@datetime' => format_date($comment->timestamp)
+      '!datetime' => $datetime,
     ));
 }
 

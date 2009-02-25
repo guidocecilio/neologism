@@ -154,8 +154,15 @@ function chameleon_node($node, $teaser = 0, $page = 0) {
 }
 
 function chameleon_comment($comment, $node, $links = array()) {
+  if (theme_get_setting('rdfa_date')) {
+    $date_iso8601 = format_date($comment->timestamp, 'custom', 'c');
+    $datetime = '<span property="dcterms:created" content="' . $date_iso8601 . '">' . format_date($comment->timestamp, 'small') . '</span>';
+  }
+  else {
+    $datetime = format_date($comment->timestamp, 'small');
+  }
   $submitted['comment_submitted'] = array(
-    'title' => t('By !author at @date', array('!author' => theme('username', $comment), '@date' => format_date($comment->timestamp, 'small'))),
+    'title' => t('By !author at !date', array('!author' => theme('username', $comment), '!date' => $datetime)),
     'html' => TRUE);
 
   $output  = "<div class=\"comment" . ' ' . $status . "\">\n";

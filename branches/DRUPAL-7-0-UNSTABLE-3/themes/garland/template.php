@@ -67,10 +67,17 @@ function garland_menu_local_tasks() {
  * Format the "Submitted by username on date/time" for each comment.
  */
 function phptemplate_comment_submitted($comment) {
+  if (theme_get_setting('rdfa_date')) {
+    $date_iso8601 = format_date($comment->timestamp, 'custom', 'c');
+    $datetime = '<span property="dcterms:created" content="' . $date_iso8601 . '">' . format_date($comment->timestamp) . '</span>';
+  }
+  else {
+    $datetime = format_date($node->created);
+  }
   return t('!datetime — !username',
     array(
       '!username' => theme('username', $comment),
-      '!datetime' => format_date($comment->timestamp)
+      '!datetime' => $datetime,
     ));
 }
 
@@ -78,10 +85,17 @@ function phptemplate_comment_submitted($comment) {
  * Format the "Submitted by username on date/time" for each node.
  */
 function garland_node_submitted($node) {
+  if (theme_get_setting('rdfa_date')) {
+    $date_iso8601 = format_date($node->created, 'custom', 'c');
+    $datetime = '<span property="dcterms:created" content="' . $date_iso8601 . '">' . format_date($node->created) . '</span>';
+  }
+  else {
+    $datetime = format_date($node->created);
+  }
   return t('!datetime — !username',
     array(
       '!username' => theme('username', $node),
-      '!datetime' => format_date($node->created),
+      '!datetime' => $datetime,
     ));
 }
 
