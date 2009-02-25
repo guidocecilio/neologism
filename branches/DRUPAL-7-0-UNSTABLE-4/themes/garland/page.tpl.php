@@ -47,7 +47,7 @@
           <?php print $breadcrumb; ?>
           <?php if ($mission): ?><div id="mission"><?php print $mission ?></div><?php endif; ?>
           <?php if ($tabs): ?><div id="tabs-wrapper" class="clear-block"><?php endif; ?>
-          <?php if ($title): ?><h2 property="dc:title"<?php print $tabs ? ' class="with-tabs"' : '' ?>><?php print $title ?></h2><?php endif; ?>
+          <?php if ($title): ?><h2 about="#this" property="dc:title"<?php print $tabs ? ' class="with-tabs"' : '' ?>><?php print $title ?></h2><?php endif; ?>
           <?php if ($tabs): ?><ul class="tabs primary"><?php print $tabs ?></ul></div><?php endif; ?>
           <?php if ($tabs2): ?><ul class="tabs secondary"><?php print $tabs2 ?></ul><?php endif; ?>
           <?php if ($show_messages && $messages): print $messages; endif; ?>
