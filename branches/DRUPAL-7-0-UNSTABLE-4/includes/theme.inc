@@ -916,6 +916,8 @@ function theme_get_settings($key = NULL) {
     'toggle_comment_user_picture'   =>  0,
     'toggle_main_menu'              =>  1,
     'toggle_secondary_menu'         =>  1,
+    'rdfa_date'                     =>  1,
+    'rdfa_author'                   =>  1,
   );
 
   $settings = array_merge($defaults, variable_get('theme_settings', array()));
@@ -1672,10 +1674,22 @@ function theme_username($object) {
     }
 
     if (user_access('access user profiles')) {
-      $output = l($name, 'user/' . $object->uid, array('attributes' => array('title' => t('View user profile.'))));
+      if (theme_get_setting('rdfa_author')) {
+        $output = l($name, 'user/' . $object->uid, array('attributes' => array('title' => t('View user profile.'), 'property' => 'foaf:name',  'about' => url('user/' . $object->uid) . '#user')));
+        $output = '<span rel="sioc:has_creator">' . $output . '</span>';
+      }
+      else {
+        $output = l($name, 'user/' . $object->uid, array('attributes' => array('title' => t('View user profile.'))));
+      }
     }
     else {
-      $output = check_plain($name);
+      if (theme_get_setting('rdfa_author')) {
+        $output = check_plain($name);
+        $output = '<span rel="sioc:has_creator">' . $output . '</span>';
+      }
+      else {
+        $output = check_plain($name);
+      }
     }
   }
   elseif ($object->name) {

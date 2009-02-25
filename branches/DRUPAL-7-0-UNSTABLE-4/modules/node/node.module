@@ -2689,10 +2689,17 @@ function node_forms() {
  * @ingroup themeable
  */
 function theme_node_submitted($node) {
-  return t('Submitted by !username on @datetime',
+  if (theme_get_setting('rdfa_date')) {
+    $date_iso8601 = format_date($node->created, 'custom', 'c');
+    $datetime = '<span property="dcterms:created" content="' . $date_iso8601 . '">' . format_date($node->created) . '</span>';
+  }
+  else {
+    $datetime = format_date($node->created);
+  }
+  return t('Submitted by !username on !datetime',
     array(
       '!username' => theme('username', $node),
-      '@datetime' => format_date($node->created),
+      '!datetime' => $datetime,
     ));
 }
 
