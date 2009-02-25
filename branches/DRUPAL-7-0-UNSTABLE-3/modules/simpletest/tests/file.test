@@ -1,0 +1,1083 @@
+<?php
+// $Id: file.test,v 1.11 2008/11/09 05:38:50 webchick Exp $
+
+/**
+ *  @file
+ *  This provides SimpleTests for the core file handling functionality.
+ *  These include FileValidateTest and FileSaveTest.
+ */
+
+/**
+ * Helper validator that returns the $errors parameter.
+ */
+function file_test_validator($file, $errors) {
+  return $errors;
+}
+
+/**
+ * Base class for file tests that adds some additional file specific
+ * assertions and helper functions.
+ */
+class FileTestCase extends DrupalWebTestCase {
+  /**
+   * Helper function to test the permissions of a file.
+   *
+   * @param $filepath
+   *   String file path.
+   * @param $expected_mode
+   *   Octal integer like 0664 or 0777.
+   * @param $message
+   *   Optional message.
+   */
+  function assertFilePermissions($filepath, $expected_mode, $message = NULL) {
+    // Mask out all but the last three octets.
+    $actual_mode = fileperms($filepath) & 511;
+    if (is_null($message)) {
+      if ($actual_mode == $expected_mode) {
+        $message = t('File permissions set correctly.');
+      }
+      else {
+        $message = t('Expected file permission to be %expected, actually were %actual.', array('%actual' => decoct($actual_mode), '%expected' => decoct($expected_mode)));
+      }
+    }
+    $this->assertEqual($actual_mode, $expected_mode, $message);
+  }
+
+  /**
+   * Create a directory and assert it exists.
+   *
+   * @param $path
+   *   Optional string with a directory path. If none is provided, a random
+   *   name in the site's files directory will be used.
+   * @return
+   *   The path to the directory.
+   */
+  function createDirectory($path = NULL) {
+    // A directory to operate on.
+    if (is_null($path)) {
+      $path = file_directory_path() . '/' . $this->randomName();
+    }
+    $this->assertTrue(mkdir($path) && is_dir($path), t('Directory was created successfully.'));
+    return $path;
+  }
+
+  /**
+   * Create a file and save it to the files table and assert that it occurs
+   * correctly.
+   *
+   * @param $filepath
+   *   Optional string specifying the file path. If none is provided then a
+   *   randomly named file will be created in the site's files directory.
+   * @return
+   *   File object.
+   */
+  function createFile($filepath = NULL) {
+    if (is_null($filepath)) {
+      $filepath = file_directory_path() . '/' . $this->randomName();
+    }
+
+    file_put_contents($filepath, 'File put contents does not seem to appreciate empty strings so lets put in some data.');
+    $this->assertTrue(is_file($filepath), t('The test file exists on the disk.'));
+
+    $file = new stdClass();
+    $file->filepath = $filepath;
+    $file->filename = basename($file->filepath);
+    $file->filemime = 'text/plain';
+    $file->uid = 1;
+    $file->timestamp = REQUEST_TIME;
+    $file->filesize = filesize($file->filepath);
+    $file->status = FILE_STATUS_TEMPORARY;
+    $this->assertNotIdentical(drupal_write_record('files', $file), FALSE, t('The file was added to the database.'));
+
+    return $file;
+  }
+}
+
+/**
+ * Base class for file tests that use the file_test module to test uploads and
+ * hooks.
+ */
+class FileHookTestCase extends FileTestCase {
+  /**
+   * Implementation of setUp().
+   */
+  function setUp() {
+    // Install file_test module
+    parent::setUp('file_test');
+    // Clear out any hook calls.
+    file_test_reset();
+  }
+
+  /**
+   * Assert that a hook_file_* hook was called a certain number of times.
+   *
+   * @param $hook
+   *   String with the hook name, e.g. 'load', 'save', 'insert', etc.
+   * @param $expected_count
+   *   Optional integer count.
+   * @param $message
+   *   Optional translated string message.
+   */
+  function assertFileHookCalled($hook, $expected_count = 1, $message = NULL) {
+    $actual_count = count(file_test_get_calls($hook));
+
+    if (is_null($message)) {
+      if ($actual_count == $expected_count) {
+        $message = t('hook_file_@name was called correctly.', array('@name' => $hook));
+      }
+      else {
+        $message = t('hook_file_@name was expected to be called %expected times but was called %actual times.', array('@name' => $hook, '%expected' => $expected_count, '%actual' => $actual_count));
+      }
+    }
+    $this->assertEqual($actual_count, $expected_count, $message);
+  }
+}
+
+/**
+ *  This will run tests against the file validation functions (file_validate_*).
+ */
+class FileValidatorTest extends DrupalWebTestCase {
+  /**
+   * Implementation of getInfo().
+   */
+  function getInfo() {
+    return array(
+      'name' => t('File validator tests'),
+      'description' => t('Tests the functions used to validate uploaded files.'),
+      'group' => t('File'),
+    );
+  }
+
+  /**
+   * Implementation of setUp().
+   */
+  function setUp() {
+    parent::setUp();
+
+    $this->image = new stdClass();
+    $this->image->filepath = 'misc/druplicon.png';
+    $this->image->filename = basename($this->image->filepath);
+
+    $this->non_image = new stdClass();
+    $this->non_image->filepath = 'misc/jquery.js';
+    $this->non_image->filename = basename($this->non_image->filepath);
+  }
+
+  /**
+   * Test the file_validate_extensions() function.
+   */
+  function testFileValidateExtensions() {
+    $file = new stdClass();
+    $file->filename = 'asdf.txt';
+    $errors = file_validate_extensions($file, 'asdf txt pork');
+    $this->assertEqual(count($errors), 0, t('Valid extension accepted.'), 'File');
+
+    $file->filename = 'asdf.txt';
+    $errors = file_validate_extensions($file, 'exe png');
+    $this->assertEqual(count($errors), 1, t('Invalid extension blocked.'), 'File');
+  }
+
+  /**
+   *  This ensures a specific file is actually an image.
+   */
+  function testFileValidateIsImage() {
+    $this->assertTrue(file_exists($this->image->filepath), t('The image being tested exists.'), 'File');
+    $errors = file_validate_is_image($this->image);
+    $this->assertEqual(count($errors), 0, t('No error reported for our image file.'), 'File');
+
+    $this->assertTrue(file_exists($this->non_image->filepath), t('The non-image being tested exists.'), 'File');
+    $errors = file_validate_is_image($this->non_image);
+    $this->assertEqual(count($errors), 1, t('An error reported for our non-image file.'), 'File');
+  }
+
+  /**
+   *  This ensures the resolution of a specific file is within bounds.
+   *  The image will be resized if it's too large.
+   */
+  function testFileValidateImageResolution() {
+    // Non-images.
+    $errors = file_validate_image_resolution($this->non_image);
+    $this->assertEqual(count($errors), 0, t("Shouldn't get any errors for a non-image file."), 'File');
+    $errors = file_validate_image_resolution($this->non_image, '50x50', '100x100');
+    $this->assertEqual(count($errors), 0, t("Don't check the resolution on non files."), 'File');
+
+    // Minimum size.
+    $errors = file_validate_image_resolution($this->image);
+    $this->assertEqual(count($errors), 0, t('No errors for an image when there is no minimum or maximum resolution.'), 'File');
+    $errors = file_validate_image_resolution($this->image, 0, '200x1');
+    $this->assertEqual(count($errors), 1, t("Got an error for an image that wasn't wide enough."), 'File');
+    $errors = file_validate_image_resolution($this->image, 0, '1x200');
+    $this->assertEqual(count($errors), 1, t("Got an error for an image that wasn't tall enough."), 'File');
+    $errors = file_validate_image_resolution($this->image, 0, '200x200');
+    $this->assertEqual(count($errors), 1, t('Small images report an error.'), 'File');
+
+    // Maximum size.
+    if (image_get_toolkit()) {
+      // Copy the image so that the original doesn't get resized.
+      $temp_dir = file_directory_temp();
+      copy(realpath('misc/druplicon.png'), realpath($temp_dir) . '/druplicon.png');
+      $this->image->filepath = $temp_dir . '/druplicon.png';
+
+      $errors = file_validate_image_resolution($this->image, '10x5');
+      $this->assertEqual(count($errors), 0, t('No errors should be reported when an oversized image can be scaled down.'), 'File');
+
+      $info = image_get_info($this->image->filepath);
+      $this->assertTrue($info['width'] <= 10, t('Image scaled to correct width.'), 'File');
+      $this->assertTrue($info['height'] <= 5, t('Image scaled to correct height.'), 'File');
+
+      unlink(realpath($temp_dir . '/druplicon.png'));
+    }
+    else {
+      // TODO: should check that the error is returned if no toolkit is available.
+      $errors = file_validate_image_resolution($this->image, '5x10');
+      $this->assertEqual(count($errors), 1, t("Oversize images that can't be scaled get an error."), 'File');
+    }
+  }
+
+  /**
+   *  This will ensure the filename length is valid.
+   */
+  function testFileValidateNameLength() {
+    // Create a new file object.
+    $file = new stdClass();
+
+    // Add a filename with an allowed length and test it.
+    $file->filename = str_repeat('x', 255);
+    $this->assertEqual(strlen($file->filename), 255);
+    $errors = file_validate_name_length($file);
+    $this->assertEqual(count($errors), 0, t('No errors reported for 255 length filename.'), 'File');
+
+    // Add a filename with a length too long and test it.
+    $file->filename = str_repeat('x', 256);
+    $errors = file_validate_name_length($file);
+    $this->assertEqual(count($errors), 1, t('An error reported for 256 length filename.'), 'File');
+
+    // Add a filename with an empty string and test it.
+    $file->filename = '';
+    $errors = file_validate_name_length($file);
+    $this->assertEqual(count($errors), 1, t('An error reported for 0 length filename.'), 'File');
+  }
+
+
+  /**
+   * Test file_validate_size().
+   */
+  function testFileValidateSize() {
+    global $user;
+    $original_user = $user;
+    drupal_save_session(FALSE);
+
+    // Run these test as uid = 1.
+    $user = user_load(array('uid' => 1));
+
+    $file = new stdClass();
+    $file->filesize = 999999;
+    $errors = file_validate_size($file, 1, 1);
+    $this->assertEqual(count($errors), 0, t('No size limits enforced on uid=1.'), 'File');
+
+    // Run these tests as a regular user.
+    $user = $this->drupalCreateUser();
+
+    // Create a file with a size of 1000 bytes, and quotas of only 1 byte.
+    $file = new stdClass();
+    $file->filesize = 1000;
+    $errors = file_validate_size($file, 0, 0);
+    $this->assertEqual(count($errors), 0, t('No limits means no errors.'), 'File');
+    $errors = file_validate_size($file, 1, 0);
+    $this->assertEqual(count($errors), 1, t('Error for the file being over the limit.'), 'File');
+    $errors = file_validate_size($file, 0, 1);
+    $this->assertEqual(count($errors), 1, t('Error for the user being over their limit.'), 'File');
+    $errors = file_validate_size($file, 1, 1);
+    $this->assertEqual(count($errors), 2, t('Errors for both the file and their limit.'), 'File');
+
+    $user = $original_user;
+    drupal_save_session(TRUE);
+  }
+}
+
+
+
+/**
+ *  Tests the file_unmanaged_save_data() function.
+ */
+class FileUnmanagedSaveDataTest extends FileTestCase {
+  /**
+   * Implementation of getInfo().
+   */
+  function getInfo() {
+    return array(
+      'name' => t('Unmanaged file save data'),
+      'description' => t('Tests the unmanaged file save data function.'),
+      'group' => t('File'),
+    );
+  }
+
+  /**
+   * Test the file_unmanaged_save_data() function.
+   */
+  function testFileSaveData() {
+    $contents = $this->randomName(8);
+
+    // No filename.
+    $filepath = file_unmanaged_save_data($contents);
+    $this->assertTrue($filepath, t('Unnamed file saved correctly.'));
+    $this->assertEqual(file_directory_path(), dirname($filepath), t("File was placed in Drupal's files directory."));
+    $this->assertEqual($contents, file_get_contents(realpath($filepath)), t('Contents of the file are correct.'));
+
+    // Provide a filename.
+    $filepath = file_unmanaged_save_data($contents, 'asdf.txt', FILE_EXISTS_REPLACE);
+    $this->assertTrue($filepath, t('Unnamed file saved correctly.'));
+    $this->assertEqual(file_directory_path(), dirname($filepath), t("File was placed in Drupal's files directory."));
+    $this->assertEqual('asdf.txt', basename($filepath), t('File was named correctly.'));
+    $this->assertEqual($contents, file_get_contents(realpath($filepath)), t('Contents of the file are correct.'));
+    $this->assertFilePermissions($filepath, 0664);
+  }
+}
+
+/**
+ * Test the file_save_upload() function.
+ */
+class FileSaveUploadTest extends FileHookTestCase {
+  /**
+   * Implementation of getInfo().
+   */
+  function getInfo() {
+    return array(
+      'name' => t('File uploading'),
+      'description' => t('Tests the file uploading functions.'),
+      'group' => t('File'),
+    );
+  }
+
+  /**
+   * Test the file_save_upload() function.
+   */
+  function testFileSaveUpload() {
+    $max_fid_before = db_result(db_query('SELECT MAX(fid) AS fid FROM {files}'));
+    $upload_user = $this->drupalCreateUser(array('access content'));
+    $this->drupalLogin($upload_user);
+
+    $image = current($this->drupalGetTestFiles('image'));
+    $this->assertTrue(is_file($image->filename), t("The file we're going to upload exists."));
+    $edit = array('files[file_test_upload]' => realpath($image->filename));
+    $this->drupalPost('file-test/upload', $edit, t('Submit'));
+    $this->assertResponse(200, t('Received a 200 response for posted test file.'));
+
+    // We can't easily check that the hooks were called but since
+    // file_save_upload() calles file_save() we can rely on file_save()'s
+    // test to catch problems invoking the hooks.
+
+    $max_fid_after = db_result(db_query('SELECT MAX(fid) AS fid FROM {files}'));
+    $this->assertTrue($max_fid_after > $max_fid_before, t('A new file was created.'));
+    $this->assertTrue(file_load($max_fid_after), t('Loaded the file.'));
+  }
+}
+
+/**
+ * Directory related tests.
+ */
+class FileDirectoryTest extends FileTestCase {
+  /**
+   * Implementation of getInfo().
+   */
+  function getInfo() {
+    return array(
+      'name' => t('File paths and directories'),
+      'description' => t('Tests operations dealing with directories.'),
+      'group' => t('File'),
+    );
+  }
+
+  /**
+   * Test the file_directory_path() function.
+   */
+  function testFileCheckDirectory() {
+    // A directory to operate on.
+    $directory = file_directory_path() . '/' . $this->randomName();
+    $this->assertFalse(is_dir($directory), t('Directory does not exist prior to testing.'));
+
+    // Non-existent directory.
+    $form_element = $this->randomName();
+    $this->assertFalse(file_check_directory($directory, 0, $form_element), t('Error reported for non-existing directory.'), 'File');
+
+    // Check that an error was set for the form element above.
+    $errors = form_get_errors();
+    $this->assertEqual($errors[$form_element], t('The directory %directory does not exist.', array('%directory' => $directory)), t('Properly generated an error for the passed form element.'), 'File');
+
+    // Make a directory.
+    $this->assertTrue(file_check_directory($directory, FILE_CREATE_DIRECTORY), t('No error reported when creating a new directory.'), 'File');
+
+    // Make sure directory actually exists.
+    $this->assertTrue(is_dir($directory), t('Directory actually exists.'), 'File');
+
+    // Make directory read only.
+    @chmod($directory, 0444);
+    $form_element = $this->randomName();
+    $this->assertFalse(file_check_directory($directory, 0, $form_element), t('Error reported for a non-writeable directory.'), 'File');
+
+    // Check if form error was set.
+    $errors = form_get_errors();
+    $this->assertEqual($errors[$form_element], t('The directory %directory is not writable', array('%directory' => $directory)), t('Properly generated an error for the passed form element.'), 'File');
+
+    // Test directory permission modification.
+    $this->assertTrue(file_check_directory($directory, FILE_MODIFY_PERMISSIONS), t('No error reported when making directory writeable.'), 'File');
+
+    // Verify directory actually is writeable.
+    $this->assertTrue(is_writeable($directory), t('Directory is writeable.'), 'File');
+
+    // Remove .htaccess file to then test that it gets re-created.
+    @unlink(file_directory_path() .'/.htaccess');
+    $directory = file_directory_path();
+    file_check_directory($directory);
+    $this->assertTrue(is_file(file_directory_path() . '/.htaccess'), t('Successfully created the .htaccess file in the files directory.'), 'File');
+
+    // Verify contents of .htaccess file.
+    $file = file_get_contents(file_directory_path() .'/.htaccess');
+    $this->assertEqual($file, "SetHandler Drupal_Security_Do_Not_Remove_See_SA_2006_006\nOptions None\nOptions +FollowSymLinks", t('The .htaccess file contains the proper content.'), 'File');
+  }
+
+  /**
+   * Check file_directory_path() and file_directory_temp().
+   */
+  function testFileDirectoryPath() {
+    // Directory path.
+    $path = variable_get('file_directory_path', conf_path() . '/files');
+    $this->assertEqual($path, file_directory_path(), t('Properly returns the stored file directory path.'), 'File');
+  }
+
+  /**
+   * Check file_directory_path() and file_directory_temp().
+   */
+  function testFileDirectoryTemp() {
+    // Temporary directory handling.
+    variable_set('file_directory_temp', NULL);
+    $temp = file_directory_temp();
+    $this->assertTrue(!is_null($temp), t('Properly set and retrieved temp directory %directory.', array('%directory' => $temp)), 'File');
+  }
+
+  /**
+   * This tests that a file is actually in the specified directory, to prevent
+   * exploits.
+   */
+  function testFileCheckLocation() {
+    $source = 'misc/xyz.txt';
+    $directory = 'misc';
+    $result = file_check_location($source, $directory);
+    $this->assertTrue($result, t('Non-existent file validates when checked for location in existing directory.'), 'File');
+
+    $source = 'fake/xyz.txt';
+    $directory = 'fake';
+    $result = file_check_location($source, $directory);
+    $this->assertTrue($result, t('Non-existent file validates when checked for location in non-existing directory.'), 'File');
+
+    $source = 'misc/../install.php';
+    $directory = 'misc';
+    $result = file_check_location($source, $directory);
+    $this->assertFalse($result, t('Existing file fails validation when it exists outside the directory path, using a /../ exploit.'), 'File');
+
+    $source = 'misc/druplicon.png';
+    $directory = 'misc';
+    $result = file_check_location($source, $directory);
+    $this->assertTrue($result, t('Existing file passes validation when checked for location in directory path, and filepath contains a subfolder of the checked path.'), 'File');
+
+    $result = file_check_location($source, $directory);
+    $this->assertTrue($result, t('Existing file passes validation, returning the source when checked for location in directory.'), 'File');
+  }
+
+
+  /**
+   * This will take a directory and path, and find a valid filepath that is not
+   * taken by another file.
+   */
+  function testFileCreateNewFilepath() {
+    // First we test against an imaginary file that does not exist in a
+    // directory.
+    $basename = 'xyz.txt';
+    $directory = 'misc';
+    $original = $directory .'/'. $basename;
+    $path = file_create_filename($basename, $directory);
+    $this->assertEqual($path, $original, t('New filepath %new equals %original.', array('%new' => $path, '%original' => $original)), 'File');
+
+    // Then we test against a file that already exists within that directory.
+    $basename = 'druplicon.png';
+    $original = $directory .'/'. $basename;
+    $expected = $directory .'/druplicon_0.png';
+    $path = file_create_filename($basename, $directory);
+    $this->assertEqual($path, $expected, t('Creating a new filepath from %original equals %new.', array('%new' => $path, '%original' => $original)), 'File');
+
+    // @TODO: Finally we copy a file into a directory several times, to ensure a properly iterating filename suffix.
+  }
+
+  /**
+   * This will test the filepath for a destination based on passed flags and
+   * whether or not the file exists.
+   *
+   * If a file exists, file_destination($destination, $replace) will either
+   * return:
+   * - the existing filepath, if $replace is FILE_EXISTS_REPLACE
+   * - a new filepath if FILE_EXISTS_RENAME
+   * - an error (returning FALSE) if FILE_EXISTS_ERROR.
+   * If the file doesn't currently exist, then it will simply return the
+   * filepath.
+   */
+  function testFileDestination() {
+    // First test for non-existent file.
+    $destination = 'misc/xyz.txt';
+    $path = file_destination($destination, FILE_EXISTS_REPLACE);
+    $this->assertEqual($path, $destination, t('Non-existing filepath destination is correct with FILE_EXISTS_REPLACE.'), 'File');
+    $path = file_destination($destination, FILE_EXISTS_RENAME);
+    $this->assertEqual($path, $destination, t('Non-existing filepath destination is correct with FILE_EXISTS_RENAME.'), 'File');
+    $path = file_destination($destination, FILE_EXISTS_ERROR);
+    $this->assertEqual($path, $destination, t('Non-existing filepath destination is correct with FILE_EXISTS_ERROR.'), 'File');
+
+    $destination = 'misc/druplicon.png';
+    $path = file_destination($destination, FILE_EXISTS_REPLACE);
+    $this->assertEqual($path, $destination, t('Existing filepath destination remains the same with FILE_EXISTS_REPLACE.'), 'File');
+    $path = file_destination($destination, FILE_EXISTS_RENAME);
+    $this->assertNotEqual($path, $destination, t('A new filepath destination is created when filepath destination already exists with FILE_EXISTS_RENAME.'), 'File');
+    $path = file_destination($destination, FILE_EXISTS_ERROR);
+    $this->assertEqual($path, FALSE, t('An error is returned when filepath destination already exists with FILE_EXISTS_ERROR.'), 'File');
+  }
+}
+
+
+/**
+ * Deletion related tests.
+ */
+class FileUnmanagedDeleteTest extends FileTestCase {
+  /**
+   * Implementation of getInfo().
+   */
+  function getInfo() {
+    return array(
+      'name' => t('Unmanaged file delete'),
+      'description' => t('Tests the unmanaged file delete function.'),
+      'group' => t('File'),
+    );
+  }
+
+  /**
+   * Delete a normal file.
+   */
+  function testNormal() {
+    // Create a file for testing
+    $file = $this->createFile();
+
+    // Delete a regular file
+    $this->assertTrue(file_unmanaged_delete($file->filepath), t('Deleted worked.'));
+    $this->assertFalse(file_exists($file->filepath), t('Test file has actually been deleted.'));
+  }
+
+  /**
+   * Try deleting a missing file.
+   */
+  function testMissing() {
+    // Try to delete a non-existing file
+    $this->assertTrue(file_unmanaged_delete(file_directory_path() . '/' . $this->randomName()), t('Returns true when deleting a non-existant file.'));
+  }
+
+  /**
+   * Try deleting a directory.
+   */
+  function testDirectory() {
+    // A directory to operate on.
+    $directory = $this->createDirectory();
+
+    // Try to delete a directory
+    $this->assertFalse(file_unmanaged_delete($directory), t('Could not delete the delete directory.'));
+    $this->assertTrue(file_exists($directory), t('Directory has not been deleted.'));
+  }
+}
+
+
+/**
+ * Unmanaged move related tests.
+ */
+class FileUnmanagedMoveTest extends FileTestCase {
+  /**
+   * Implementation of getInfo().
+   */
+  function getInfo() {
+    return array(
+      'name' => t('Unmanaged file moving'),
+      'description' => t('Tests the unmanaged file move function.'),
+      'group' => t('File'),
+    );
+  }
+
+  /**
+   * Move a normal file.
+   */
+  function testNormal() {
+    // Create a file for testing
+    $file = $this->createFile();
+
+    // Moving to a new name.
+    $desired_filepath = file_directory_path() . '/' . $this->randomName();
+    $new_filepath = file_unmanaged_move($file->filepath, $desired_filepath, FILE_EXISTS_ERROR);
+    $this->assertTrue($new_filepath, t('Move was successful.'));
+    $this->assertEqual($new_filepath, $desired_filepath, t('Returned expected filepath.'));
+    $this->assertTrue(file_exists($new_filepath), t('File exists at the new location.'));
+    $this->assertFalse(file_exists($file->filepath), t('No file remains at the old location.'));
+    $this->assertFilePermissions($new_filepath, 0664);
+
+    // Moving with rename.
+    $desired_filepath = file_directory_path() . '/' . $this->randomName();
+    $this->assertTrue(file_exists($new_filepath), t('File exists before moving.'));
+    $this->assertTrue(file_put_contents($desired_filepath, ' '), t('Created a file so a rename will have to happen.'));
+    $newer_filepath = file_unmanaged_move($new_filepath, $desired_filepath, FILE_EXISTS_RENAME);
+    $this->assertTrue($newer_filepath, t('Move was successful.'));
+    $this->assertNotEqual($newer_filepath, $desired_filepath, t('Returned expected filepath.'));
+    $this->assertTrue(file_exists($newer_filepath), t('File exists at the new location.'));
+    $this->assertFalse(file_exists($new_filepath), t('No file remains at the old location.'));
+    $this->assertFilePermissions($newer_filepath, 0664);
+
+    // TODO: test moving to a directory (rather than full directory/file path)
+  }
+
+  /**
+   * Try to move a missing file.
+   */
+  function testMissing() {
+    // Move non-existant file.
+    $new_filepath = file_unmanaged_move($this->randomName(), $this->randomName());
+    $this->assertFalse($new_filepath, t('Moving a missing file fails.'));
+  }
+
+  /**
+   * Try to move a file onto itself.
+   */
+  function testOverwriteSelf() {
+    // Create a file for testing.
+    $file = $this->createFile();
+
+    // Move the file onto itself without renaming shouldn't make changes.
+    $new_filepath = file_unmanaged_move($file->filepath, $file->filepath, FILE_EXISTS_REPLACE);
+    $this->assertFalse($new_filepath, t('Moving onto itself without renaming fails.'));
+    $this->assertTrue(file_exists($file->filepath), t('File exists after moving onto itself.'));
+
+    // Move the file onto itself with renaming will result in a new filename.
+    $new_filepath = file_unmanaged_move($file->filepath, $file->filepath, FILE_EXISTS_RENAME);
+    $this->assertTrue($new_filepath, t('Moving onto itself with renaming works.'));
+    $this->assertFalse(file_exists($file->filepath), t('Original file has been removed.'));
+    $this->assertTrue(file_exists($new_filepath), t('File exists after moving onto itself.'));
+  }
+}
+
+
+/**
+ * Unmanaged copy related tests.
+ */
+class FileUnmanagedCopyTest extends FileTestCase {
+  /**
+   * Implementation of getInfo().
+   */
+  function getInfo() {
+    return array(
+      'name' => t('Unmanaged file copying'),
+      'description' => t('Tests the unmanaged file copy function.'),
+      'group' => t('File'),
+    );
+  }
+
+  /**
+   * Copy a normal file.
+   */
+  function testNormal() {
+    // Create a file for testing
+    $file = $this->createFile();
+
+    // Copying to a new name.
+    $desired_filepath = file_directory_path() . '/' . $this->randomName();
+    $new_filepath = file_unmanaged_copy($file->filepath, $desired_filepath, FILE_EXISTS_ERROR);
+    $this->assertTrue($new_filepath, t('Copy was successful.'));
+    $this->assertEqual($new_filepath, $desired_filepath, t('Returned expected filepath.'));
+    $this->assertTrue(file_exists($file->filepath), t('Original file remains.'));
+    $this->assertTrue(file_exists($new_filepath), t('New file exists.'));
+    $this->assertFilePermissions($new_filepath, 0664);
+
+    // Copying with rename.
+    $desired_filepath = file_directory_path() . '/' . $this->randomName();
+    $this->assertTrue(file_put_contents($desired_filepath, ' '), t('Created a file so a rename will have to happen.'));
+    $newer_filepath = file_unmanaged_copy($new_filepath, $desired_filepath, FILE_EXISTS_RENAME);
+    $this->assertTrue($newer_filepath, t('Copy was successful.'));
+    $this->assertNotEqual($newer_filepath, $desired_filepath, t('Returned expected filepath.'));
+    $this->assertTrue(file_exists($file->filepath), t('Original file remains.'));
+    $this->assertTrue(file_exists($new_filepath), t('New file exists.'));
+    $this->assertFilePermissions($new_filepath, 0664);
+
+    // TODO: test copying to a directory (rather than full directory/file path)
+  }
+
+  /**
+   * Copy a non-existant file.
+   */
+  function testNonExistant() {
+    // Copy non-existant file
+    $desired_filepath = $this->randomName();
+    $this->assertFalse(file_exists($desired_filepath), t("Randomly named file doesn't exists."));
+    $new_filepath = file_unmanaged_copy($desired_filepath, $this->randomName());
+    $this->assertFalse($new_filepath, t('Copying a missing file fails.'));
+  }
+
+  /**
+   * Copy a file onto itself.
+   */
+  function testOverwriteSelf() {
+    // Create a file for testing
+    $file = $this->createFile();
+
+    // Copy the file onto itself with renaming works.
+    $new_filepath = file_unmanaged_copy($file->filepath, $file->filepath, FILE_EXISTS_RENAME);
+    $this->assertTrue($new_filepath, t('Copying onto itself with renaming works.'));
+    $this->assertNotEqual($new_filepath, $file->filepath, t('Copied file has a new name.'));
+    $this->assertTrue(file_exists($file->filepath), t('Original file exists after copying onto itself.'));
+    $this->assertTrue(file_exists($new_filepath), t('Copied file exists after copying onto itself.'));
+
+    // Copy the file onto itself without renaming fails.
+    $new_filepath = file_unmanaged_copy($file->filepath, $file->filepath, FILE_EXISTS_ERROR);
+    $this->assertFalse($new_filepath, t('Copying onto itself without renaming fails.'));
+    $this->assertTrue(file_exists($file->filepath), t('File exists after copying onto itself.'));
+
+    // Copy the file into same directory without renaming fails.
+    $new_filepath = file_unmanaged_copy($file->filepath, dirname($file->filepath), FILE_EXISTS_ERROR);
+    $this->assertFalse($new_filepath, t('Copying onto itself fails.'));
+    $this->assertTrue(file_exists($file->filepath), t('File exists after copying onto itself.'));
+
+    // Copy the file into same directory with renaming works.
+    $new_filepath = file_unmanaged_copy($file->filepath, dirname($file->filepath), FILE_EXISTS_RENAME);
+    $this->assertTrue($new_filepath, t('Copying into same directory works.'));
+    $this->assertNotEqual($new_filepath, $file->filepath, t('Copied file has a new name.'));
+    $this->assertTrue(file_exists($file->filepath), t('Original file exists after copying onto itself.'));
+    $this->assertTrue(file_exists($new_filepath), t('Copied file exists after copying onto itself.'));
+  }
+}
+
+
+
+/**
+ * Deletion related tests.
+ */
+class FileDeleteTest extends FileHookTestCase {
+  /**
+   * Implementation of getInfo().
+   */
+  function getInfo() {
+    return array(
+      'name' => t('File delete'),
+      'description' => t('Tests the file delete function.'),
+      'group' => t('File'),
+    );
+  }
+
+  /**
+   * Try deleting a normal file (as opposed to a directory, symlink, etc).
+   */
+  function testNormal() {
+    $file = $this->createFile();
+
+    // Check that deletion removes the file and database record.
+    $this->assertTrue(is_file($file->filepath), t("File exists."));
+    $this->assertIdentical(file_delete($file), TRUE, t("Delete worked."));
+    $this->assertFileHookCalled('references');
+    $this->assertFileHookCalled('delete');
+    $this->assertFalse(file_exists($file->filepath), t("Test file has actually been deleted."));
+    $this->assertFalse(file_load(array('filepath' => $file->filepath)), t("File was removed from the database."));
+
+    // TODO: implement hook_file_references() in file_test.module and report a
+    // file in use and test the $force parameter.
+  }
+}
+
+
+/**
+ * Move related tests
+ */
+class FileMoveTest extends FileHookTestCase {
+  /**
+   * Implementation of getInfo().
+   */
+  function getInfo() {
+    return array(
+      'name' => t('File moving'),
+      'description' => t('Tests the file move function.'),
+      'group' => t('File'),
+    );
+  }
+
+  /**
+   * Move a normal file.
+   */
+  function testNormal() {
+    $file = $this->createFile();
+    $desired_filepath = file_directory_path() . '/' . $this->randomName();
+
+    $file = file_move(clone $file, $desired_filepath, FILE_EXISTS_ERROR);
+    $this->assertTrue($file, t("File moved sucessfully."));
+    $this->assertFileHookCalled('move');
+    $this->assertFileHookCalled('update');
+    $this->assertEqual($file->fid, $file->fid, t("File id $file->fid is unchanged after move."));
+
+    $loaded_file = file_load($file->fid, TRUE);
+    $this->assertTrue($loaded_file, t("File can be loaded from the database."));
+    $this->assertEqual($file->filename, $loaded_file->filename, t("File name was updated correctly in the database."));
+    $this->assertEqual($file->filepath, $loaded_file->filepath, t("File path was updated correctly in the database."));
+  }
+}
+
+
+/**
+ * Copy related tests.
+ */
+class FileCopyTest extends FileHookTestCase {
+  /**
+   * Implementation of getInfo().
+   */
+  function getInfo() {
+    return array(
+      'name' => t('File copying'),
+      'description' => t('Tests the file copy function.'),
+      'group' => t('File'),
+    );
+  }
+
+  /**
+   * Test copying a normal file.
+   */
+  function testNormal() {
+    $source_file = $this->createFile();
+    $desired_filepath = file_directory_path() . '/' . $this->randomName();
+
+    $file = file_copy(clone $source_file, $desired_filepath, FILE_EXISTS_ERROR);
+    $this->assertTrue($file, t("File copied sucessfully."));
+    $this->assertFileHookCalled('copy');
+    $this->assertFileHookCalled('insert');
+    $this->assertNotEqual($source_file->fid, $file->fid, t("A new file id was created."));
+    $this->assertNotEqual($source_file->filepath, $file->filepath, t("A new filepath was created."));
+    $this->assertEqual($file->filepath, $desired_filepath, t('The copied file object has the desired filepath.'));
+    $this->assertTrue(file_exists($source_file->filepath), t('The original file still exists.'));
+    $this->assertTrue(file_exists($file->filepath), t('The copied file exists.'));
+
+    // Check that the changes were actually saved to the database.
+    $loaded_file = file_load($file->fid, TRUE);
+    $this->assertTrue($loaded_file, t("File can be loaded from the database."));
+    $this->assertEqual($file->filename, $loaded_file->filename, t("File name was updated correctly in the database."));
+    $this->assertEqual($file->filepath, $loaded_file->filepath, t("File path was updated correctly in the database."));
+  }
+}
+
+
+/**
+ * Tests the file_load() function.
+ */
+class FileLoadTest extends FileHookTestCase {
+  /**
+   * Implementation of getInfo().
+   */
+  function getInfo() {
+    return array(
+      'name' => t('File loading'),
+      'description' => t('Tests the file_load() function.'),
+      'group' => t('File'),
+    );
+  }
+
+  /**
+   * Try to load a non-existant file by fid.
+   */
+  function testLoadMissingFid() {
+    $this->assertFalse(file_load(-1), t("Try to load an invalid fid fails."));
+    $this->assertFileHookCalled('load', 0);
+  }
+
+  /**
+   * Try to load a non-existant file by filepath.
+   */
+  function testLoadMissingFilepath() {
+    $this->assertFalse(file_load(array('filepath' => 'misc/druplicon.png')), t("Try to load a file that doesn't exist in the database fails."));
+    $this->assertFileHookCalled('load', 0);
+  }
+
+  /**
+   * Try to load a non-existant file by status.
+   */
+  function testLoadInvalidStatus() {
+    $this->assertFalse(file_load(array('status' => -99)), t("Trying to load a file with an invalid status fails."));
+    $this->assertFileHookCalled('load', 0);
+  }
+
+  /**
+   * This will test lading file data from the database.
+   */
+  function testFileLoad() {
+    // Create a new file object.
+    $file = array(
+      'uid' => 1,
+      'filename' => 'druplicon.png',
+      'filepath' => 'misc/druplicon.png',
+      'filemime' => 'image/png',
+      'timestamp' => 1,
+      'status' => FILE_STATUS_PERMANENT,
+    );
+    $file = file_save($file);
+
+    // Load by path.
+    file_test_reset();
+    $by_path_file = file_load(array('filepath' => $file->filepath));
+    $this->assertFileHookCalled('load');
+    $this->assertTrue($by_path_file->file_test['loaded'], t('file_test_file_load() was able to modify the file during load.'));
+    $this->assertEqual($by_path_file->fid, $file->fid, t("Loading by filepath got the correct fid."), 'File');
+
+    // Load by fid.
+    file_test_reset();
+    $by_fid_file = file_load($file->fid);
+    $this->assertFileHookCalled('load', 0);
+    $this->assertTrue($by_fid_file->file_test['loaded'], t('file_test_file_load() was able to modify the file during load.'));
+    $this->assertEqual($by_fid_file->filepath, $file->filepath, t("Loading by fid got the correct filepath."), 'File');
+
+    // Load again by fid but use the reset param to reload.
+    file_test_reset();
+    $by_fid_file = file_load($file->fid, TRUE);
+    $this->assertFileHookCalled('load');
+    $this->assertEqual($by_fid_file->filepath, $file->filepath, t("Loading by fid got the correct filepath."), 'File');
+  }
+}
+/**
+ * Tests the file_save() function.
+ */
+class FileSaveTest extends FileHookTestCase {
+  /**
+   * Implementation of getInfo().
+   */
+  function getInfo() {
+    return array(
+      'name' => t('File saving'),
+      'description' => t('Tests the file_save() function.'),
+      'group' => t('File'),
+    );
+  }
+
+  function testFileSave() {
+    // Create a new file object.
+    $file = array(
+      'uid' => 1,
+      'filename' => 'druplicon.png',
+      'filepath' => 'misc/druplicon.png',
+      'filemime' => 'image/png',
+      'timestamp' => 1,
+      'status' => FILE_STATUS_PERMANENT,
+    );
+    $file = (object) $file;
+
+    // Save it, inserting a new record.
+    $saved_file = file_save($file);
+    $this->assertFileHookCalled('insert');
+    $this->assertNotNull($saved_file, t("Saving the file should give us back a file object."), 'File');
+    $this->assertTrue($saved_file->fid > 0, t("A new file ID is set when saving a new file to the database."), 'File');
+    $loaded_file = db_query('SELECT * FROM {files} f WHERE f.fid = :fid', array(':fid' => $saved_file->fid))->fetch(PDO::FETCH_OBJ);
+    $this->assertNotNull($loaded_file, t("Record exists in the database."));
+    $this->assertEqual($loaded_file->status, $file->status, t("Status was saved correctly."));
+    $this->assertEqual($saved_file->filesize, filesize($file->filepath), t("File size was set correctly."), 'File');
+    $this->assertTrue($saved_file->timestamp > 1, t("File size was set correctly."), 'File');
+
+    // Resave the file, updating the existing record.
+    file_test_reset();
+    $saved_file->status = 7;
+    $resaved_file = file_save($saved_file);
+    $this->assertFileHookCalled('update');
+    $this->assertEqual($resaved_file->fid, $saved_file->fid, t("The file ID of an existing file is not changed when updating the database."), 'File');
+    $this->assertTrue($resaved_file->timestamp >= $saved_file->timestamp, t("Timestamp didn't go backwards."), 'File');
+    $loaded_file = db_query('SELECT * FROM {files} f WHERE f.fid = :fid', array(':fid' => $saved_file->fid))->fetch(PDO::FETCH_OBJ);
+    $this->assertNotNull($loaded_file, t("Record still exists in the database."), 'File');
+    $this->assertEqual($loaded_file->status, $saved_file->status, t("Status was saved correctly."));
+  }
+}
+
+
+/**
+ * Tests the file_validate() function..
+ */
+class FileValidateTest extends FileHookTestCase {
+  /**
+   * Implementation of getInfo().
+   */
+  function getInfo() {
+    return array(
+      'name' => t('File validate'),
+      'description' => t('Tests the file_validate() function.'),
+      'group' => t('File'),
+    );
+  }
+
+  /**
+   * Test that the validators passed into are checked.
+   */
+  function testCallerValidation() {
+    $file = $this->createFile();
+
+    // Empty validators.
+    $this->assertEqual(file_validate($file, array()), array(), t('Validating an empty array works succesfully.'));
+    $this->assertFileHookCalled('validate', 1);
+
+    // Use the file_test.module's test validator to ensure that passing tests
+    // return correctly.
+    file_test_reset();
+    file_test_set_return('validate', array());
+    $passing = array('file_test_validator' => array(array()));
+    $this->assertEqual(file_validate($file, $passing), array(), t('Validating passes.'));
+    $this->assertFileHookCalled('validate', 1);
+
+    // Now test for failures in validators passed in and by hook_validate.
+    file_test_reset();
+    file_test_set_return('validate', array('Epic fail'));
+    $failing = array('file_test_validator' => array(array('Failed', 'Badly')));
+    $this->assertEqual(file_validate($file, $failing), array('Failed', 'Badly', 'Epic fail'), t('Validating returns errors.'));
+    $this->assertFileHookCalled('validate', 1);
+  }
+}
+
+/**
+ *  Tests the file_save_data() function.
+ */
+class FileSaveDataTest extends FileHookTestCase {
+  /**
+   * Implementation of getInfo().
+   */
+  function getInfo() {
+    return array(
+      'name' => t('File save data'),
+      'description' => t('Tests the file save data function.'),
+      'group' => t('File'),
+    );
+  }
+
+  /**
+   * Test the file_save_data() function.
+   */
+  function testFileSaveData() {
+    $contents = $this->randomName(8);
+
+    // No filename.
+    $file = file_save_data($contents);
+    $this->assertTrue($file, t("Unnamed file saved correctly."));
+    $this->assertEqual(file_directory_path(), dirname($file->filepath), t("File was placed in Drupal's files directory."));
+    $this->assertEqual($contents, file_get_contents(realpath($file->filepath)), t("Contents of the file are correct."));
+    $this->assertEqual($file->filemime, 'application/octet-stream', t("A MIME type was set."));
+    $this->assertEqual($file->status, FILE_STATUS_PERMANENT, t("The file's status was set to permanent."));
+
+    // Try loading the file.
+    $loaded_file = file_load($file->fid);
+    $this->assertTrue($loaded_file, t("File loaded from database."));
+
+    // Provide a filename.
+    $file = file_save_data($contents, 'asdf.txt', FILE_EXISTS_REPLACE);
+    $this->assertTrue($file, t("Unnamed file saved correctly."));
+    $this->assertEqual(file_directory_path(), dirname($file->filepath), t("File was placed in Drupal's files directory."));
+    $this->assertEqual('asdf.txt', basename($file->filepath), t("File was named correctly."));
+    $this->assertEqual($contents, file_get_contents(realpath($file->filepath)), t("Contents of the file are correct."));
+
+    // Check the overwrite error.
+    $file = file_save_data($contents, 'asdf.txt', FILE_EXISTS_ERROR);
+    $this->assertFalse($file, t("Overwriting a file fails when FILE_EXISTS_ERROR is specified."));
+  }
+}
