@@ -1,5 +1,5 @@
 <?php
-// $Id: evoc.module,v 1.1.2.5 2009/02/12 17:25:44 scor Exp $
+// $Id: evoc.module,v 1.1.2.7 2009/02/25 18:50:40 scor Exp $
 
 /**
  * @file
@@ -123,7 +123,7 @@ function evoc_import_vocabulary($vocabulary_uri, $vocabulary_prefix) {
  * Fetch an external vocabulary.
  * This is an API function which is used by other modules like Neologism.
  */
-function evoc_fetch_vocabulary($vocabulary_uri, $vocabulary_prefix, $ignore_base_ns = FALSE, $ns_uri) {
+function evoc_fetch_vocabulary($vocabulary_uri, $vocabulary_prefix, $ignore_base_ns = FALSE, $ns_uri = NULL) {
   global $rdf_namespaces;
   rdf_get_namespaces();
 
@@ -135,7 +135,7 @@ function evoc_fetch_vocabulary($vocabulary_uri, $vocabulary_prefix, $ignore_base
     // Add momentarily the namespace in memory to be able to convert the URIs to QNames.
     $rdf_namespaces[$vocabulary_prefix] = $vocabulary_uri;
   }
-  if (!in_array($ns_uri, $rdf_namespaces)) {
+  if ($ns_uri && !in_array($ns_uri, $rdf_namespaces)) {
     // Add momentarily the namespace in memory to be able to convert the URIs to QNames.
     $rdf_namespaces[$vocabulary_prefix] = $ns_uri;
   }
@@ -147,41 +147,13 @@ function evoc_fetch_vocabulary($vocabulary_uri, $vocabulary_prefix, $ignore_base
                      'query' => "
   prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
   prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-  select *
-  from <$vocabulary_uri>
-  where {
-  ?class rdf:type rdfs:Class.
-  OPTIONAL {?class rdfs:label ?label}.
-  OPTIONAL {?class rdfs:subClassOf ?superclass}.
-  OPTIONAL {?class rdfs:comment ?comment}.
-  }
-  limit 1000
-  ");
-  $term_queries[] = array('type' => 'property',
-                     'query' => "
-  prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-  prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-  select *
-  from <$vocabulary_uri>
-  where {
-  ?property rdf:type rdf:Property.
-  OPTIONAL {?property rdfs:label ?label}.
-  OPTIONAL {?property rdfs:domain ?domain}.
-  OPTIONAL {?property rdfs:range ?range}.
-  OPTIONAL {?property rdfs:comment ?comment}.
-  }
-  limit 1000
-  ");
-  // for SIOC...
-  $term_queries[] = array('type' => 'class',
-                     'query' => "
-  prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-  prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
   prefix owl: <http://www.w3.org/2002/07/owl#>
   select *
   from <$vocabulary_uri>
   where {
-  ?class rdf:type owl:Class.
+  {?class rdf:type owl:Class}
+  union
+  {?class rdf:type rdfs:Class}.
   OPTIONAL {?class rdfs:label ?label}.
   OPTIONAL {?class rdfs:subClassOf ?superclass}.
   OPTIONAL {?class rdfs:comment ?comment}.
@@ -196,7 +168,11 @@ function evoc_fetch_vocabulary($vocabulary_uri, $vocabulary_prefix, $ignore_base
   select *
   from <$vocabulary_uri>
   where {
-  ?property rdf:type owl:ObjectProperty.
+  {?property rdf:type owl:DatatypeProperty} 
+  union 
+  {?property rdf:type owl:ObjectProperty}
+  union 
+  {?property rdf:type rdf:Property.}.
   OPTIONAL {?property rdfs:label ?label}.
   OPTIONAL {?property rdfs:domain ?domain}.
   OPTIONAL {?property rdfs:range ?range}.
@@ -211,12 +187,12 @@ function evoc_fetch_vocabulary($vocabulary_uri, $vocabulary_prefix, $ignore_base
   // Loop through all the various queries in order to extract as many classes and properties as possible.
   $fetched_terms = array();
   foreach ($term_queries as $query) {
-    //$endpoint = 'http://demo.openlinksw.com/sparql/';
+    $endpoint = 'http://demo.openlinksw.com/sparql/';
     //$endpoint = 'http://www.sparql.org/sparql';
-    $endpoint = 'http://jena.hpl.hp.com:2020/sparql';
+    //$endpoint = 'http://jena.hpl.hp.com:2020/sparql';
     $sparql_res = sparql_request($endpoint, $query['query']);
 
-    if ($sparql_res === FALSE) {
+    if (!is_array($sparql_res)) {
       drupal_set_message("The SPARQL endpoint <a href=\"$endpoint\">$endpoint</a> returned an error. Please check it and make sure it allows to load from URIs via FROM clauses.", $type = 'warning', $repeat = FALSE);
     }
     // Parse the SPARQL results and extract the relevant terms.

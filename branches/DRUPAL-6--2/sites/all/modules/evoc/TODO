@@ -18,3 +18,7 @@ this break the superclass. from FOAF:
 #4 autocomplete with "rdf:" returns terms from rdfs voc
 
 #5 update the SPARQL queries
+
+###6 split classes and properties
+
+# 7 add better validation

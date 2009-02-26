@@ -1,5 +1,5 @@
 <?php
-// $Id: evocreference.module,v 1.1.2.1 2009/02/25 16:00:50 scor Exp $
+// $Id: evocreference.module,v 1.1.2.2 2009/02/25 22:21:30 scor Exp $
 
 /**
  * @file
@@ -629,6 +629,20 @@ function _evocreference_potential_references_standard($field, $string = '', $mat
  */
 function evocreference_autocomplete($field_name, $string = '') {
   $fields = content_fields();
+
+  // Custom autocomplete for non CCK field modules.
+  // We create dummy fields with the right parameters.
+	$fields['_classes'] = array(
+	  'field_name' => '_classes',
+    'widget' => array('autocomplete_match' => 'contains'),
+	  'referenceable_term_types' => array('classes' => 1),
+	);
+  $fields['_properties'] = array(
+    'field_name' => '_properties',
+    'widget' => array('autocomplete_match' => 'contains'),
+    'referenceable_term_types' => array('properties' => 1),
+  );
+	
   $field = $fields[$field_name];
   $match = isset($field['widget']['autocomplete_match']) ? $field['widget']['autocomplete_match'] : 'contains';
   $matches = array();
