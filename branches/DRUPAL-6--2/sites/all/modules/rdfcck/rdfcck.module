@@ -1,5 +1,5 @@
 <?php
-// $Id: rdfcck.module,v 1.2.2.1 2009/02/08 02:04:57 scor Exp $
+// $Id: rdfcck.module,v 1.2.2.6 2009/02/26 06:28:54 scor Exp $
 
 /**
  * @file
@@ -104,11 +104,12 @@ function rdfcck_admin_rdf_overview_form(&$form_state, $type_name) {
   );
 
   $form['rdf_class'] = array(
-    '#type' => 'select',
+    '#type' => 'textfield',
     '#title' => t('RDF class'),
     '#description' => t('Choose the RDF class this content type will be mapped to.'),
+    '#autocomplete_path' => 'evocreference/autocomplete/_classes',
     '#default_value' => _rdfcck_get_default_class($type_name),
-    '#options' => _rdfcck_get_classes(),
+    '#size' => 30,
   );
 
   // Fields.
@@ -118,7 +119,7 @@ function rdfcck_admin_rdf_overview_form(&$form_state, $type_name) {
       'human_name' => array('#value' => check_plain($field['widget']['label'])),
       'name' => array('#value' => $field['field_name']),
       'type' => array('#value' => t($field_types[$field['type']]['label'])),
-      'rdf_property' => array('#type' => 'select', '#options' => _rdfcck_get_properties(), '#default_value' => _rdfcck_get_default_property($type_name, $name)),
+      'rdf_property' => array('#type' => 'textfield', '#autocomplete_path' => 'evocreference/autocomplete/_properties', '#size' => 30, '#default_value' => _rdfcck_get_default_property($type_name, $name)),
       'hidden_name' => array('#type' => 'hidden', '#default_value' => $field['field_name']),
       '#leaf' => TRUE,
     );
@@ -154,7 +155,7 @@ function rdfcck_admin_rdf_overview_form(&$form_state, $type_name) {
         'human_name' => array('#value' => t($extra[$name]['label'])),
         'name' => array('#value' => isset($extra[$name]['description']) ? $extra[$name]['description'] : ''),
         'type' => array(),
-        'rdf_property' => array('#type' => 'select', '#options' => _rdfcck_get_properties(), '#default_value' => _rdfcck_get_default_property($type_name, $name)),
+        'rdf_property' => array('#type' => 'textfield', '#autocomplete_path' => 'evocreference/autocomplete/_properties', '#size' => 30, '#default_value' => _rdfcck_get_default_property($type_name, $name)),
         'hidden_name' => array('#type' => 'hidden', '#default_value' => $name),
         '#leaf' => TRUE,
         '#root' => TRUE,
@@ -163,7 +164,7 @@ function rdfcck_admin_rdf_overview_form(&$form_state, $type_name) {
       $dummy[$name] = array('#weight' => $weight, '#value' => $name .' ');
     }
   }
-
+  
   // Let drupal_render figure out the right order for the rows.
   $form['#order'] = explode(' ', trim(drupal_render($dummy)));
 
@@ -298,6 +299,7 @@ function rdfcck_rdf_resources($context) {
     case NULL:
     case RDF_SITE_URI:
       // TODO improve the discovery mechanism for passing the nid to the loading function.
+      //$uri = url('node/' . arg(1), array('fragment' => 'this', 'absolute' => TRUE));
       $uri = url('node/' . arg(1), array('absolute' => TRUE));
       return array($uri => new RDF_QueryCallback('rdfcck_load_node', array(arg(1))));
   }
@@ -335,57 +337,50 @@ function rdfcck_load_node($node) {
   $type = content_types($node->type);
   if ($type['fields']) {
     foreach ($type['fields'] as $field) {
-      $rdf_field_name = _rdfcck_build_site_rdf_property_id($field['field_name'], $node->type);
-      switch ($field['type']) {
-        case 'nodereference' :
-          $field_values = $node->$field['field_name'];
-          // Generate a triple for each different values.
-          $uris = array();
-          foreach ($field_values as $value) {
-            $uris[] = rdf_uriref(url('node/' . $value['nid'], array('absolute' => TRUE)));
-          }
-          $resources['site:' . $rdf_field_name] = $uris;
-          break;
+      $rdf_site_field_name = _rdfcck_build_site_rdf_property_id($field['field_name'], $node->type);
+      $field_values = $node->$field['field_name'];
+      // $objects will contain all the values of the field.
+      $objects = array();
+      foreach ($field_values as $value) {
+        switch ($field['type']) {
+          case 'nodereference' :
+            if ($value['nid']) {
+              $objects[] = rdf_uriref(url('node/' . $value['nid'], array('fragment' => 'this', 'absolute' => TRUE)));
+            }
+            break;
 
-        case 'userreference' :
-          // TODO
-          break;
+          case 'userreference' :
+            if ($value['uid']) {
+              $objects[] = rdf_uriref(url('user/' . $value['uid'], array('fragment' => 'this', 'absolute' => TRUE)));
+            }
+            break;
 
-        case 'text' :
-          $field_value = $node->$field['field_name'];
-          $resources['site:' . $rdf_field_name] = $field_value[0]['value'];
-          // Only export the external mapping if it is defined.
-          if ($p = _rdfcck_get_default_property($node->type, $field['field_name'])) {
-            $resources[$p] = $field_value[0]['value'];
-          };
-          break;
+          case 'text' :
+            if ($value['value']) {
+              $objects[] = $value['value'];
+            }
+            break;
+  
+          case 'link' :
+            if ($value['url']) {
+              $objects[] = rdf_uriref($value['url']);
+            }
+            break;
 
-        case 'number_decimal' :
-          // TODO
-          $range = 'xsd:decimal';
-          break;
-
-        case 'number_integer' :
-          // TODO
-          $range = 'xsd:integer';
-          break;
-
-        case 'number_float' :
-          // TODO
-          $range = 'xsd:float';
-          break;
-
-        case 'link' :
-          $field_values = $node->$field['field_name'];
-          // Generate a triple for each different values.
-          $uris = array();
-          foreach ($field_values as $value) {
-            $uris[] = rdf_uriref($value['url']);
-          }
-          $resources['site:' . $rdf_field_name] = $uris;
-          break;
-
-      }
+          case 'image' :
+          case 'filefield' :
+            if ($value['filepath']) {
+              $objects[] = rdf_uriref(url($value['filepath'], array('absolute' => TRUE)));
+            }
+            break;
+            
+        } // end switch
+      } // end foreach values of the field
+      $resources['site:' . $rdf_site_field_name] = $objects;
+      // Only export the external mapping if it is defined.
+      if ($p = _rdfcck_get_default_property($node->type, $field['field_name'])) {
+        $resources[$p] = $objects;
+      };
     }
   }
 
