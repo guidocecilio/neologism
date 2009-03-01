@@ -3,7 +3,7 @@
 RDF CCK
 =======
 
-The RDF CCK module allows site administrators to map each content type, node title, node body and CCK field to an RDF term (class or property).
+The RDF CCK module allows site administrators to map content types, node titles, node bodies and CCK fields to an external RDF term. Content types can be mapped to an RDF class, and fields can be mapped to RDF properties.
 
 RDF CCK requires the modules:
 * RDF - http://drupal.org/project/rdf
@@ -25,7 +25,7 @@ dc : http://purl.org/dc/elements/1.1/
 foaf : http://xmlns.com/foaf/0.1/
 sioc: http://rdfs.org/sioc/ns#
 
-Go to Administer -> Content management -> Content types. Choose an existing content type and click on the tab "Manage RDF mappings". This page will give you an overview of the current mappings on your site. Assign the mappings to your content type and fields. Finally browse to node/{nid}/rdf where {nid} corresponds to a node of the type you just edited.
+Go to Administer -> Content management -> Content types. Choose an existing content type and click on the tab "Manage RDF mappings". This page will give you an overview of the current mappings for that particular content type. Assign the mappings to the content type and its fields using the autocomplete fields (available in evoc 6.x-1.0-alpha2). Finally, to get the RDF export browse to node/{nid}/rdf where {nid} corresponds to a node of the type you just edited.
 
 
 AUTHOR/MAINTAINER

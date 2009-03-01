@@ -157,6 +157,7 @@ function userreference_field_settings($op, $field) {
 function userreference_field($op, &$node, $field, &$items, $teaser, $page) {
   switch ($op) {
     case 'validate':
+    //var_dump($items);
       // Extract uids to check.
       $ids = array();
       foreach ($items as $delta => $item) {
@@ -519,6 +520,7 @@ function userreference_autocomplete_process($element, $edit, $form_state, $form)
     // nested element, so the final id will look like 'field-name-0-uid-uid'.
     '#value' => implode('][', array_merge($element['#parents'], array($field_key, $field_key))),
   );
+//var_dump($element);
   return $element;
 }
 
@@ -564,15 +566,17 @@ function userreference_autocomplete_validate($element, &$form_state) {
   $field_key = $element['#columns'][0];
   $value = $element['#value'][$field_key];
   $uid = NULL;
+  //var_dump($value); echo '^^^^';
   if (!empty($value)) {
     $reference = _userreference_potential_references($field, $value, 'equals', NULL, 1);
     if (empty($reference)) {
-      form_error($element[$field_key], t('%name: found no valid user with that name.', array('%name' => t($field['widget']['label']))));
+      form_error($element[$field_key], t('%name: found no valid user with that name.', array('%name' => $value)));
     }
     else {
       $uid = key($reference);
     }
   }
+  //var_dump($uid);
   form_set_value($element, $uid, $form_state);
 }
 

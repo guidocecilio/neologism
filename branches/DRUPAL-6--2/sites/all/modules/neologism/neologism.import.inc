@@ -1,7 +1,24 @@
 <?php
 
 function neologism_import_form($form_state) {
-  $form['vocabulary_uri'] = array(
+
+/// import test for myclass evoc reference
+        $node_type = 'myclass';
+        $node['values']['title'] = 'title test import myclass';
+        $node['values']['body'] = '';
+        $node['values']['field_superclass'][0]['evoc_term']['evoc_term'] = 'sioc:User';
+//        $node['values']['field_evoc'][0]['evoc_term'] = 'sioc:Item';
+        $node['values']['field_text'][0]['value'] = 'text value imported';
+        $node['values']['field_node'][0]['nid']['nid'] = 'test import myclass';
+        $node['values']['field_user'][0]['uid']['uid'] = 'admin';
+        //$node['values']['field_comment'][0]['value'] = 'new comment here';
+        // Nodereference field use the nid key instead of value.
+	
+///    neologism_create_node($node_type, $node);
+        
+/// end of import test        
+        
+	$form['vocabulary_uri'] = array(
     '#type' => 'textfield',
     '#title' => t('Vocabulary URI'),
     '#required' => TRUE,

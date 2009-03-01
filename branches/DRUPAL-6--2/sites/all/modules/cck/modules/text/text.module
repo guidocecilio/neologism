@@ -145,6 +145,7 @@ function text_field_settings($op, $field) {
 function text_field($op, &$node, $field, &$items, $teaser, $page) {
   switch ($op) {
     case 'validate':
+//      var_dump($items);
       $allowed_values = content_allowed_values($field);
       if (is_array($items)) {
         foreach ($items as $delta => $item) {

@@ -1267,6 +1267,7 @@ function _content_field_invoke_default($op, &$node, $teaser = NULL, $page = NULL
     return content_storage($op, $node);
   }
   else {
+//var_dump($type['fields']);
     foreach ($type['fields'] as $field) {
       $items = isset($node->$field['field_name']) ? $node->$field['field_name'] : array();
       $result = content_field($op, $node, $field, $items, $teaser, $page);

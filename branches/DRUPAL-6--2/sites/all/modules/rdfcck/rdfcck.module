@@ -227,7 +227,7 @@ function rdfcck_admin_rdf_overview_form_submit($form, &$form_state) {
     elseif (in_array($key, $form['#rdf_fields'])) {
       // Delete the property mapping.
       // FIXME add the type_name here too.
-      db_query("DELETE FROM {rdfcck_fields} WHERE field_name = '%s'", $key);
+      db_query("DELETE FROM {rdfcck_fields} WHERE field_name = '%s' AND type_name = '%s'", $key, $form['#type_name']);
       // Update the mapping if specified.
       if ($value = $values['rdf_property']) {
         db_query("INSERT INTO {rdfcck_fields} (field_name, type_name, property) VALUES ('%s', '%s', '%s')", $key, $form['#type_name'], $value);
@@ -299,8 +299,8 @@ function rdfcck_rdf_resources($context) {
     case NULL:
     case RDF_SITE_URI:
       // TODO improve the discovery mechanism for passing the nid to the loading function.
-      //$uri = url('node/' . arg(1), array('fragment' => 'this', 'absolute' => TRUE));
-      $uri = url('node/' . arg(1), array('absolute' => TRUE));
+      $uri = url('node/' . arg(1), array('fragment' => 'this', 'absolute' => TRUE));
+      //$uri = url('node/' . arg(1), array('absolute' => TRUE));
       return array($uri => new RDF_QueryCallback('rdfcck_load_node', array(arg(1))));
   }
 }
@@ -309,8 +309,8 @@ function rdfcck_rdf_resources($context) {
 // This is where the RDF data is added to the RDF export at node/*/rdf.
 function rdfcck_load_node($node) {
   $node = is_object($node) ? $node : node_load((int)$node);
-
   $resources = array(
+/////////////////////////////////////////////////////////////////////////////////
     rdf::type         => array(
       // Mapping to the local schema.
       rdf_uriref(rdf_qname_to_uri('site:' . _rdfcck_build_site_rdf_class_id($node->type))),
@@ -318,10 +318,16 @@ function rdfcck_load_node($node) {
     // TODO normalize the order of the parameters in _rdfcck_build_site_rdf_property_id().
     'site:' . _rdfcck_build_site_rdf_property_id('title', $node->type)  => $node->title,
     'site:' . _rdfcck_build_site_rdf_property_id('body', $node->type)   => $node->body,
-    'site:created'    => rdf_datetime($node->created),
-    'site:changed'    => rdf_datetime($node->changed),
+/////////////////////////////////////////////////////////////////////////////////
+//    'site:created'    => rdf_datetime($node->created),
+//    'site:changed'    => rdf_datetime($node->changed),
   );
-
+foreach ($node->taxonomy as $term) {
+  $terms[] = $term->name;
+}
+$resources['dc:subject'] = $terms;
+$resources['sioc:num_replies'] = $node->comment_count;
+//var_dump($node);
   // Add the type, title and body mappings if they exist.
   if ($c = _rdfcck_get_default_class($node->type)) {
     // Mapping to the external class.
@@ -376,7 +382,9 @@ function rdfcck_load_node($node) {
             
         } // end switch
       } // end foreach values of the field
+/////////////////////////////////////////////////////////////////////////////////
       $resources['site:' . $rdf_site_field_name] = $objects;
+/////////////////////////////////////////////////////////////////////////////////
       // Only export the external mapping if it is defined.
       if ($p = _rdfcck_get_default_property($node->type, $field['field_name'])) {
         $resources[$p] = $objects;
@@ -407,7 +415,7 @@ function rdfcck_rdf_classes() {
       'module'  => 'content', // module necessary here to allow rdf_schema module to consider this class enable.
       'comment' => $type->description,
       'enabled' => TRUE,
-
+      'mappings' => _rdfcck_get_default_class($type->type),
 
     );
   }
@@ -431,6 +439,7 @@ function rdfcck_rdf_properties() {
         'title' => 'Title',
         'domain' => $type['type'],
         'comment' => 'Title of the node',
+        'mappings' => _rdfcck_get_default_property($type['type'], 'title'),
       );
     }
     if ($type['has_body']) {
@@ -439,6 +448,7 @@ function rdfcck_rdf_properties() {
         'title' => 'Body',
         'domain' => $type['type'],
         'comment' => 'Body of the node',
+        'mappings' => _rdfcck_get_default_property($type['type'], 'body_field'),
       );
     }
 
@@ -496,6 +506,7 @@ function rdfcck_rdf_properties() {
           'domain' => $field['type_name'],
           'comment' => $field['widget']['description'],
           'range' => isset($range) ? $range : NULL,
+          'mappings' => _rdfcck_get_default_property($type['type'], $field['field_name']),
         );
       }
 
