@@ -2227,6 +2227,7 @@ function content_preprocess_content_field(&$variables) {
 
   // Defines the set of field types which will be mapped to an RDF property using the rel attribute.
   $rdfa_rel_field_types = array('link', 'nodereference', 'image');
+  $mapped_property = _rdfcck_get_default_property($variables['node']->type, $field['field_name']);
   $additions = array(
     'field_type' => $field['type'],
     'field_name' => $field['field_name'],
@@ -2241,8 +2242,8 @@ function content_preprocess_content_field(&$variables) {
       'content-field-'. $element['#node']->type,
       'content-field-'. $element['#field_name'] .'-'. $element['#node']->type,
     ),
-    'rdfa_property' => 'drupal:' . $field['field_name'],
-    'rel' => in_array($field['type'], $rdfa_rel_field_types) ? 'drupal:' . $field['field_name'] : NULL,
+    'rdfa_property' => 'site:' . $field['field_name'] . ' ' . $mapped_property,
+    'rel' => in_array($field['type'], $rdfa_rel_field_types) ? 'site:' . $field['field_name'] . ' ' . $mapped_property : NULL,
   );
   $variables = array_merge($variables, $additions);
 }
