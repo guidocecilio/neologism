@@ -73,6 +73,14 @@ return t('The RDF index of the site has been rebuilt. Browse to the <a href="@en
 
 function local_sparql_sparql_endpoint() {
 
+// FIXME add all the ns in the default SPARQL query
+$ns = rdf_get_namespaces();
+global $default_q;
+$l = array('site', 'sioc', 'foaf', 'rdf', 'dc');
+foreach($l as $prefix) {
+$default_q .= "PREFIX $prefix: <" . $ns[$prefix] . ">\n";
+}
+
   global $db_url;
   $url = parse_url($db_url);
 
