@@ -1,0 +1,7 @@
+; $Id: rdfcck.info,v 1.2.2.2 2009/02/25 22:23:19 scor Exp $
+name = Local SPARQL endpoint
+description = Expose local RDF data in a SPARQL endpoint.
+dependencies[] = rdf
+dependencies[] = sparql
+package = RDF
+core = 6.x
