@@ -58,6 +58,14 @@ function rdfcck_theme() {
  * fields to be mapped to RDF properties.
  */
 function rdfcck_admin_rdf_overview_form(&$form_state, $type_name) {
+  
+  drupal_add_js(drupal_get_path('module', 'rdfcck') .'/ontosearch.js');
+  drupal_add_js(drupal_get_path('module', 'rdfcck') .'/jquery.bgiframe.min.js');
+  drupal_add_js(drupal_get_path('module', 'rdfcck') .'/jquery.ajaxQueue.js');
+  drupal_add_js(drupal_get_path('module', 'rdfcck') .'/jquery.autocomplete.js');
+
+  drupal_add_css(drupal_get_path('module', 'rdfcck') .'/jquery.autocomplete.css');
+
   // When displaying the form, make sure the list of 'extra' fields
   // is up-to-date.
   if (empty($form_state['post'])) {
@@ -107,9 +115,10 @@ function rdfcck_admin_rdf_overview_form(&$form_state, $type_name) {
     '#type' => 'textfield',
     '#title' => t('RDF class'),
     '#description' => t('Choose the RDF class this content type will be mapped to.'),
-    '#autocomplete_path' => 'evocreference/autocomplete/_classes',
+//    '#autocomplete_path' => 'evocreference/autocomplete/_classes',
     '#default_value' => _rdfcck_get_default_class($type_name),
     '#size' => 30,
+    '#attributes' => array('class' => 'autocomplete-class'),
   );
 
   // Fields.
@@ -119,7 +128,10 @@ function rdfcck_admin_rdf_overview_form(&$form_state, $type_name) {
       'human_name' => array('#value' => check_plain($field['widget']['label'])),
       'name' => array('#value' => $field['field_name']),
       'type' => array('#value' => t($field_types[$field['type']]['label'])),
-      'rdf_property' => array('#type' => 'textfield', '#autocomplete_path' => 'evocreference/autocomplete/_properties', '#size' => 30, '#default_value' => _rdfcck_get_default_property($type_name, $name)),
+      'rdf_property' => array('#type' => 'textfield', 
+      //'#autocomplete_path' => 'evocreference/autocomplete/_properties',
+      '#attributes' => array('class' => 'autocomplete-property'),
+      '#size' => 30, '#default_value' => _rdfcck_get_default_property($type_name, $name)),
       'hidden_name' => array('#type' => 'hidden', '#default_value' => $field['field_name']),
       '#leaf' => TRUE,
     );
@@ -155,7 +167,10 @@ function rdfcck_admin_rdf_overview_form(&$form_state, $type_name) {
         'human_name' => array('#value' => t($extra[$name]['label'])),
         'name' => array('#value' => isset($extra[$name]['description']) ? $extra[$name]['description'] : ''),
         'type' => array(),
-        'rdf_property' => array('#type' => 'textfield', '#autocomplete_path' => 'evocreference/autocomplete/_properties', '#size' => 30, '#default_value' => _rdfcck_get_default_property($type_name, $name)),
+        'rdf_property' => array('#type' => 'textfield', 
+        //'#autocomplete_path' => 'evocreference/autocomplete/_properties',
+        '#attributes' => array('class' => 'autocomplete-property'),
+        '#size' => 30, '#default_value' => _rdfcck_get_default_property($type_name, $name)),
         'hidden_name' => array('#type' => 'hidden', '#default_value' => $name),
         '#leaf' => TRUE,
         '#root' => TRUE,
