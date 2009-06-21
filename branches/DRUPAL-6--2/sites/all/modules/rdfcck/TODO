@@ -20,3 +20,5 @@ cons: tabulator does not read RDFa
 
 - there are still some drupal:field_source_milk in the RDFa output
 - how to generalize the relationship made between the master type cheese and the related nodes cheese_review? could extract the relation from views or views_attach?
+
+- add the path module as required and add an alias from ns to schema.
