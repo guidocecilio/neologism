@@ -1,5 +1,5 @@
 <?php
-// $Id: evoc.module,v 1.1.2.7 2009/02/25 18:50:40 scor Exp $
+// $Id: evoc.module,v 1.1.2.9 2009/06/21 12:53:17 scor Exp $
 
 /**
  * @file
@@ -189,7 +189,7 @@ function evoc_fetch_vocabulary($vocabulary_uri, $vocabulary_prefix, $ignore_base
   foreach ($term_queries as $query) {
     $endpoint = 'http://demo.openlinksw.com/sparql/';
     //$endpoint = 'http://www.sparql.org/sparql';
-    //$endpoint = 'http://jena.hpl.hp.com:2020/sparql';
+    $endpoint = 'http://jena.hpl.hp.com:2020/sparql';
     $sparql_res = sparql_request($endpoint, $query['query']);
 
     if (!is_array($sparql_res)) {
@@ -220,8 +220,8 @@ function evoc_fetch_vocabulary($vocabulary_uri, $vocabulary_prefix, $ignore_base
 
         case 'property' :
           // Extract some information like domain and range.
-          $term['domain'] = rdf_uri_to_qname($res_term['domain']->uri);
-          $term['range'] = rdf_uri_to_qname($res_term['range']->uri);
+          $term['rdf_domain'] = rdf_uri_to_qname($res_term['domain']->uri);
+          $term['rdf_range'] = rdf_uri_to_qname($res_term['range']->uri);
           break;
 
       }
