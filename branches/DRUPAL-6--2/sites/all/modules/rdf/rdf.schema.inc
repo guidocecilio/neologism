@@ -129,10 +129,16 @@ function rdf_schema_load_schema_class($class, $class_info, $comment = NULL) {
   $comment = !empty($comment) ? $comment : $class_info['comment'];
   $comment = !empty($comment) ? $comment : module_invoke($class_info['module'], 'help', 'node/add/#' . $class, NULL);
   $comment = !empty($comment) ? $comment : module_invoke($class_info['module'], 'help', 'admin/help#' . $class_info['module'], NULL);
+  if (isset($class_info['mappings']) && $class_info['mappings']) {
+    $super_classes = rdf_qname_to_uriref($class_info['mappings']);
+  } 
+  else {
+    $super_classes = rdf_qname_to_uriref('rdfs:Resource');
+  }
   return array(
     rdf::type         => rdf_qname_to_uriref('rdfs:Class'),
-    rdfs::isDefinedBy => rdf_uri(RDF_SCHEMA_URI),
-    rdfs::subClassOf  => rdf_qname_to_uriref('rdfs:Resource'),
+    rdfs::isDefinedBy => rdf_uriref(RDF_SCHEMA_URI),
+    rdfs::subClassOf  => $super_classes,
     rdfs::label       => rdf_literal($class_info['title'], 'en'),
     rdfs::comment     => !empty($comment) ? rdf_literal(strip_tags($comment), 'en') : NULL,
   );
@@ -142,9 +148,10 @@ function rdf_schema_load_schema_property($class, $field_name, $field_info, $form
   $title = isset($form_info['#title']) ? $form_info['#title'] : @$field_info['description'];
   return array(
     rdf::type         => rdf_qname_to_uriref('rdf:Property'),
-    rdfs::isDefinedBy => rdf_uri(RDF_SCHEMA_URI),
-    rdfs::domain      => rdf_uri(rdf_schema_get_class_uri($class)),
-    rdfs::range       => rdf_qname_to_uriref('rdfs:Literal'), // TODO: should we map these to xsd:* types?
+    rdfs::isDefinedBy => rdf_uriref(RDF_SCHEMA_URI),
+    rdfs::subPropertyOf => $super_properties,
+    rdfs::domain      => rdf_uriref(rdf_schema_get_class_uri($class)),
+    rdfs::range       => rdf_qname_to_uri('rdfs:Literal'), // TODO: should we map these to xsd:* types?
     rdfs::label       => !empty($title) ? rdf_literal($title, 'en') : NULL,
     rdfs::comment     => !empty($form_info['#description']) ? rdf_literal($form_info['#description'], 'en') : NULL,
   );
@@ -154,10 +161,13 @@ function rdf_schema_load_schema_property($class, $field_name, $field_info, $form
 //////////////////////////////////////////////////////////////////////////////
 // added by scor
 function rdf_schema_load_schema_property_evoc($property) {
-//var_dump($property);
+  if (isset($property['mappings']) && $property['mappings']) {
+    $super_properties = rdf_qname_to_uri($property['mappings']);
+  } 
   return array(
     rdf::type         => rdf_qname_to_uriref('rdf:Property'),
     rdfs::isDefinedBy => rdf_uriref(RDF_SCHEMA_URI),
+    rdfs::subPropertyOf => $super_properties,
     rdfs::domain      => rdf_uriref(rdf_schema_get_class_uri($property['domain'])),
     // we don't use the rdf_schema_get_class_uri() here as we want to be able to specify classes from other ns.
     rdfs::range       => !empty($property['range']) ? rdf_qname_to_uriref($property['range']) : rdf_qname_to_uriref('rdfs:Literal'), // TODO: should we map these to xsd:* types?
