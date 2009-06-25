@@ -1,0 +1,35 @@
+# @TODO PATCH disable the export of user and node. removes the # in the property uri generation, to be compatible with our own Index: rdf.module
+===================================================================
+--- rdf.module	(revision 375)
++++ rdf.module	(working copy)
+@@ -661,7 +661,7 @@
+       'table'   => 'users',
+       'query'   => 'SELECT uid FROM {users} WHERE uid > 0',
+       'uri'     => 'user/%uid',
+-      'enabled' => TRUE,
++      'enabled' => FALSE,
+     ),
+     'vocabulary' => array(
+       'title'   => t('Taxonomy vocabulary'),
+@@ -687,7 +687,7 @@
+       'query'   => 'SELECT nid FROM {node}',
+       'uri'     => 'node/%nid',
+       'load'    => 'node_load',
+-      'enabled' => TRUE,
++      'enabled' => FALSE,
+     ),
+     'comment' => array(
+       'title'   => t('Comment'),
+Index: rdf.schema.inc
+===================================================================
+--- rdf.schema.inc	(revision 375)
++++ rdf.schema.inc	(working copy)
+@@ -13,7 +13,7 @@
+ }
+ 
+ function rdf_schema_get_property_uri($class, $property) {
+-  return RDF_SCHEMA_URI . $class . '#' . $property;
++  return RDF_SCHEMA_URI . $class . '' . $property;
+ }
+ 
+ function rdf_schema_get_entities() {

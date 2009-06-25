@@ -1,0 +1,13 @@
+# @TODO PATCH - fix rdf_schema.inc to allow other module to specify a class comment via hook_rdf_classes()
+Index: rdf.schema.inc
+===================================================================
+--- rdf.schema.inc	(revision 375)
++++ rdf.schema.inc	(working copy)
+@@ -100,6 +100,7 @@
+ }
+ 
+ function rdf_schema_load_schema_class($class, $class_info, $comment = NULL) {
++  $comment = !empty($comment) ? $comment : $class_info['comment'];
+   $comment = !empty($comment) ? $comment : module_invoke($class_info['module'], 'help', 'node/add/#' . $class, NULL);
+   $comment = !empty($comment) ? $comment : module_invoke($class_info['module'], 'help', 'admin/help#' . $class_info['module'], NULL);
+   return array(
