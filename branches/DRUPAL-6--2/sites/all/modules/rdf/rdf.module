@@ -661,7 +661,7 @@ function rdf_rdf_classes() {
       'table'   => 'users',
       'query'   => 'SELECT uid FROM {users} WHERE uid > 0',
       'uri'     => 'user/%uid',
-      'enabled' => TRUE,
+      'enabled' => FALSE,
     ),
     'vocabulary' => array(
       'title'   => t('Taxonomy vocabulary'),
@@ -687,7 +687,7 @@ function rdf_rdf_classes() {
       'query'   => 'SELECT nid FROM {node}',
       'uri'     => 'node/%nid',
       'load'    => 'node_load',
-      'enabled' => TRUE,
+      'enabled' => FALSE,
     ),
     'comment' => array(
       'title'   => t('Comment'),
@@ -738,13 +738,14 @@ function rdf_rdf_properties() {
 function rdf_rdf_resources($context) {
   switch ($context) {
     case NULL:
-      return array(); // FIXME
-      //return array_merge(rdf_schema_get_resources(), rdf_schema_get_classes());
+      //return array(); // FIXME
+      return array_merge(rdf_schema_get_resources(), rdf_schema_get_classes(), rdf_schema_get_properties());
     case RDF_SITE_URI:
       return array(RDF_SITE_URI => new RDF_QueryCallback('rdf_load_site'));
       //return rdf_schema_get_resources(); // rdf_schema.module
     case RDF_SCHEMA_URI:
-      return rdf_schema_get_classes();
+      //return rdf_schema_get_classes();
+      return array_merge(rdf_schema_get_classes(), rdf_schema_get_properties());
   }
 }
 

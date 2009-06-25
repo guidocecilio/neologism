@@ -13,7 +13,7 @@ function rdf_schema_get_class_uri($class) {
 }
 
 function rdf_schema_get_property_uri($class, $property) {
-  return RDF_SCHEMA_URI . $class . '#' . $property;
+  return RDF_SCHEMA_URI . $class . '' . $property;
 }
 
 function rdf_schema_get_entities() {
@@ -46,6 +46,32 @@ function rdf_schema_get_classes() {
 
   return $resources;
 }
+
+/////////////////////////////////////////////////
+// Added by scor for the evoc module
+function rdf_schema_get_properties() {
+  // FIXME not all of this is necessary here since it is already in rdf_schema_get_classes().
+  $resources = array(RDF_SCHEMA_URI => new RDF_QueryCallback('rdf_schema_load_schema')); 
+
+  $url_options = array('absolute' => TRUE, 'alias' => TRUE);
+  foreach (module_invoke_all('rdf_properties') as $ns => $properties_info) {
+    // Property URIs
+    if ($ns == 'drupal') { // only exports the local properties
+      // Loop through each property of the local ns.
+      foreach ($properties_info as $property => $property_info) {
+  //var_dump($property_info);
+        $uri = rdf_schema_get_property_uri('', $property);
+        $resources[$uri] = new RDF_QueryCallback('rdf_schema_load_schema_property_evoc', array($property_info));
+      
+      }
+    }
+
+  }
+
+  return $resources;
+}
+/////////////////////////////////////////////////
+
 
 function rdf_schema_get_resources() {
   $resources = array(RDF_SITE_URI => new RDF_QueryCallback('rdf_schema_load_site'));
@@ -100,6 +126,7 @@ function rdf_schema_load_schema() {
 }
 
 function rdf_schema_load_schema_class($class, $class_info, $comment = NULL) {
+  $comment = !empty($comment) ? $comment : $class_info['comment'];
   $comment = !empty($comment) ? $comment : module_invoke($class_info['module'], 'help', 'node/add/#' . $class, NULL);
   $comment = !empty($comment) ? $comment : module_invoke($class_info['module'], 'help', 'admin/help#' . $class_info['module'], NULL);
   return array(
@@ -122,6 +149,25 @@ function rdf_schema_load_schema_property($class, $field_name, $field_info, $form
     rdfs::comment     => !empty($form_info['#description']) ? rdf_literal($form_info['#description'], 'en') : NULL,
   );
 }
+
+
+//////////////////////////////////////////////////////////////////////////////
+// added by scor
+function rdf_schema_load_schema_property_evoc($property) {
+//var_dump($property);
+  return array(
+    rdf::type         => rdf_qname_to_uriref('rdf:Property'),
+    rdfs::isDefinedBy => rdf_uriref(RDF_SCHEMA_URI),
+    rdfs::domain      => rdf_uriref(rdf_schema_get_class_uri($property['domain'])),
+    // we don't use the rdf_schema_get_class_uri() here as we want to be able to specify classes from other ns.
+    rdfs::range       => !empty($property['range']) ? rdf_qname_to_uriref($property['range']) : rdf_qname_to_uriref('rdfs:Literal'), // TODO: should we map these to xsd:* types?
+    rdfs::label       => !empty($property['title']) ? rdf_literal($property['title'], 'en') : NULL,
+    rdfs::comment     => !empty($form_info['#description']) ? rdf_literal($form_info['#description'], 'en') : NULL,
+  );
+}
+//////////////////////////////////////////////////////////////////////////////
+
+
 
 //////////////////////////////////////////////////////////////////////////////
 // RDF Schema mappings
@@ -149,7 +195,7 @@ function rdf_schema_load_user($user) {
 function rdf_schema_load_node($node) {
   $node = is_object($node) ? $node : node_load((int)$node);
   return array(
-    rdf::type         => rdf_uri(rdf_qname_to_uri(variable_get('rdf_schema_class_' . $node->type, 'drupal:node'))),
+    rdf::type         => rdf_uri(rdf_qname_to_uri($type = variable_get('rdf_schema_class_' . $node->type) ? $type :  'drupal:node')),
     'node:nid'        => (int)$node->nid,
     'node:vid'        => (int)$node->vid,
     'node:uid'        => (int)$node->uid,
