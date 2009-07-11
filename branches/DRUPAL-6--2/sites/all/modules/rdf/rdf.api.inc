@@ -244,6 +244,10 @@ function rdf_alt() {
   return new RDF_Alt(func_get_args());
 }
 
+function rdf_graph($subject, $predicates) {
+  return new RDF_Graph($subject, $predicates);
+}
+
 function rdf_val_to_str($value) {
   return (is_object($value) && $value instanceof RDF_Literal) ? $value->value : (string)$value;
 }
@@ -412,7 +416,13 @@ function rdf_denormalize($input) {
       }
       else {
         foreach ($objects as $object) {
-          $output[] = array($subject, $predicate, $object);
+          if (is_object($object) && ($object instanceof RDF_Graph)) {
+            $output[] = array($subject, $predicate, rdf_uri($object->subject));
+            $output = array_merge_recursive($output, rdf_denormalize(array($object->subject => $object->predicates)));
+          }
+          else {
+            $output[] = array($subject, $predicate, $object);
+          }
         }
       }
     }
@@ -804,6 +814,9 @@ function rdf_expand_qnames(array $input, $remove_empty = TRUE) {
   $output = array();
   foreach ($input as $qname => $data) {
     if (!empty($data)) {
+      if ($data instanceof RDF_Graph) {
+        $data->expand_predicates();
+      }
       $output[rdf_qname_to_uri($qname)] = is_array($data) ? $data : array($data);
     }
   }
@@ -1324,4 +1337,29 @@ class RDF_Bag extends RDF_Collection {
 
 class RDF_Alt extends RDF_Collection {
   function predicate() { return 'rdf:Alt'; }
+}
+
+/**
+ * RDF_Graph class definition.
+ *
+ * This is a simple to represent a simple graph containing one subject and a set
+ * of predicates and objects.
+ *
+ * public $subject
+ *   The URI of the subject.
+ * public $predicate
+ *   Array containing a list of predicates and objects.
+ */
+ class RDF_Graph {
+  public $subject;
+  public $predicates;
+
+  public function __construct($subject, $predicates) {
+    $this->subject = $subject;
+    $this->predicates = $predicates;
+  }
+
+  function expand_predicates() {
+      $this->predicates = rdf_expand_qnames($this->predicates);
+  }
 }

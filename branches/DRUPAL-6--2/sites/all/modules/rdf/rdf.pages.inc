@@ -18,7 +18,7 @@ function rdf_export_user($account) {
 }
 
 function rdf_export_entity($type, $id) {
-  $data = rdf_query(url($type . '/' . $id, array('fragment' => 'this', 'absolute' => TRUE)));
+  $data = rdf_query(url($type . '/' . $id, array('absolute' => TRUE)));
   rdf_export($data, implode('-', array($type, $id)));
 }
 
