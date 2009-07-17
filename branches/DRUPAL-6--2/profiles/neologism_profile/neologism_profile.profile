@@ -24,6 +24,9 @@ function neologism_profile_profile_modules() {
     // CCK core
     'content', 'nodereference', 'optionwidgets', 'text', 'userreference', 'content_copy', 'fieldgroup',
     
+    // Contrib
+    'rdf', 'evoc', 'evocreference',
+    
     // Neologism
     'neologism',
   );
