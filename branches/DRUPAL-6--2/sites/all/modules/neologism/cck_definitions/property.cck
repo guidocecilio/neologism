@@ -3,7 +3,8 @@ $content[type]  = array (
   'type' => NEOLOGISM_CT_PROPERTY,
   'description' => '',
   'title_label' => 'Id',
-  'body_label' => 'Description of the property (only used in the documentation)',
+  // The description is now a CCK field for consistency. The body of the node is not being used anymore.
+  'body_label' => '',
   'min_word_count' => '0',
   'help' => '',
   'node_options' => 
@@ -13,6 +14,7 @@ $content[type]  = array (
     'sticky' => false,
     'revision' => false,
   ),
+  'language_content_type' => 0,
   'old_type' => 'neo_property',
   'orig_type' => '',
   'module' => 'node',
@@ -25,6 +27,7 @@ $content[groups]  = array (
   0 => 
   array (
     'label' => 'Vocabulary',
+    'group_type' => 'standard',
     'settings' => 
     array (
       'form' => 
@@ -38,6 +41,7 @@ $content[groups]  = array (
         'teaser' => 
         array (
           'format' => 'fieldset',
+          'exclude' => 0,
         ),
         'full' => 
         array (
@@ -106,124 +110,159 @@ $content[fields]  = array (
   1 => 
   array (
     'label' => 'Domain',
-    'field_name' => 'field_domain',
-    'type' => 'nodereference',
-    'widget_type' => 'nodereference_select',
+    'field_name' => 'field_domain2',
+    'type' => 'evocreference',
+    'widget_type' => 'evocreference_autocomplete',
     'change' => 'Change basic information',
     'weight' => '-3',
     'description' => 'Select the class for the rdfs:domain of this property.',
+    'autocomplete_match' => 'contains',
     'default_value' => 
     array (
+      0 => 
+      array (
+        'evoc_term' => '',
+        '_error_element' => 'default_value_widget][field_domain2][0][evoc_term][evoc_term',
+      ),
     ),
     'default_value_php' => '',
     'default_value_widget' => 
     array (
-      'field_domain' => 
+      'field_domain2' => 
       array (
-        'nid' => 
+        0 => 
         array (
-          'nid' => '',
+          'evoc_term' => 
+          array (
+            'evoc_term' => '',
+            '_error_element' => 'default_value_widget][field_domain2][0][evoc_term][evoc_term',
+          ),
+          '_error_element' => 'default_value_widget][field_domain2][0][evoc_term][evoc_term',
         ),
       ),
     ),
     'group' => false,
     'required' => 0,
     'multiple' => '0',
-    'referenceable_types' => 
+    'referenceable_term_types' => 
     array (
-      NEOLOGISM_CT_CLASS => NEOLOGISM_CT_CLASS,
-      0 => 1,
-      'page' => false,
-      NEOLOGISM_CT_PROPERTY => 0,
-      NEOLOGISM_CT_VOCABULARY => 0,
+      'properties' => 'properties',
+      'classes' => 0,
     ),
     'op' => 'Save field settings',
-    'module' => 'nodereference',
-    'widget_module' => 'nodereference',
+    'module' => 'evocreference',
+    'widget_module' => 'evocreference',
     'columns' => 
     array (
-      'nid' => 
+      'evoc_term' => 
       array (
-        'type' => 'int',
-        'unsigned' => true,
+        'type' => 'varchar',
+        'length' => 64,
         'not null' => false,
+        'sortable' => true,
       ),
     ),
     'display_settings' => 
     array (
       'label' => 
       array (
-        'format' => 'inline',
+        'format' => 'above',
+        'exclude' => 0,
       ),
       'teaser' => 
       array (
         'format' => 'default',
+        'exclude' => 0,
       ),
       'full' => 
       array (
         'format' => 'default',
+        'exclude' => 0,
+      ),
+      4 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
       ),
     ),
   ),
   2 => 
   array (
     'label' => 'Range',
-    'field_name' => 'field_range',
-    'type' => 'nodereference',
-    'widget_type' => 'nodereference_select',
+    'field_name' => 'field_range2',
+    'type' => 'evocreference',
+    'widget_type' => 'evocreference_autocomplete',
     'change' => 'Change basic information',
+    'autocomplete_match' => 'contains',
+    'reverse_link' => 0,
     'weight' => '-2',
-    'description' => 'Select the class for the rdfs:range of this property.',
+    'description' => '',
     'default_value' => 
     array (
+      0 => 
+      array (
+        'evoc_term' => '',
+        '_error_element' => 'default_value_widget][field_range2][0][evoc_term][evoc_term',
+      ),
     ),
     'default_value_php' => '',
     'default_value_widget' => 
     array (
-      'field_range' => 
+      'field_range2' => 
       array (
-        'nid' => 
+        0 => 
         array (
-          'nid' => '',
+          'evoc_term' => 
+          array (
+            'evoc_term' => '',
+            '_error_element' => 'default_value_widget][field_range2][0][evoc_term][evoc_term',
+          ),
+          '_error_element' => 'default_value_widget][field_range2][0][evoc_term][evoc_term',
         ),
       ),
     ),
     'group' => false,
     'required' => 0,
     'multiple' => '0',
-    'referenceable_types' => 
+    'referenceable_term_types' => 
     array (
-      NEOLOGISM_CT_CLASS => NEOLOGISM_CT_CLASS,
-      0 => 1,
-      'page' => false,
-      NEOLOGISM_CT_PROPERTY => 0,
-      NEOLOGISM_CT_VOCABULARY => 0,
+      'properties' => 'properties',
+      'classes' => 0,
     ),
     'op' => 'Save field settings',
-    'module' => 'nodereference',
-    'widget_module' => 'nodereference',
+    'module' => 'evocreference',
+    'widget_module' => 'evocreference',
     'columns' => 
     array (
-      'nid' => 
+      'evoc_term' => 
       array (
-        'type' => 'int',
-        'unsigned' => true,
+        'type' => 'varchar',
+        'length' => 64,
         'not null' => false,
+        'sortable' => true,
       ),
     ),
     'display_settings' => 
     array (
       'label' => 
       array (
-        'format' => 'inline',
+        'format' => 'above',
+        'exclude' => 0,
       ),
       'teaser' => 
       array (
         'format' => 'default',
+        'exclude' => 0,
       ),
       'full' => 
       array (
         'format' => 'default',
+        'exclude' => 0,
+      ),
+      4 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
       ),
     ),
   ),
@@ -289,7 +328,90 @@ $content[fields]  = array (
       ),
     ),
   ),
+  // The description is now a CCK field for consistency. The body of the node is not being used anymore.
   4 => 
+  array (
+    'label' => 'Description of the property (only used in the documentation)',
+    'field_name' => 'field_description2',
+    'type' => 'text',
+    'widget_type' => 'text_textarea',
+    'change' => 'Change basic information',
+    'weight' => '0',
+    'rows' => '5',
+    'size' => 60,
+    'description' => '',
+    'default_value' => 
+    array (
+      0 => 
+      array (
+        'value' => '',
+        '_error_element' => 'default_value_widget][field_description2][0][value',
+      ),
+    ),
+    'default_value_php' => '',
+    'default_value_widget' => 
+    array (
+      'field_description2' => 
+      array (
+        0 => 
+        array (
+          'value' => '',
+          '_error_element' => 'default_value_widget][field_description2][0][value',
+          'format' => 1,
+        ),
+      ),
+    ),
+    'group' => false,
+    'required' => 0,
+    'multiple' => '0',
+    'text_processing' => '1',
+    'max_length' => '',
+    'allowed_values' => '',
+    'allowed_values_php' => '',
+    'op' => 'Save field settings',
+    'module' => 'text',
+    'widget_module' => 'text',
+    'columns' => 
+    array (
+      'value' => 
+      array (
+        'type' => 'text',
+        'size' => 'big',
+        'not null' => false,
+        'sortable' => true,
+      ),
+      'format' => 
+      array (
+        'type' => 'int',
+        'unsigned' => true,
+        'not null' => false,
+      ),
+    ),
+    'display_settings' => 
+    array (
+      'label' => 
+      array (
+        'format' => 'above',
+        'exclude' => 0,
+      ),
+      'teaser' => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      'full' => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      4 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+    ),
+  ),
+  5 => 
   array (
     'label' => 'Vocabulary',
     'field_name' => 'field_vocabulary',
@@ -351,71 +473,87 @@ $content[fields]  = array (
       ),
     ),
   ),
-  5 => 
+  6 => 
   array (
     'label' => 'Inverse',
-    'field_name' => 'field_inverse',
-    'type' => 'nodereference',
-    'widget_type' => 'nodereference_select',
+    'field_name' => 'field_inverse2',
+    'type' => 'evocreference',
+    'widget_type' => 'evocreference_autocomplete',
     'change' => 'Change basic information',
-    'weight' => '0',
-    'description' => 'Select the inverse of this property. Your new property will have a statement expressing that it is a owl:inverseOf the selected property.
-
-',
+    'weight' => '1',
+    'autocomplete_match' => 'contains',
+    'reverse_link' => 0,
+    'description' => '',
     'default_value' => 
     array (
+      0 => 
+      array (
+        'evoc_term' => '',
+        '_error_element' => 'default_value_widget][field_inverse2][0][evoc_term][evoc_term',
+      ),
     ),
     'default_value_php' => '',
     'default_value_widget' => 
     array (
-      'field_inverse' => 
+      'field_inverse2' => 
       array (
-        'nid' => 
+        0 => 
         array (
-          'nid' => '',
+          'evoc_term' => 
+          array (
+            'evoc_term' => '',
+            '_error_element' => 'default_value_widget][field_inverse2][0][evoc_term][evoc_term',
+          ),
+          '_error_element' => 'default_value_widget][field_inverse2][0][evoc_term][evoc_term',
         ),
       ),
     ),
     'group' => false,
     'required' => 0,
     'multiple' => '0',
-    'referenceable_types' => 
+    'referenceable_term_types' => 
     array (
-      NEOLOGISM_CT_PROPERTY => NEOLOGISM_CT_PROPERTY,
-      0 => 1,
-      NEOLOGISM_CT_CLASS => 0,
-      'page' => false,
-      NEOLOGISM_CT_VOCABULARY => 0,
+      'properties' => 'properties',
+      'classes' => 0,
     ),
     'op' => 'Save field settings',
-    'module' => 'nodereference',
-    'widget_module' => 'nodereference',
+    'module' => 'evocreference',
+    'widget_module' => 'evocreference',
     'columns' => 
     array (
-      'nid' => 
+      'evoc_term' => 
       array (
-        'type' => 'int',
-        'unsigned' => true,
+        'type' => 'varchar',
+        'length' => 64,
         'not null' => false,
+        'sortable' => true,
       ),
     ),
     'display_settings' => 
     array (
       'label' => 
       array (
-        'format' => 'inline',
+        'format' => 'above',
+        'exclude' => 0,
       ),
       'teaser' => 
       array (
         'format' => 'default',
+        'exclude' => 0,
       ),
       'full' => 
       array (
         'format' => 'default',
+        'exclude' => 0,
+      ),
+      4 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
       ),
     ),
   ),
-  6 => 
+  7 => 
   array (
     'label' => 'Functional Property',
     'field_name' => 'field_fp',
@@ -457,7 +595,7 @@ $content[fields]  = array (
       ),
     ),
   ),
-  7 => 
+  8 => 
   array (
     'label' => 'Inverse Functional Property',
     'field_name' => 'field_ifp',
@@ -499,66 +637,88 @@ $content[fields]  = array (
       ),
     ),
   ),
-  8 => 
+  9 => 
   array (
     'label' => 'Superproperty',
-    'field_name' => 'field_subpropertyof',
-    'type' => 'nodereference',
-    'widget_type' => 'nodereference_select',
+    'field_name' => 'field_superproperty2',
+    'type' => 'evocreference',
+    'widget_type' => 'evocreference_autocomplete',
     'change' => 'Change basic information',
     'weight' => '6',
-    'description' => 'Select the superproperty of this property. Your new property will have a statement expressing that it is a rdfs:subPropertyOf the selected property.',
+    'autocomplete_match' => 'contains',
+    'reverse_link' => 0,
+    'description' => '',
     'default_value' => 
     array (
+      0 => 
+      array (
+        'evoc_term' => '',
+        '_error_element' => 'default_value_widget][field_superproperty2][0][evoc_term][evoc_term',
+      ),
     ),
     'default_value_php' => '',
     'default_value_widget' => 
     array (
-      'field_subpropertyof' => 
+      'field_superproperty2' => 
       array (
-        'nid' => 
+        0 => 
         array (
-          'nid' => '',
+          'evoc_term' => 
+          array (
+            'evoc_term' => '',
+            '_error_element' => 'default_value_widget][field_superproperty2][0][evoc_term][evoc_term',
+          ),
+          '_error_element' => 'default_value_widget][field_superproperty2][0][evoc_term][evoc_term',
         ),
       ),
     ),
     'group' => false,
     'required' => 0,
     'multiple' => '0',
-    'referenceable_types' => 
+    'referenceable_term_types' => 
     array (
-      NEOLOGISM_CT_PROPERTY => NEOLOGISM_CT_PROPERTY,
-      0 => 1,
-      NEOLOGISM_CT_CLASS => 0,
-      'page' => false,
-      NEOLOGISM_CT_VOCABULARY => 0,
+      'properties' => 'properties',
+      'classes' => 0,
     ),
     'op' => 'Save field settings',
-    'module' => 'nodereference',
-    'widget_module' => 'nodereference',
+    'module' => 'evocreference',
+    'widget_module' => 'evocreference',
     'columns' => 
     array (
-      'nid' => 
+      'evoc_term' => 
       array (
-        'type' => 'int',
-        'unsigned' => true,
+        'type' => 'varchar',
+        'length' => 64,
         'not null' => false,
+        'sortable' => true,
       ),
     ),
     'display_settings' => 
     array (
       'label' => 
       array (
-        'format' => 'inline',
+        'format' => 'above',
+        'exclude' => 0,
       ),
       'teaser' => 
       array (
         'format' => 'default',
+        'exclude' => 0,
       ),
       'full' => 
       array (
         'format' => 'default',
+        'exclude' => 0,
+      ),
+      4 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
       ),
     ),
   ),
+);
+$content[extra]  = array (
+  'title' => '-9',
+  'menu' => '-5',
 );

@@ -168,47 +168,51 @@ $content[fields]  = array (
   2 => 
   array (
     'label' => 'Superclass',
-    'field_name' => 'field_subclassof',
-    'type' => 'nodereference',
-    'widget_type' => 'nodereference_select',
+    'field_name' => 'field_superclass2',
+    'type' => 'evocreference',
+    'widget_type' => 'evocreference_autocomplete',
     'change' => 'Change basic information',
     'weight' => '-2',
-    'description' => 'Select the superclass of this class. Your new class will have a statement expressing that it is a rdfs:subClassOf the selected class.',
+    'autocomplete_match' => 'contains',
+    'description' => 'Specify the superclass of this class. Your new class will have a statement expressing that it is a rdfs:subClassOf the specified class.',
     'default_value' => 
     array (
     ),
     'default_value_php' => '',
     'default_value_widget' => 
     array (
-      'field_subclassof' => 
+      'field_superclass2' => 
       array (
-        'nid' => 
+        0 => 
         array (
-          'nid' => '',
+          'evoc_term' => 
+          array (
+            'evoc_term' => '',
+            '_error_element' => 'default_value_widget][field_superclass2][0][evoc_term][evoc_term',
+          ),
+          '_error_element' => 'default_value_widget][field_superclass2][0][evoc_term][evoc_term',
         ),
       ),
     ),
     'group' => false,
     'required' => 0,
     'multiple' => '0',
-    'referenceable_types' => 
+    'referenceable_term_types' => 
     array (
-      NEOLOGISM_CT_CLASS => NEOLOGISM_CT_CLASS,
-      0 => 1,
-      'page' => false,
-      NEOLOGISM_CT_PROPERTY => false,
-      NEOLOGISM_CT_VOCABULARY => 0,
+      'classes' => 'classes',
+      'properties' => 0,
     ),
     'op' => 'Save field settings',
-    'module' => 'nodereference',
-    'widget_module' => 'nodereference',
+    'module' => 'evocreference',
+    'widget_module' => 'evocreference',
     'columns' => 
     array (
-      'nid' => 
+      'evoc_term' => 
       array (
-        'type' => 'int',
-        'unsigned' => true,
+        'type' => 'varchar',
+        'length' => 64,
         'not null' => false,
+        'sortable' => true,
       ),
     ),
     'display_settings' => 
@@ -292,47 +296,57 @@ $content[fields]  = array (
   4 => 
   array (
     'label' => 'Disjoint with',
-    'field_name' => 'field_disjointwith',
-    'type' => 'nodereference',
-    'widget_type' => 'nodereference_select',
+    'field_name' => 'field_disjointwith2',
+    'type' => 'evocreference',
+    'widget_type' => 'evocreference_autocomplete',
     'change' => 'Change basic information',
     'weight' => '-1',
-    'description' => 'Select the classes that are disjoint with this class. Your new class will have statements expressing that it is owl:disjointWith the selected classes.',
+    'description' => 'Specify the classes that are disjoint with this class. Your new class will have statements expressing that it is owl:disjointWith the specified classes.',
+    'autocomplete_match' => 'contains',
+    'reverse_link' => 0,
     'default_value' => 
     array (
+      0 => 
+      array (
+        'evoc_term' => '',
+        '_error_element' => 'default_value_widget][field_disjointwith2][0][evoc_term][evoc_term',
+      ),
     ),
     'default_value_php' => '',
     'default_value_widget' => 
     array (
-      'field_disjointwith' => 
+      'field_disjointwith2' => 
       array (
-        'nid' => 
+        0 => 
         array (
-          'nid' => 
+          'evoc_term' => 
           array (
+            'evoc_term' => '',
+            '_error_element' => 'default_value_widget][field_disjointwith2][0][evoc_term][evoc_term',
           ),
+          '_error_element' => 'default_value_widget][field_disjointwith2][0][evoc_term][evoc_term',
         ),
       ),
     ),
     'group' => false,
     'required' => 0,
     'multiple' => '1',
-    'referenceable_types' => 
+    'referenceable_term_types' => 
     array (
-      NEOLOGISM_CT_CLASS => NEOLOGISM_CT_CLASS,
-      NEOLOGISM_CT_PROPERTY => 0,
-      NEOLOGISM_CT_VOCABULARY => 0,
+      'classes' => 'classes',
+      'properties' => 0,
     ),
     'op' => 'Save field settings',
-    'module' => 'nodereference',
-    'widget_module' => 'nodereference',
+    'module' => 'evocreference',
+    'widget_module' => 'evocreference',
     'columns' => 
     array (
-      'nid' => 
+      'evoc_term' => 
       array (
-        'type' => 'int',
-        'unsigned' => true,
+        'type' => 'varchar',
+        'length' => 64,
         'not null' => false,
+        'sortable' => true,
       ),
     ),
     'display_settings' => 
