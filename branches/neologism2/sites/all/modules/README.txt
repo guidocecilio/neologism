@@ -1,1 +1,0 @@
-Important: this branch is dead and is being continued at https://neologism.googlecode.com/svn/branches/DRUPAL-6--2
