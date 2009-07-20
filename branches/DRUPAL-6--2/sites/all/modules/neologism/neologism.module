@@ -257,31 +257,42 @@ function neologism_export_html($node) {
 //// Treeview
     // Treeview
     $output .= '<h2 id="sec_treeview" class="neologism">' . check_plain($node->title) . ' treeview</h2>';
-
+	
+	// guidocecilio - 20 july 2009
+	// the sequence of (array) cast is to prevent the warning when trying to iterate 
+	// through an array that may sometimes have no data in it  
+		
     // Tweak the classes for later HTML list output
-    foreach ($classes as $id => $class) {
+    foreach ( (array) $classes as $id => $class) {
       $classes[$id]['data'] = '<a href="#' . $class['id'] . '" title="class ' . check_plain($node->title) . ':'. check_plain($class['title']) . '">' . check_plain($class['title']) . '</a>';
     }
-
+	
     // We'll use a temporary array which will be emptied as we build the tree.
     $classes_flat = $classes;
     // Find parents.
-    foreach ($classes_flat as $class) {
+    foreach ( (array) $classes_flat as $class) {
       if ($class['superclass'] == NULL) {
         $tree[$node->title . ':' . $class['id']] = $class;
         unset($classes_flat[$class['id']]);
       }
     }
-    ksort($tree);
+    
+	// guidocecilio - 20 july 2009
+	// this condition is to prevent the warning when trying to iterate through 
+	// an array that may sometimes have no data in it  
+	if( $tree ) {
+		ksort($tree);
+	}
+		
     // TODO use recursive function here.
     // Children.
-    foreach ($tree as $id => $class) {
+    foreach ( (array) $tree as $id => $class) {
       if ($children = get_children($classes_flat, $id)) {
         $tree[$id]['children'] = $children;
       }
     }
     // Children depth 2.
-    foreach ($tree as $id => $class) {
+    foreach ( (array) $tree as $id => $class) {
       if (isset($class['children']) && is_array($class['children'])) {
         foreach ($class['children'] as $id2 => $class2) {
           if ($children = get_children($classes_flat, 'birf:' . $id2)) {
