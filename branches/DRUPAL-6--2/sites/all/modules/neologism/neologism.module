@@ -362,7 +362,7 @@ function neologism_get_rdf_model($node, $uri, $document) {
 
     //export all classes
     $classes = get_all_classes($node);
-    foreach ($classes as $oneclass) {
+    foreach ( (array) $classes as $oneclass) {
         $classresource = new Resource($uri . $oneclass["title"]);
         $model->add(new Statement($classresource, new Resource($ns["rdf"], "type"), new Resource($ns["rdfs"], "Class")));
         $model->add(new Statement($classresource, new Resource($ns["rdfs"], "isDefinedBy"), $doc));
@@ -381,7 +381,7 @@ function neologism_get_rdf_model($node, $uri, $document) {
 
     //export all properties
     $properties = get_all_properties($node);
-    foreach ($properties as $oneprop) {
+    foreach ( (array) $properties as $oneprop) {
         $propresource = new Resource($uri . $oneprop["title"]);
         $model->add(new Statement($propresource, new Resource($ns["rdf"], "type"), new Resource($ns["rdf"], "Property")));
     if ($oneprop["ifp"] == true) {
@@ -725,55 +725,68 @@ function neologism_nodeapi(&$node, $op, $teaser, $page) {
 //    drupal_goto('node/'. $node->field_vocabulary[0]['nid']);
 //  }
 
+  if (module_exists('path')) {
+    switch ($op) {
 
-    if (module_exists('path')) {
-        switch ($op) {
-
-            case 'load':
-                            if ($node->type == NEOLOGISM_CT_VOCABULARY and arg(0) == TRUE and arg(1) == TRUE and arg(2) == FALSE) {
-                                //vocabulary root, so content negotiation, provide an appropiate representation
-                                $request_uri = $_SERVER["REQUEST_URI"];
-                                $accept = $_SERVER["HTTP_ACCEPT"];
-                                $redirect_uri = neologism_get_preferred_uri($request_uri, $accept);
-                                header("HTTP/1.1 303");
-                                header("Vary: Accept");
-                                header("Location: " . $redirect_uri);
-                            }
-                            break;
-
-            case 'insert':
-                            // Create a user friendly alias to the vocabulary node
-                            if($node->type == NEOLOGISM_CT_VOCABULARY) {
-                              _neologism_set_aliases($node);
-                            }
-                            break;
-
-            case 'update':
-                            if($node->type == NEOLOGISM_CT_VOCABULARY) {
-                              _neologism_unset_aliases($node);
-                              _neologism_set_aliases($node);
-                            }
-                            break;
-
-            case 'delete':
-                            // Deletion of the aliases when deleting a vocabulary
-                            if($node->type == NEOLOGISM_CT_VOCABULARY) {
-                                path_set_alias("node/$node->nid");
-                                path_set_alias("node/$node->nid/".HTML);
-                                path_set_alias("node/$node->nid/".RDF);
-                                path_set_alias("node/$node->nid/".N3);
-                                path_set_alias("node/$node->nid/".XML);
-                                path_set_alias("node/$node->nid/layout");
-                                path_set_alias("node/$node->nid/diagram");
-                                path_set_alias("node/$node->nid/image");
-                            }
-                            break;
-
-            default:
-                            break;
-
+      case 'load':
+        if ($node->type == NEOLOGISM_CT_VOCABULARY and arg(0) == TRUE and arg(1) == TRUE and arg(2) == FALSE) {
+          //vocabulary root, so content negotiation, provide an appropiate representation
+          $request_uri = $_SERVER["REQUEST_URI"];
+          $accept = $_SERVER["HTTP_ACCEPT"];
+          $redirect_uri = neologism_get_preferred_uri($request_uri, $accept);
+          header("HTTP/1.1 303");
+          header("Vary: Accept");
+          header("Location: " . $redirect_uri);
         }
+        break;
+      
+      case 'insert':
+        // Create a user friendly alias to the vocabulary node
+        if($node->type == NEOLOGISM_CT_VOCABULARY) {
+          _neologism_set_aliases($node);
+        }
+        
+        // behavior to update evoc's classes list when a new class' content type is added 
+        if( $node->type == NEOLOGISM_CT_CLASS ) {
+          $term = array();
+          $term['id'] = $node->title;
+          $term['type'] = 'class';
+          $term['label'] = $node->field_label[0]['value']; 
+          $term['comment'] = $node->field_comment[0]['value'];
+          $term['superclass'] = $node->field_superclass2[0]['evoc_term'];
+          
+          // load vocabulary's node to get its title as namespace/prefix for this class 
+          $vocabulary = node_load($node->field_vocabulary[0][nid]);
+          $term['prefix'] = $vocabulary->title; 
+          
+          evoc_write_class($term);  
+        }
+        break;
+      
+      case 'update':
+        if($node->type == NEOLOGISM_CT_VOCABULARY) {
+          _neologism_unset_aliases($node);
+          _neologism_set_aliases($node);
+        }
+        break;
+      
+      case 'delete':
+        // Deletion of the aliases when deleting a vocabulary
+        if($node->type == NEOLOGISM_CT_VOCABULARY) {
+        path_set_alias("node/$node->nid");
+          path_set_alias("node/$node->nid/".HTML);
+          path_set_alias("node/$node->nid/".RDF);
+          path_set_alias("node/$node->nid/".N3);
+          path_set_alias("node/$node->nid/".XML);
+          path_set_alias("node/$node->nid/layout");
+          path_set_alias("node/$node->nid/diagram");
+          path_set_alias("node/$node->nid/image");
+        }
+        break;
+    
+      default:
     }
+  }
 }
 
 function _neologism_set_aliases($node) {
@@ -851,40 +864,55 @@ function get_all_classes($node) {
   $class_ids = db_query(db_rewrite_sql("SELECT n.nid, n.title FROM {content_field_vocabulary} c INNER JOIN {node} n ON c.nid = n.nid WHERE c.field_vocabulary_nid = %d AND n.type = '%s'"), $node->nid, NEOLOGISM_CT_CLASS);
   $i=0;
 
+  // load all the classes 
   while ($item = db_fetch_object($class_ids)) {
-  $class_data[$item->title]['id']=$item->title;
-  $class_data[$item->title]['nid']=$item->nid;
-  $class_data[$item->title]['title']=$item->title;
+    $class_data[$item->title]['id']=$item->title;
+    $class_data[$item->title]['nid']=$item->nid;
+    $class_data[$item->title]['title']=$item->title;
+  
+    // for later use in the tree display.
+    //$class_data[$item->title]['data']=$item->title;
+    
+    //$n = node_load($item->nid);
+  
+    //TODO change to node_load
+   /* 
+    $result = db_query('SELECT n.nid FROM {node} n WHERE n.type = '."'node_type'".' and n.status = 1');
+    $output = '';
+    while ($node = db_fetch_object($result))
+    {
+        $output .= node_view(node_load($node->nid), true);
+    }
 
-  // for later use in the tree display.
-  //$class_data[$item->title]['data']=$item->title;
+    print $output;*/
 
-  $disjoint_id = db_fetch_array(db_query(db_rewrite_sql('SELECT field_disjointwith_nid FROM {content_field_disjointwith} WHERE nid = %d'), $item->nid));
-  $disjoint = db_fetch_array(db_query(db_rewrite_sql('SELECT title FROM {node} WHERE nid = %d'), $disjoint_id[field_disjointwith_nid]));
-  $class_data[$item->title]['disjoint']=$disjoint[title];
-
-  //TODO remove me
-//  $subclass_id = db_fetch_array(db_query(db_rewrite_sql('SELECT field_subclassof_nid FROM {content_type_'.NEOLOGISM_CT_CLASS.'} WHERE nid = %d'), $item->nid));
-//  $subclass = db_fetch_array(db_query(db_rewrite_sql('SELECT title FROM {node} WHERE nid = %d'), $subclass_id[field_subclassof_nid]));
-//  $class_data[$i]['subclass']=$subclass[title];
-
-  $comment_rdfs = db_fetch_array(db_query(db_rewrite_sql('SELECT field_superclass_value FROM {content_type_'.NEOLOGISM_CT_CLASS.'} WHERE nid = %d'), $item->nid));
-  $class_data[$item->title]['superclass']=$comment_rdfs['field_superclass_value'];
-
-  // $superclass_id = db_fetch_array(db_query(db_rewrite_sql('SELECT field_superclassof_nid FROM {content_type_'.NEOLOGISM_CT_CLASS.'} WHERE nid = %d'), $item->nid));
-  // $superclass = db_fetch_array(db_query(db_rewrite_sql('SELECT title FROM {node} WHERE nid = %d'), $superclass_id[field_superclassof_nid]));
-  // $class_data[$i]['superclassOf']=$superclass[title];
-
-  $label = db_fetch_array(db_query(db_rewrite_sql('SELECT field_label_value FROM {content_field_label} WHERE nid = %d'), $item->nid));
-  $class_data[$item->title]['label']=$label[field_label_value];
-
-  $comment_rdfs = db_fetch_array(db_query(db_rewrite_sql('SELECT field_comment_value FROM {content_field_comment} WHERE nid = %d'), $item->nid));
-  $class_data[$item->title]['comment_rdfs']=$comment_rdfs[field_comment_value];
-
-  // $title = db_fetch_array(db_query(db_rewrite_sql('SELECT title FROM {node} WHERE nid = %d'), $item->nid));
-  // $class_data[$i]['title']=$title[title];
-
-  $i++;
+    	 
+    //$disjoint_id = db_fetch_array(db_query(db_rewrite_sql('SELECT field_disjointwith_nid FROM {content_field_disjointwith} WHERE nid = %d'), $item->nid));
+    //$disjoint = db_fetch_array(db_query(db_rewrite_sql('SELECT title FROM {node} WHERE nid = %d'), $disjoint_id[field_disjointwith_nid]));
+    //$class_data[$item->title]['disjoint']=$disjoint[title];
+  
+    //TODO remove me
+  //  $subclass_id = db_fetch_array(db_query(db_rewrite_sql('SELECT field_subclassof_nid FROM {content_type_'.NEOLOGISM_CT_CLASS.'} WHERE nid = %d'), $item->nid));
+  //  $subclass = db_fetch_array(db_query(db_rewrite_sql('SELECT title FROM {node} WHERE nid = %d'), $subclass_id[field_subclassof_nid]));
+  //  $class_data[$i]['subclass']=$subclass[title];
+  
+//    $comment_rdfs = db_fetch_array(db_query(db_rewrite_sql('SELECT field_superclass_value FROM {content_type_'.NEOLOGISM_CT_CLASS.'} WHERE nid = %d'), $item->nid));
+ //   $class_data[$item->title]['superclass']=$comment_rdfs['field_superclass_value'];
+  
+    // $superclass_id = db_fetch_array(db_query(db_rewrite_sql('SELECT field_superclassof_nid FROM {content_type_'.NEOLOGISM_CT_CLASS.'} WHERE nid = %d'), $item->nid));
+    // $superclass = db_fetch_array(db_query(db_rewrite_sql('SELECT title FROM {node} WHERE nid = %d'), $superclass_id[field_superclassof_nid]));
+    // $class_data[$i]['superclassOf']=$superclass[title];
+  
+    $label = db_fetch_array(db_query(db_rewrite_sql('SELECT field_label_value FROM {content_field_label} WHERE nid = %d'), $item->nid));
+    $class_data[$item->title]['label']=$label[field_label_value];
+  
+    $comment_rdfs = db_fetch_array(db_query(db_rewrite_sql('SELECT field_comment_value FROM {content_field_comment} WHERE nid = %d'), $item->nid));
+    $class_data[$item->title]['comment_rdfs']=$comment_rdfs[field_comment_value];
+  
+    // $title = db_fetch_array(db_query(db_rewrite_sql('SELECT title FROM {node} WHERE nid = %d'), $item->nid));
+    // $class_data[$i]['title']=$title[title];
+  
+    $i++;
   }
   // var_dump($class_data);
   return $class_data;
