@@ -1,5 +1,5 @@
 <?php
-// $Id: sparql.install,v 1.4 2008/06/07 20:07:14 arto Exp $
+// $Id: sparql.install,v 1.3 2008/06/06 10:09:07 arto Exp $
 /**
  * sparql.install - SPARQL API installation/uninstallation.
  *
@@ -22,16 +22,12 @@ function sparql_enable() {
 /**
  * Implementation of hook_install().
  */
-function sparql_install() {
-  drupal_install_schema('sparql');
-}
+function sparql_install() {}
 
 /**
  * Implementation of hook_uninstall().
  */
 function sparql_uninstall() {
-  drupal_uninstall_schema('sparql');
-
   db_query("DELETE FROM {variable} WHERE name LIKE 'sparql_%'");
   cache_clear_all('variables', 'cache');
 }
@@ -55,110 +51,4 @@ function sparql_requirements($phase) {
   }
 
   return $requirements;
-}
-
-//////////////////////////////////////////////////////////////////////////////
-// Schema API hooks
-
-/**
- * Implementation of hook_schema().
- */
-function sparql_schema() {
-  return array(
-    'sparql_nodes' => array(
-      'description' => t('Stores SPARQL node data.'),
-      'fields' => array(
-        'nid' => array(
-          'description' => t("The node's ID from {node}.nid."),
-          'type' => 'int',
-          'unsigned' => TRUE,
-          'not null' => TRUE,
-          'default' => 0,
-        ),
-        'vid' => array(
-          'description' => t("The node's version ID from {node}.vid."),
-          'type' => 'int',
-          'unsigned' => TRUE,
-          'not null' => TRUE,
-          'default' => 0,
-        ),
-        'endpoint' => array(
-          'description' => t("The SPARQL endpoint's URL."),
-          'type' => 'text',
-        ),
-        'query' => array(
-          'description' => t("The SPARQL query."),
-          'type' => 'text',
-          'size' => 'big',
-        ),
-      ),
-      'primary key' => array('nid', 'vid'),
-    ),
-  );
-}
-
-//////////////////////////////////////////////////////////////////////////////
-// Schema API updates
-
-/**
- * Installs the database schema; this is necessary when upgrading from any
- * version prior to 6.x-1.0-alpha2.
- *
- * @see http://drupal.org/node/150215
- * @see http://drupal.org/node/150220
- */
-function sparql_update_6000() {
-  $updates = array();
-
-  db_create_table($updates, 'sparql_nodes', array(
-    'description' => t('Stores SPARQL node data.'),
-    'fields' => array(
-      'nid' => array(
-        'description' => t("The node's ID from {node}.nid."),
-        'type' => 'int',
-        'unsigned' => TRUE,
-        'not null' => TRUE,
-        'default' => 0,
-      ),
-      'vid' => array(
-        'description' => t("The node's version ID from {node}.vid."),
-        'type' => 'int',
-        'unsigned' => TRUE,
-        'not null' => TRUE,
-        'default' => 0,
-      ),
-      'endpoint' => array(
-        'description' => t("The SPARQL endpoint's URL."),
-        'type' => 'text',
-      ),
-      'query' => array(
-        'description' => t("The SPARQL query."),
-        'type' => 'text',
-        'size' => 'big',
-      ),
-    ),
-    'primary key' => array('nid', 'vid'),
-  ));
-
-  return $updates;
-}
-
-/**
- * Converts SPARQL node data from early 6.x-dev format to 6.x-1.0-alpha2.
- */
-function sparql_update_6001() {
-  $updates = array();
-
-  $result = db_query("SELECT nid, vid FROM {node} WHERE type = 'sparql' ORDER BY nid ASC");
-  while ($node = db_fetch_object($result)) {
-    $query    = variable_get('sparql_node_' . $node->nid . '_query', '');
-    $endpoint = variable_get('sparql_node_' . $node->nid . '_endpoint', '');
-
-    if (db_query("INSERT INTO {sparql_nodes} (nid, vid, endpoint, query) VALUES (%d, %d, '%s', '%s')", $node->nid, $node->vid, $endpoint, $query)) {
-      variable_del('sparql_node_' . $node->nid . '_query');
-      variable_del('sparql_node_' . $node->nid . '_endpoint');
-    }
-  }
-
-  return $updates;
 }

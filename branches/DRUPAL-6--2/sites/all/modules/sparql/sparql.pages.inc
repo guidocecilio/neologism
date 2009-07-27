@@ -1,5 +1,5 @@
 <?php
-// $Id: sparql.pages.inc,v 1.3 2008/06/07 20:07:14 arto Exp $
+// $Id: sparql.pages.inc,v 1.2 2008/06/06 10:09:07 arto Exp $
 /**
  * sparql.pages.inc - SPARQL API menu callbacks.
  *
@@ -117,17 +117,14 @@ function theme_sparql_results($result) {
         return drupal_render($form['results']);
       }
       else {
-        require_once drupal_get_path('module', 'rdf') . '/rdf.theme.inc';
         $vars = array_keys($result[0]);
-        $rows = array_map('theme_sparql_results_row', $result);
+        $rows = array_map('array_values', $result);
         return theme('table', $vars, $rows, array('class' => 'sparql-results'));
       }
+      break;
 
     case 'object':  // CONSTRUCT/DESCRIBE
       return theme('rdf_triple_table', $result);
+      break;
   }
-}
-
-function theme_sparql_results_row($row) {
-  return array_map('theme_rdf_value', array_values($row));
 }

@@ -1,5 +1,5 @@
 <?php
-// $Id: sparql.client.inc,v 1.3 2008/06/07 20:07:14 arto Exp $
+// $Id: sparql.client.inc,v 1.2 2008/06/06 10:09:07 arto Exp $
 /**
  * sparql.client.inc - SPARQL HTTP client implementation.
  *
@@ -39,15 +39,9 @@ function sparql_request($endpoint, $query, $options = array(), &$errors = NULL) 
 
       switch ($format = $matches[1]) {
         case 'application/sparql-results+json':
-        case 'application/json':
-        case 'application/javascript':
-        case 'text/javascript':
           return sparql_parse_json_results($response->data);
 
         case 'application/sparql-results+xml':
-        case 'application/xml':
-        case 'text/xml':
-        case 'text/plain': // CIA Factbook returns this
           return sparql_parse_xml_results($response->data);
 
         default:
@@ -64,7 +58,7 @@ function sparql_request($endpoint, $query, $options = array(), &$errors = NULL) 
     }
   }
 
-  return NULL;
+  return FALSE;
 }
 
 /**

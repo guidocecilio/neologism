@@ -6,9 +6,9 @@ dependencies[] = rdf
 core = 6.x
 php = 5.2
 
-; Information added by drupal.org packaging script on 2008-06-08
-version = "6.x-1.x-dev"
+; Information added by drupal.org packaging script on 2008-06-06
+version = "6.x-1.0-alpha1"
 core = "6.x"
 project = "sparql"
-datestamp = "1212883962"
+datestamp = "1212747329"
 

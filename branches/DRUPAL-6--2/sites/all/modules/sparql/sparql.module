@@ -1,5 +1,5 @@
 <?php
-// $Id: sparql.module,v 1.4 2008/06/07 20:07:14 arto Exp $
+// $Id: sparql.module,v 1.3 2008/06/06 10:09:07 arto Exp $
 /**
  * sparql.module - Enables the use of SPARQL queries with the RDF API.
  *
@@ -134,8 +134,8 @@ function sparql_node_form(&$node, $form_state) {
     $form['body_field']['body']['#rows'] = 3;
   }
 
-  $form['sparql_query'] = array('#type' => 'textarea', '#title' => t('Query'), '#default_value' => @$node->sparql_query, '#rows' => 15, '#required' => TRUE);
-  $form['sparql_endpoint'] = array('#type' => 'textfield', '#title' => t('Endpoint URL'), '#default_value' => @$node->sparql_endpoint, '#required' => TRUE);
+  $form['sparql_query'] = array('#type' => 'textarea', '#title' => t('Query'), '#default_value' => @$node->sparql_query, '#required' => TRUE, '#rows' => 15);
+  $form['sparql_endpoint'] = array('#type' => 'textfield', '#title' => t('Endpoint URL'), '#default_value' => @$node->sparql_endpoint, '#required' => FALSE);
 
   return $form;
 }
@@ -144,20 +144,10 @@ function sparql_node_form(&$node, $form_state) {
  * Implementation of hook_view().
  */
 function sparql_node_view($node, $teaser = FALSE, $page = FALSE) {
-  $node->format = FALSE; // prevent PHP notice from node_prepare()
   $node = node_prepare($node, $teaser);
 
   if (!$teaser && !empty($node->sparql_query)) {
-    $errors = array();
-    $result = sparql_node_result($node, $errors);
-
-    foreach ($errors as $error) {
-      drupal_set_message($error, 'error', FALSE);
-    }
-
-    if (!is_null($result)) {
-      $node->content['sparql_results'] = array('#value' => theme('sparql_results', $result), '#weight' => 10);
-    }
+    $node->content['sparql_results'] = array('#value' => theme('sparql_results', sparql_node_result($node)), '#weight' => 10);
   }
 
   return $node;
@@ -168,18 +158,16 @@ function sparql_node_view($node, $teaser = FALSE, $page = FALSE) {
  */
 function sparql_node_load($node) {
   return (object)array(
-    'sparql_query'    => (string)db_result(db_query("SELECT query FROM {sparql_nodes} WHERE vid = %d", $node->vid)),
-    'sparql_endpoint' => (string)db_result(db_query("SELECT endpoint FROM {sparql_nodes} WHERE vid = %d", $node->vid)),
+    'sparql_query'    => variable_get('sparql_node_' . $node->nid . '_query', ''),
+    'sparql_endpoint' => variable_get('sparql_node_' . $node->nid . '_endpoint', ''),
   );
 }
 
 /**
  * Implementation of hook_validate().
  */
-function sparql_node_validate($node, &$form) {
+function sparql_node_validate(&$node) {
   if (!sparql_parse($node->sparql_query, NULL, $errors)) {
-    // TODO: suppress the display of previous query results when previewing a changed query.
-
     foreach ($errors as $error) {
       form_set_error('sparql_query', $error);
     }
@@ -190,45 +178,22 @@ function sparql_node_validate($node, &$form) {
  * Implementation of hook_insert().
  */
 function sparql_node_insert($node) {
-  db_query("INSERT INTO {sparql_nodes} (nid, vid, endpoint, query) VALUES (%d, %d, '%s', '%s')", $node->nid, $node->vid, $node->sparql_endpoint, $node->sparql_query);
+  sparql_node_update($node);
 }
 
 /**
  * Implementation of hook_update().
  */
 function sparql_node_update($node) {
-  if ($node->revision) {
-    return sparql_node_insert($node);
-  }
-
-  db_query("UPDATE {sparql_nodes} SET endpoint = '%s', query = '%s' WHERE vid = %d", $node->sparql_endpoint, $node->sparql_query, $node->vid);
+  variable_set('sparql_node_' . $node->nid . '_query', $node->sparql_query);
+  variable_set('sparql_node_' . $node->nid . '_endpoint', $node->sparql_endpoint);
   cache_clear_all('sparql:' . $node->nid, 'cache');
 }
 
-/**
- * Implementation of hook_delete().
- */
-function sparql_node_delete($node) {
-  db_query('DELETE FROM {sparql_nodes} WHERE nid = %d', $node->nid);
-}
-
-/**
- * Implementation of hook_nodeapi().
- */
-function sparql_nodeapi(&$node, $op, $teaser, $page) {
-  switch ($op) {
-    case 'delete revision':
-      if ($node->type == 'sparql') {
-        db_query('DELETE FROM {sparql_nodes} WHERE vid = %d', $node->vid);
-      }
-      break;
-  }
-}
-
-function sparql_node_result($node, &$errors = array()) {
-  $result = ($result = cache_get('sparql:' . $node->nid, 'cache')) ? $result->data : NULL;
-  if (is_null($result) || $result == '') {
-    $result = sparql_query($node->sparql_query, array('endpoint' => $node->sparql_endpoint), $errors);
+function sparql_node_result($node) {
+  $result = ($result = cache_get('sparql:' . $node->nid, 'cache')) ? $result->data : FALSE;
+  if (!$result) {
+    $result = sparql_query($node->sparql_query, array('endpoint' => $node->sparql_endpoint));
     cache_set('sparql:' . $node->nid, $result, 'cache', CACHE_PERMANENT);
   }
   return $result;
