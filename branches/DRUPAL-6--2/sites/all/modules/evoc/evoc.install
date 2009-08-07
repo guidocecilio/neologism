@@ -3,6 +3,8 @@
 
 /**
  * Implementation of hook_schema().
+ * 
+ * Define two tables one for classes and other for properties
  */
 function evoc_schema() {
   $schema['evoc_rdf_classes'] = array(

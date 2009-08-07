@@ -56,8 +56,9 @@ function evocreference_field_info() {
 }
 
 /**
- * Implementation of hook_field_settings().
- */
+* Handle the parameters for a field.
+*
+*/
 function evocreference_field_settings($op, $field) {
   switch ($op) {
     case 'form':
@@ -91,10 +92,53 @@ function evocreference_field_settings($op, $field) {
 }
 
 /**
- * Implementation of hook_field().
- */
+* Define the behavior of a field type.
+* see http://drupal.org/node/342996
+* 
+* @param $op
+*   What kind of action is being performed. Possible values:
+*   - "load": The node is about to be loaded from the database. This hook
+*     should be used to load the field.
+*   - "view": The node is about to be presented to the user. The module
+*     should prepare and return an HTML string containing a default
+*     representation of the field.
+*   - "validate": The user has just finished editing the node and is
+*     trying to preview or submit it. This hook can be used to check or
+*     even modify the node. Errors should be set with form_set_error().
+*   - "submit": The user has just finished editing the node and the node has
+*     passed validation. This hook can be used to modify the node.
+*   - "insert": The node is being created (inserted in the database).
+*   - "update": The node is being updated.
+*   - "delete": The node is being deleted.
+* @param &$node
+*   The node the action is being performed on. This argument is passed by
+*   reference for performance only; do not modify it.
+* @param $field
+*   The field the action is being performed on.
+* @param &$items
+* An array containing the values of the field in this node. Changes to this variable will
+* be saved back to the node object.
+* Note that, in order to ensure consistency, this variable contains an array regardless of
+* whether field is set to accept multiple values or not.
+* @return
+*   This varies depending on the operation.
+*   - The "load" operation should return an object containing extra values
+*     to be merged into the node object.
+*   - The "view" operation should return a string containing an HTML
+*     representation of the field data.
+*   - The "insert", "update", "delete", "validate", and "submit" operations
+*     have no return value.
+*
+* In most cases, only "view" and "validate" are relevant operations; the rest
+* have default implementations in content_field() that usually suffice.
+*/
 function evocreference_field($op, &$node, $field, &$items, $teaser, $page) {
   switch ($op) {
+    
+    // The user has just finished editing the node and is
+   //  trying to preview or submit it. This hook can be used to check or
+   //  even modify the node. Errors should be set with form_set_error().
+    
     case 'validate':
 //    var_dump($items);
       // Extract evoc terms to check.
@@ -120,8 +164,10 @@ function evocreference_field($op, &$node, $field, &$items, $teaser, $page) {
   }
 }
 
+
 /**
  * Implementation of hook_content_is_empty().
+ * This CCK hook is to say when the field is empty
  */
 function evocreference_content_is_empty($item, $field) {
   if (empty($item['evoc_term'])) {
@@ -131,9 +177,17 @@ function evocreference_content_is_empty($item, $field) {
 }
 
 /**
- * Implementation of hook_field_formatter_info().
- */
+* Declare information about a formatter.
+*
+* @return
+*   An array keyed by formatter name. Each element of the array is an associative
+*   array with these keys and values:
+*   - "label": The human-readable label for the formatter.
+*   - "field types": An array of field type names that can be displayed using
+*     this formatter.
+*/
 function evocreference_field_formatter_info() {
+ 
   return array(
     'default' => array(
       'label' => t('Default'),
@@ -170,7 +224,14 @@ function theme_evocreference_formatter_plain($element) {
 }
 
 /**
- * Implementation of hook_widget_info().
+ * Declare information about a widget.
+ *
+ * @return
+ *   An array keyed by widget name. Each element of the array is an associative
+ *   array with these keys and values:
+ *   - "label": The human-readable label for the widget. 
+ *   - "field types": An array of field type names that can be edited using
+ *     this widget.
  *
  * We need custom handling of multiple values for the evocreference_select
  * widget because we need to combine them into a options list rather
@@ -246,7 +307,22 @@ function evocreference_elements() {
 }
 
 /**
- * Implementation of hook_widget_settings().
+ * Handle the parameters for a widget.
+ *
+ * @param $op
+ *   The operation to be performed. Possible values:
+ *   - "form": Display the widget settings form.
+ *   - "validate": Check the widget settings form for errors.
+ *   - "save": Declare which pieces of information to save back to the database.
+ * @param $widget
+ *   The widget on which the operation is to be performed.
+ * @return
+ *   This varies depending on the operation.
+ *   - The "form" operation should return an array of form elements to add to
+ *     the settings page.
+ *   - The "validate" operation has no return value. Use form_set_error().
+ *   - The "save" operation should return an array of names of form elements to
+ *     be saved in the database.
  */
 function evocreference_widget_settings($op, $widget) {
   switch ($op) {
@@ -552,8 +628,10 @@ function _evocreference_potential_references($field, $string = '', $match = 'con
   if (!isset($results[$cid])) {
     // We don't use views in evoc
     $references = _evocreference_potential_references_standard($field, $string, $match, $ids, $limit);
-
+    
     // Store the results.
+    //$results[$cid] = !empty($references) ? $references : array();
+
     $results[$cid] = $references;
   }
 
@@ -752,3 +830,4 @@ function theme_evocreference_buttons($element) {
 function theme_evocreference_autocomplete($element) {
   return $element['#children'];
 }
+

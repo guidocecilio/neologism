@@ -110,8 +110,12 @@ http://www.w3.org/2001/vcard-rdf/3.0#
 
 */
 
-/*
+/**
  * Import callback function for the evoc module.
+ * 
+ * @param object $vocabulary_uri
+ * @param object $vocabulary_prefix
+ * @return 
  */
 function evoc_import_vocabulary($vocabulary_uri, $vocabulary_prefix) {
   $fetched_terms = evoc_fetch_vocabulary($vocabulary_uri, $vocabulary_prefix);
@@ -315,3 +319,59 @@ function evoc_write_property($property) {
     }
 }
 
+/**
+ * Search for an existing term in the database
+ * 
+ * @param object $term a keyed array containing the pair prefix and id.
+ * @param object $string_term [optional] if $term is NULL then the full string term goes in $string_term.
+ * @param object $class_term [optional] if TRUE the search take place in the classes repository 
+ * otherwise the search take place in the properties repository. 
+ * @return TRUE whether the term exists and FALSE in otherwise 
+ */
+function evoc_term_exists($term, $string_term, $class_term = TRUE) {
+  $table = $class_term ? "evoc_rdf_properties2" : "evoc_rdf_classes";
+  
+  if( !$term ) {
+    if( ($pos = strpos($string_term, ":")) > 0 ) {
+      $prefix = substr($string_term, 0, $pos);
+      $id = substr($string_term, $pos + 1, strlen($string_term) );
+      $term = array('prefix' => $prefix, 'id' => $id);
+    }
+    else {
+      $term = array('prefix' => NULL, 'id' => $string_term);
+    }
+  }
+
+  $count = db_result( db_query( db_rewrite_sql('SELECT count(*) FROM {%s} WHERE prefix="%s" AND id = "%s"'), $table, $term['prefix'], $term['id'] ));
+  return $count > 0;  
+}
+
+/**
+ * Remove class term form evoc's repository
+ * @param object $class
+ * @return 
+ */
+function evoc_remove_class($class) {
+  $res = db_query(db_rewrite_sql('DELETE FROM {evoc_rdf_classes} WHERE prefix="%s" AND id = "%s"'), $class['prefix'], $class['id']);
+  if( $res ) {
+    drupal_set_message($class['prefix'] . ":" . $class['id'] . " has been successfully removed from the system.");
+  }
+  else {
+    drupal_set_message($class['prefix'] . ":" . $class['id'] . " not found in the system.", 'warning');
+  }
+}
+
+/**
+ * Remove property term form evoc's repository
+ * @param object $property
+ * @return 
+ */
+function evoc_remove_property($property) {
+  $res = db_query(db_rewrite_sql('DELETE FROM {evoc_rdf_properties} WHERE prefix="%s" AND id = "%s"'), $property['prefix'], $property['id']);
+  if( $res ) {
+    drupal_set_message($property['prefix'] . ":" . $property['id'] . " has been successfully removed from the system.");
+  }
+  else {
+    drupal_set_message($property['prefix'] . ":" . $property['id'] . " not found in the system.", 'warning');
+  }
+}
