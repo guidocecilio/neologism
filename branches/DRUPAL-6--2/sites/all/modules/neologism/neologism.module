@@ -1127,8 +1127,12 @@ function _neologism_neo_class_node_form_validate($form, &$form_state) {
       form_set_error('field_superclass2', t('You must select a superclass for this class.'));
     }
     else {
-      if( !evoc_term_exists(NULL, $super_class, FALSE) ) {
-          form_set_error('field_superclass2', t('You must select a super class from one of the class that match your criterial. If that class does not exists in the system, please import it.'));
+      // TODO do a global select and then compare with the selected value. 
+      // This way consume too much resources whether there exist many classes.
+      foreach( $form_state['values']['field_superclass2'] as $value ) {
+        if( !evoc_term_exists(NULL, $value['evoc_term'], FALSE) ) {
+            form_set_error('field_superclass2', t('You must select a super class from one of the class that match your criterial. If that class does not exists in the system, please import it.'));
+        }
       }
     }
     
