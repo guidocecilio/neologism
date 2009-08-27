@@ -1,11 +1,11 @@
 <?php
-// $Id: page.tpl.php,v 1.18 2008/01/24 09:42:53 goba Exp $
-?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML+RDFa 1.0//EN" "http://www.w3.org/MarkUp/DTD/xhtml-rdfa-1.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="<?php print $language->language ?>" 
-  <?php print $rdf_namespaces ?>>
-<head profile="<?php print $grddl_profile ?>">
-    <title><?php print $head_title ?></title>
+// $Id: page.tpl.php,v 1.18.2.1 2009/04/30 00:13:31 goba Exp $
+?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="<?php print $language->language ?>" lang="<?php print $language->language ?>" dir="<?php print $language->dir ?>">
+  <head>
     <?php print $head ?>
+    <title><?php print $head_title ?></title>
     <?php print $styles ?>
     <?php print $scripts ?>
     <!--[if lt IE 7]>

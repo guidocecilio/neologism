@@ -28,6 +28,5 @@
       <div class="links"><?php print $links; ?></div>
     <?php endif; ?>
   </div>
-<p><a href="<?php print $node_url ?>/rdf"><img alt="RDF export" title="RDF export" src="http://www.w3.org/RDF/icons/rdf_w3c_button.32" /></a></p>
 
 </div>
