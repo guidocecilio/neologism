@@ -1,5 +1,5 @@
 <?php
-// $Id: aggregator.module,v 1.374.2.3 2008/08/08 20:10:01 dries Exp $
+// $Id: aggregator.module,v 1.374.2.5 2009/03/30 12:15:53 goba Exp $
 
 /**
  * @file
@@ -390,7 +390,7 @@ function aggregator_save_category($edit) {
   else if (!empty($edit['title'])) {
     // A single unique id for bundles and feeds, to use in blocks
     db_query("INSERT INTO {aggregator_category} (title, description, block) VALUES ('%s', '%s', 5)", $edit['title'], $edit['description']);
-    $link_path .= db_last_insert_id('aggregator', 'cid');
+    $link_path .= db_last_insert_id('aggregator_category', 'cid');
     $op = 'insert';
   }
   if (isset($op)) {
@@ -647,7 +647,6 @@ function aggregator_refresh($feed) {
     default:
       watchdog('aggregator', 'The feed from %site seems to be broken, due to "%error".', array('%site' => $feed['title'], '%error' => $result->code .' '. $result->error), WATCHDOG_WARNING);
       drupal_set_message(t('The feed from %site seems to be broken, because of error "%error".', array('%site' => $feed['title'], '%error' => $result->code .' '. $result->error)));
-      module_invoke('system', 'check_http_request');
   }
 }
 
