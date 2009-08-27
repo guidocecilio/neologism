@@ -1,5 +1,5 @@
 <?php
-// $Id: color.module,v 1.39 2008/01/23 09:43:25 goba Exp $
+// $Id: color.module,v 1.39.2.2 2009/05/16 16:09:21 dries Exp $
 
 /**
  * Implementation of hook_help().
@@ -93,7 +93,7 @@ function _color_page_alter(&$vars) {
 
           // If the current language is RTL and the CSS file had an RTL variant,
           // pull out the non-colored and add rewritten RTL stylesheet.
-          if (defined('LANGUAGE_RTL') && $language->direction == LANGUAGE_RTL) {
+          if ($language->direction == LANGUAGE_RTL) {
             $rtl_old_path = str_replace('.css', '-rtl.css', $old_path);
             $rtl_color_path = str_replace('.css', '-rtl.css', $color_path);
             if (file_exists($rtl_color_path)) {
@@ -203,7 +203,7 @@ function color_scheme_form(&$form_state, $theme) {
 /**
  * Theme color form.
  *
- * @ingroup @themeable
+ * @ingroup themeable
  */
 function theme_color_scheme_form($form) {
   // Include stylesheet
