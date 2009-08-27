@@ -1,5 +1,5 @@
 <?php
-// $Id: menu.module,v 1.157.2.3 2008/05/10 06:53:53 dries Exp $
+// $Id: menu.module,v 1.157.2.6 2009/04/27 12:50:13 goba Exp $
 
 /**
  * @file
@@ -163,11 +163,13 @@ function menu_theme() {
  */
 function menu_enable() {
   menu_rebuild();
-  $link = db_fetch_array(db_query("SELECT mlid AS plid, menu_name from {menu_links} WHERE link_path = 'admin/build/menu' AND module = 'system'"));
-  $link['router_path'] = 'admin/build/menu-customize/%';
-  $link['module'] = 'menu';
+  $base_link = db_fetch_array(db_query("SELECT mlid AS plid, menu_name from {menu_links} WHERE link_path = 'admin/build/menu' AND module = 'system'"));
+  $base_link['router_path'] = 'admin/build/menu-customize/%';
+  $base_link['module'] = 'menu';
   $result = db_query("SELECT * FROM {menu_custom}");
   while ($menu = db_fetch_array($result)) {
+    // $link is passed by reference to menu_link_save(), so we make a copy of $base_link.
+    $link = $base_link;
     $link['mlid'] = 0;
     $link['link_title'] = $menu['title'];
     $link['link_path'] = 'admin/build/menu-customize/'. $menu['menu_name'];
@@ -254,8 +256,7 @@ function _menu_parents_recurse($tree, $menu_name, $indent, &$options, $exclude, 
  * Reset a system-defined menu item.
  */
 function menu_reset_item($item) {
-  $router = menu_router_build();
-  $new_item = _menu_link_build($router[$item['router_path']]);
+  $new_item = _menu_link_build(menu_get_item($item['router_path']));
   foreach (array('mlid', 'has_children') as $key) {
     $new_item[$key] = $item[$key];
   }
@@ -296,7 +297,7 @@ function menu_nodeapi(&$node, $op) {
     case 'insert':
     case 'update':
       if (isset($node->menu)) {
-        $item = $node->menu;
+        $item = &$node->menu;
         if (!empty($item['delete'])) {
           menu_link_delete($item['mlid']);
         }

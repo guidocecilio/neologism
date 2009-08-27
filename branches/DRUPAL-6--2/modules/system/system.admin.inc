@@ -1,5 +1,5 @@
 <?php
-// $Id: system.admin.inc,v 1.63.2.5 2008/11/26 13:54:33 dries Exp $
+// $Id: system.admin.inc,v 1.63.2.8 2009/06/09 10:58:09 goba Exp $
 
 /**
  * @file
@@ -1346,6 +1346,9 @@ function system_performance_settings() {
     '#submit' => array('system_clear_cache_submit'),
   );
 
+  $form['#submit'][] = 'drupal_clear_css_cache';
+  $form['#submit'][] = 'drupal_clear_js_cache';
+
   return system_settings_form($form);
 }
 
@@ -1354,7 +1357,7 @@ function system_performance_settings() {
  *
  * @ingroup forms
  */
-function system_clear_cache_submit(&$form_state, $form) {
+function system_clear_cache_submit($form, &$form_state) {
   drupal_flush_all_caches();
   drupal_set_message(t('Caches cleared.'));
 }
@@ -1723,7 +1726,7 @@ function system_run_cron() {
  * Menu callback: return information about PHP.
  */
 function system_php() {
-  phpinfo(INFO_GENERAL | INFO_CONFIGURATION);
+  phpinfo();
   exit();
 }
 
