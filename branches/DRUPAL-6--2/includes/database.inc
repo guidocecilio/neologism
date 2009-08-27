@@ -1,5 +1,5 @@
 <?php
-// $Id: database.inc,v 1.92.2.3 2008/10/20 09:13:04 goba Exp $
+// $Id: database.inc,v 1.92.2.5 2009/06/09 10:42:02 goba Exp $
 
 /**
  * @file
@@ -427,6 +427,8 @@ function db_escape_table($string) {
  *       just map to the according database engine specific
  *       datatypes.  Use 'serial' for auto incrementing fields. This
  *       will expand to 'int auto_increment' on mysql.
+ *     - 'serialize': A boolean indicating whether the field will be stored
+         as a serialized string.
  *     - 'size': The data size: 'tiny', 'small', 'medium', 'normal',
  *       'big'.  This is a hint about the largest value the field will
  *       store and determines which of the database engine specific
@@ -458,7 +460,7 @@ function db_escape_table($string) {
  *
  *  - 'primary key': An array of one or more key column specifiers (see below)
  *    that form the primary key.
- *  - 'unique key': An associative array of unique keys ('keyname' =>
+ *  - 'unique keys': An associative array of unique keys ('keyname' =>
  *    specification).  Each specification is an array of one or more
  *    key column specifiers (see below) that form a unique key on the table.
  *  - 'indexes':  An associative array of indexes ('indexame' =>

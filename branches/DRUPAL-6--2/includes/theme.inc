@@ -1,5 +1,5 @@
 <?php
-// $Id: theme.inc,v 1.415.2.17 2008/12/10 21:09:05 goba Exp $
+// $Id: theme.inc,v 1.415.2.24 2009/06/18 12:04:04 goba Exp $
 
 /**
  * @file
@@ -687,6 +687,10 @@ function theme() {
   }
   // restore path_to_theme()
   $theme_path = $temp;
+  // Add final markup to the full page.
+  if ($hook == 'page' || $hook == 'book_export_html') {
+    $output = drupal_final_markup($output);
+  }
   return $output;
 }
 
@@ -698,11 +702,16 @@ function theme() {
 function drupal_discover_template($paths, $suggestions, $extension = '.tpl.php') {
   global $theme_engine;
 
+  // Remove slashes or null to prevent files from being included from
+  // an unexpected location (especially on Windows servers).
+  $extension = str_replace(array("/", "\\", "\0"), '', $extension);
+
   // Loop through all paths and suggestions in FIFO order.
   $suggestions = array_reverse($suggestions);
   $paths = array_reverse($paths);
   foreach ($suggestions as $suggestion) {
     if (!empty($suggestion)) {
+      $suggestion = str_replace(array("/", "\\", "\0"), '', $suggestion);
       foreach ($paths as $path) {
         if (file_exists($file = $path .'/'. $suggestion . $extension)) {
           return $file;
@@ -1133,6 +1142,7 @@ function theme_status_messages($display = NULL) {
  *   A string containing an unordered list of links.
  */
 function theme_links($links, $attributes = array('class' => 'links')) {
+  global $language;
   $output = '';
 
   if (count($links) > 0) {
@@ -1151,7 +1161,8 @@ function theme_links($links, $attributes = array('class' => 'links')) {
       if ($i == $num_links) {
         $class .= ' last';
       }
-      if (isset($link['href']) && ($link['href'] == $_GET['q'] || ($link['href'] == '<front>' && drupal_is_front_page()))) {
+      if (isset($link['href']) && ($link['href'] == $_GET['q'] || ($link['href'] == '<front>' && drupal_is_front_page()))
+          && (empty($link['language']) || $link['language']->language == $language->language)) {
         $class .= ' active';
       }
       $output .= '<li'. drupal_attributes(array('class' => $class)) .'>';
@@ -1621,7 +1632,7 @@ function theme_username($object) {
     $output .= ' ('. t('not verified') .')';
   }
   else {
-    $output = variable_get('anonymous', t('Anonymous'));
+    $output = check_plain(variable_get('anonymous', t('Anonymous')));
   }
 
   return $output;
@@ -1728,16 +1739,6 @@ function template_preprocess(&$variables, $hook) {
   }
 }
 
-function drupal_get_rdf_namespaces() {
-  // Serialize the RDF namespaces used in RDFa annotation.
-  $xml_rdf_namespaces = array();
-  foreach (module_invoke_all('rdf_namespaces') as $prefix => $uri) {
-    $xml_rdf_namespaces[] = 'xmlns:' . $prefix . '="' . $uri . '"';
-  }
-  return implode("\n  ", $xml_rdf_namespaces);
-}
-
-
 /**
  * Process variables for page.tpl.php
  *
@@ -1819,15 +1820,13 @@ function template_preprocess_page(&$variables) {
   $variables['primary_links']     = theme_get_setting('toggle_primary_links') ? menu_primary_links() : array();
   $variables['secondary_links']   = theme_get_setting('toggle_secondary_links') ? menu_secondary_links() : array();
   $variables['search_box']        = (theme_get_setting('toggle_search') ? drupal_get_form('search_theme_form') : '');
-  $variables['site_name']         = (theme_get_setting('toggle_name') ? variable_get('site_name', 'Drupal') : '');
-  $variables['site_slogan']       = (theme_get_setting('toggle_slogan') ? variable_get('site_slogan', '') : '');
+  $variables['site_name']         = (theme_get_setting('toggle_name') ? filter_xss_admin(variable_get('site_name', 'Drupal')) : '');
+  $variables['site_slogan']       = (theme_get_setting('toggle_slogan') ? filter_xss_admin(variable_get('site_slogan', '')) : '');
   $variables['css']               = drupal_add_css();
   $variables['styles']            = drupal_get_css();
   $variables['scripts']           = drupal_get_js();
   $variables['tabs']              = theme('menu_local_tasks');
   $variables['title']             = drupal_get_title();
-  $variables['rdf_namespaces']    = drupal_get_rdf_namespaces();
-  $variables['grddl_profile']     = 'http://ns.inria.fr/grddl/rdfa/';
   // Closure should be filled last.
   $variables['closure']           = theme('closure');
 
@@ -1878,6 +1877,7 @@ function template_preprocess_page(&$variables) {
   $suggestion = 'page';
   $suggestions = array();
   while ($arg = arg($i++)) {
+    $arg = str_replace(array("/", "\\", "\0"), '', $arg);
     $suggestions[] = $suggestion .'-'. $arg;
     if (!is_numeric($arg)) {
       $suggestion .= '-'. $arg;

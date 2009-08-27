@@ -1,5 +1,5 @@
 <?php
-// $Id: form.inc,v 1.265.2.16 2008/11/22 13:03:19 dries Exp $
+// $Id: form.inc,v 1.265.2.25 2009/05/26 08:18:46 goba Exp $
 
 /**
  * @defgroup forms Form builder functions
@@ -756,7 +756,10 @@ function form_execute_handlers($type, &$form, &$form_state) {
 
   foreach ($handlers as $function) {
     if (function_exists($function))  {
-      if ($type == 'submit' && ($batch =& batch_get())) {
+      // Check to see if a previous _submit handler has set a batch, but 
+      // make sure we do not react to a batch that is already being processed 
+      // (for instance if a batch operation performs a drupal_execute()).
+      if ($type == 'submit' && ($batch =& batch_get()) && !isset($batch['current_set'])) {
         // Some previous _submit handler has set a batch. We store the call
         // in a special 'control' batch set, for execution at the correct
         // time during the batch processing workflow.
@@ -972,7 +975,6 @@ function _form_builder_handle_input_element($form_id, &$form, &$form_state, $com
     $form['#id'] = form_clean_id('edit-'. implode('-', $form['#parents']));
   }
 
-  unset($edit);
   if (!empty($form['#disabled'])) {
     $form['#attributes']['disabled'] = 'disabled';
   }
@@ -1170,7 +1172,12 @@ function form_type_image_button_value($form, $edit = FALSE) {
  */
 function form_type_checkbox_value($form, $edit = FALSE) {
   if ($edit !== FALSE) {
-    return !empty($edit) ? $form['#return_value'] : 0;
+    if (empty($form['#disabled'])) {
+      return !empty($edit) ? $form['#return_value'] : 0;
+    }
+    else {
+      return $form['#default_value'];
+    }
   }
 }
 
@@ -1534,7 +1541,7 @@ function theme_radio($element) {
   $output .= (check_plain($element['#value']) == $element['#return_value']) ? ' checked="checked" ' : ' ';
   $output .= drupal_attributes($element['#attributes']) .' />';
   if (!is_null($element['#title'])) {
-    $output = '<label class="option">'. $output .' '. $element['#title'] .'</label>';
+    $output = '<label class="option" for="'. $element['#id'] .'">'. $output .' '. $element['#title'] .'</label>';
   }
 
   unset($element['#title']);
@@ -1617,7 +1624,7 @@ function password_confirm_validate($form, &$form_state) {
   $pass1 = trim($form['pass1']['#value']);
   if (!empty($pass1)) {
     $pass2 = trim($form['pass2']['#value']);
-    if ($pass1 != $pass2) {
+    if (strcmp($pass1, $pass2)) {
       form_error($form, t('The specified passwords do not match.'));
     }
   }
@@ -1873,7 +1880,7 @@ function theme_checkbox($element) {
   $checkbox .= drupal_attributes($element['#attributes']) .' />';
 
   if (!is_null($element['#title'])) {
-    $checkbox = '<label class="option">'. $checkbox .' '. $element['#title'] .'</label>';
+    $checkbox = '<label class="option" for="'. $element['#id'] .'">'. $checkbox .' '. $element['#title'] .'</label>';
   }
 
   unset($element['#title']);
