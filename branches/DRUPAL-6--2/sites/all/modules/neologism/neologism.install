@@ -25,9 +25,7 @@ function _neologism_create_content($type) {
 
 function neologism_update_1() {
   $ret = array();
-
-
-   return $ret;
+  return $ret;
 }
 
 

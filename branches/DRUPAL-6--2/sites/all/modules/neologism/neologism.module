@@ -22,11 +22,18 @@ define("DEFAULT_RDFS_SUPERCLASS", "rdfs:Resource");
  * Implementation of hook_init().
  */
 function neologism_init() {
+  
   drupal_add_css(drupal_get_path('module', NEOLOGISM) .'/neologism.css');
-  drupal_add_css(drupal_get_path('module', NEOLOGISM) .'/js/jquery-treeview/jquery.treeview.css');
-  drupal_add_js(drupal_get_path('module', 'neologism') . '/js/jquery-treeview/jquery.cookie.js');
-  drupal_add_js(drupal_get_path('module', 'neologism') . '/js/jquery-treeview/jquery.treeview.js');
   drupal_add_js(drupal_get_path('module', 'neologism') . '/js/neologism.js');
+  
+  //drupal_add_css( drupal_get_path('module', NEOLOGISM) . '/ext/css/xtheme-darkgray.css');
+  //drupal_add_css( drupal_get_path('module', NEOLOGISM) . '/ext/css/xtheme-slickness.css');
+  //drupal_add_css( drupal_get_path('module', NEOLOGISM) . '/ext/css/xtheme-olive.css');
+  
+  //drupal_add_css(drupal_get_path('module', NEOLOGISM) .'/js/jquery-treeview/jquery.treeview.css');
+  //drupal_add_js(drupal_get_path('module', 'neologism') . '/js/jquery-treeview/jquery.cookie.js');
+  //drupal_add_js(drupal_get_path('module', 'neologism') . '/js/jquery-treeview/jquery.treeview.js');
+  
 
   $ct = content_types();
 
@@ -57,6 +64,14 @@ function neologism_perm() {
  */
 function neologism_theme() {
   return array(
+    'class_view' => array(
+      'arguments' => array('node' => array(), 'vocabulary' => NULL, 'teaser' => NULL, 'page' => NULL, 'links' => NULL)
+    ),
+    
+    'property_view' => array(
+      'arguments' => array('node' => array(), 'vocabulary' => NULL, 'teaser' => NULL, 'page' => NULL, 'links' => NULL)
+    ),
+    
     'neologism_item_list' => array(
       'arguments' => array('items' => array(), 'title' => NULL, 'type' => 'ul', 'attribute' => NULL),
     ),
@@ -86,39 +101,46 @@ function neologism_menu() {
     'title' => 'Neologism Vocabularies',
     'description' => "Show a list of vocabularies.",
     'page callback' => 'neologism_view_index',
-    'access arguments' => TRUE,
+    //'access arguments' => TRUE,  see at http://www.aprium.net/content/error-menuinc-line-258
+    'access arguments' => array('access content'),
     'type' => MENU_LOCAL_TASK,
   );
-  $items['node/%neologism_vocabulary/' . HTML] = array(
+
+  $items['node/%neologism_vocabulary/'.HTML] = array(
       'title' => 'View HTML',
       'page callback' => 'neologism_export_html',
       'page arguments' => array(1),
       'access callback' => 'node_access',
       'access arguments' => array('view', 1),
+      //'access arguments' => array('access content'),
       'type' => MENU_LOCAL_TASK,
   );
-  $items['node/%neologism_vocabulary/' . RDF] = array(
+
+  $items['node/%neologism_vocabulary/'.RDF] = array(
       'title' => 'View RDF/XML',
       'page callback' => 'neologism_export_rdfxml',
       'page arguments' => array(1),
       'access callback' => 'node_access',
       'access arguments' => array('view', 1),
-      'type' => MENU_LOCAL_TASK,
+      //'access arguments' => array('access content'),
+      'type' => MENU_CALLBACK,
   );
-  $items['node/%neologism_vocabulary/' . N3] = array(
+  $items['node/%neologism_vocabulary/'.N3] = array(
       'title' => 'View N3',
       'page callback' => 'neologism_export_n3',
       'page arguments' => array(1),
       'access callback' => 'node_access',
       'access arguments' => array('view', 1),
-      'type' => MENU_LOCAL_TASK,
+      //'access arguments' => array('access content'),
+      'type' => MENU_CALLBACK,
   );
-  $items['node/%neologism_vocabulary/' . XML] = array(
+  $items['node/%neologism_vocabulary/'.XML] = array(
       'title' => 'View XML',
       'page callback' => 'neologism_export_xml',
       'page arguments' => array(1),
       'access callback' => 'node_access',
       'access arguments' => array('view', 1),
+      //'access arguments' => array('access content'),
       'type' => MENU_CALLBACK,
   );
   $items['node/%neologism_vocabulary/layout'] = array(
@@ -127,6 +149,7 @@ function neologism_menu() {
       'page arguments' => array(1),
       'access callback' => 'node_access',
       'access arguments' => array('view', 1),
+      //'access arguments' => array('access content'),
       'type' => MENU_CALLBACK,
   );
   $items['node/%neologism_vocabulary/image'] = array(
@@ -134,6 +157,7 @@ function neologism_menu() {
       'page callback' => 'neologism_image',
       'page arguments' => array(1),
       'access callback' => 'node_access',
+      //'access arguments' => array('access content'),
       'access arguments' => array('view', 1),
       'type' => MENU_CALLBACK,
   );
@@ -143,6 +167,7 @@ function neologism_menu() {
       'page callback' => 'neologism_show_diagram',
       'page arguments' => array(1),
       'access callback' => 'node_access',
+      //'access arguments' => array('access content'),
       'access arguments' => array('view', 1),
       'type' => MENU_LOCAL_TASK,
   );
@@ -154,8 +179,123 @@ function neologism_menu() {
     'access arguments' => array('administer nodes'),
     'file' => 'neologism.import.inc',
   );
+  
+  // ajax/json gateway for preview classes and properties
+  $items['neologism/json'] = array(
+    'title' => 'Neologism AJAX gateway',
+    'description' => 'Neologism Ajax Gateway.',
+    'page callback' => 'neologism_get_classes_tree',
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+    'file' => 'neologism.gateway.php'
+  );
+  $items['neologism/json/objectpropertytree'] = array(
+    'title' => 'Neologism AJAX gateway',
+    'description' => 'Neologism Ajax Gateway.',
+    'page callback' => 'neologism_get_objectproperty_tree',
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+    'file' => 'neologism.gateway.php'
+  );
+  
+  $items['neologism/json/fulltree'] = array(
+    'title' => 'Neologism AJAX gateway - get full classes tree structure',
+    'description' => 'Get full tree for all the current classes stored in Neologism.',
+    'page callback' => 'neologism_gateway_get_full_classes_tree',
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+    'file' => 'neologism.gateway.php'
+  );
+  
+  $items['neologism/json/propertiesfulltree'] = array(
+    'title' => 'Neologism AJAX gateway - get full properties tree structure',
+    'description' => 'Get get full properties tree structure stored in Neologism.',
+    'page callback' => 'neologism_gateway_get_full_properties_tree',
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+    'file' => 'neologism.gateway.php'
+  );
 
   return $items;
+}
+
+/**
+ * Implementation of hook_form_alter().
+ */
+//TODO check the new form_alter
+function neologism_form_alter(&$form, &$form_state, $form_id) {
+  // Select the vocabulary when adding a class or a property from a vocabulary page
+  if (($form_id == NEOLOGISM_CT_CLASS.'_node_form' || $form_id == NEOLOGISM_CT_PROPERTY.'_node_form')
+      && isset($_GET['v']) && isset($form['field_vocabulary']['#default_value'])) {
+    $vocabulary_id = (int)$_GET['v'];
+    $form['field_vocabulary']['#default_value'][0]['nid'] = $vocabulary_id;
+  }
+  
+  // Select the parent class if provided in the url of type node/add/class/parent/9
+  if ($form_id == NEOLOGISM_CT_CLASS.'_node_form' && arg(3) == 'parent' && isset($form['field_subclassof']['#default_value'])) {
+    $form['field_subclassof']['#default_value'][0]['nid'] = arg(4);
+  }
+  
+  if( $form_id == NEOLOGISM_CT_PROPERTY.'_node_form' ) {
+    
+    $form['#validate'][] = '_neologism_neo_property_node_form_validate';
+    
+    if( isset($form['field_range2']) ) {
+      $form['field_range2']['#prefix'] = '<div id="range-field">';
+      $form['field_range2']['#suffix'] = '</div>';  
+    }
+    
+    // add behaviours for evoc fields if they are using the MXCheckBox selection widget
+    
+    $form['field_superproperty2']['#neo_behaviour']['handler'] = 'EvocWidget.createSuperpropertySelecctionWidget';
+    $form['field_superproperty2']['#neo_behaviour']['url_gateway'] = 'neologism/json/propertiesfulltree';
+    
+    //$form['field_disjointwith2']['#neo_behaviour']['handler'] = 'EvocWidget.createDisjointWithSelecctionWidget'; 
+    //$form['field_disjointwith2']['#neo_behaviour']['url_gateway'] = 'neologism/json/fulltree'; 
+    
+    // Select the domain of a property if provided in the url of type node/add/property/classparent/3
+    if( arg(3) == 'classparent' && isset($form['field_domain']['#default_value']) ) {
+      $form['field_domain']['#default_value'][0]['nid'] = arg(4);
+    }
+    
+    // Select the parent class if provided in the url of type node/add/property/parent/11
+    if( arg(3) == 'parent' && isset($form['field_subpropertyof']['#default_value']) ) {
+      $form['field_subpropertyof']['#default_value'][0]['nid'] = arg(4);
+    }
+  }
+  
+  // add the validation handler to both content type
+  if( $form_id == NEOLOGISM_CT_CLASS.'_node_form' )
+  {
+    $form['#validate'][] = '_neologism_neo_class_node_form_validate';
+    $form['field_superclass2']['#neo_behaviour']['handler'] = 'EvocWidget.createClassSelecctionWidget';
+    $form['field_superclass2']['#neo_behaviour']['url_gateway'] = 'neologism/json/fulltree';
+    $form['field_disjointwith2']['#neo_behaviour']['handler'] = 'EvocWidget.createDisjointWithSelecctionWidget'; 
+    $form['field_disjointwith2']['#neo_behaviour']['url_gateway'] = 'neologism/json/fulltree'; 
+  }
+  
+  // Hide the menu settings fieldset in class and property forms
+  // as it is not likely to be used here and also steps in the middle of the form flow.
+  if (($form_id == NEOLOGISM_CT_CLASS.'_node_form' || $form_id == NEOLOGISM_CT_PROPERTY.'_node_form') && isset($form['menu'])) {
+    unset($form['menu']);
+  }
+  // Set the size of the description field to 5 rows in class and property forms.
+  if (($form_id == NEOLOGISM_CT_CLASS.'_node_form' || $form_id == NEOLOGISM_CT_PROPERTY.'_node_form') && isset($form['body_field']['body']['#rows'])) {
+    $form['body_field']['body']['#rows'] = 4;
+  }
+  // Hide the layout field of the vocublary page since it's only used
+  // internally by the viewer to store the diagram layout.
+  if ($form_id == NEOLOGISM_CT_VOCABULARY.'_node_form' && isset($form['field_layout'])) {
+    unset($form['field_layout']);
+  }
+  // Collapse the URL path fieldset to prevent people from messing with it.
+  if ($form_id == NEOLOGISM_CT_VOCABULARY.'_node_form' && isset($form['path']['#collapsed'])) {
+    $form['path']['#collapsed'] = TRUE;
+  }
+  // Set the weight of the menu settings for it to appear after the description field.
+  if ($form_id == NEOLOGISM_CT_VOCABULARY.'_node_form' && isset($form['menu']['#weight'])) {
+    $form['menu']['#weight'] = 1;
+  }
 }
 
 function neologism_vocabulary_load($nid) {
@@ -170,66 +310,57 @@ function neologism_vocabulary_load($nid) {
   }
 }
 
-function get_children($array, $parent_id) {
-  $children = array();
-  foreach ($array as $id => $item) {
-    // Check if is child of parent_id
-    if ($item['superclass'] == $parent_id) {
-      $children[$id] = $item;
-      unset($array[$id]);
-      continue;
-    }
-  }
-  return $children;
-}
-
-
 /**
  * Output the HTML version of the vocabulary specified as input.
  */
 function neologism_export_html($node) {
 
-  $output = '';
-  drupal_set_title('Vocabulary '. check_plain($node->title));
+  $vocabulary_title = check_plain($node->field_title[0]['value']);
+  $output = '<div id="vocabulary-view">';
+  
+  $image = theme('image', drupal_get_path('module', 'neologism') .'/images/icons/rdf_w3c_icon.48.gif', t('RDF/XML version of this vocabulary.'), t('RDF/XML version of this vocabulary.'));
+  $link = l($image, $node->path.'/'.RDF, array('html' => TRUE, 'attributes' => Array('class' => 'icon')));
+  $image = theme('image', drupal_get_path('module', 'neologism') .'/images/icons/n3.gif', t('N3/Turtle version of this vocabulary.'), t('N3/Turtle version of this vocabulary.'));
+  $link2 = l($image, $node->path.'/'.N3, array('html' => TRUE, 'attributes' => Array('class' => 'icon')));
+  $output .= '<div id="icons">'.$link.'&nbsp;'.$link2.'</div>';
+  
+  $output .= '<h1>'.$vocabulary_title.'</h1>';
+    
+  // clear the title so we can print our formatted title
+  drupal_set_title('');
   
   $classes = get_all_classes($node);
   $properties = get_all_properties($node);
   
-  // Last update date
-  $output .= '<div id="last_update" class="neologism field"><div class="field-label-inline-first">Last update:&nbsp;</div> ' . format_date($node->changed, 'large') . ' </div>';
+  //$output .= '<div id="namespace"><h3>Namespace URI:</h3> <div id="namespace-value">'.$namespace_url.'#</div></div>';
+  $output .= '<div id="last-update" ><h3>Last update:</h3><div id="last-update-value">'.format_date($node->changed, 'large').'</div></div>';
   
   // Authors TODO: loop among the author to display their name
-  $first_class = '-first';
-  $output .= '<div class="field field-type-nodereference field-field-disjointwith">';
-  $output .= '<div class="field-items">';
   
-  
+  $output .= '<div id="authors" ><h3>'.t('Author').':</h3>';
   foreach($node->field_authors as $author) {
     $author = user_load($author);
-    $output .= '<div class="field-item"><div class="field-label-inline'. $first_class .'">Authors:&nbsp;</div>';
-    $output .= l($author->name, 'user/'. $author->uid);
-    $output .= '</div>';
-    $first_class = '';
+    $output .= '<div id="author-value">'.l($author->name, 'user/'. $author->uid).'</div>';
   }
+  $output .= '</div>';
+
+  $opts = array('absolute' => TRUE);
+  $namespace_url = url($node->path, $opts);
+  $output .= '<div id="namespace"><h3>Namespace URI:</h3> <div id="namespace-value">'.$namespace_url.'#</div></div>';
 
   // Abstract
-  $output .= '<div id="abstract" class="neologism field"><div class="field-label-inline-first">Abstract:&nbsp;</div> ' . check_plain($node->field_abstract[0]['value']) . ' </div>';
-  
-  // Free text (body)
-  $output .= '<p id="last_update" class="neologism">' . check_markup($node->body) . ' </p>';
-  
+  $output .= '<div id="abstract" class="neologism field"><div class="block title"><h3>Abstract&nbsp;</h3></div> ' . check_plain($node->field_abstract[0]['value']) . ' </div>';
+
   // Content type in urls are with - instead of _
   $vocabulary_url_str = str_replace('_', '-', NEOLOGISM_CT_VOCABULARY);
   $class_url_str = str_replace('_', '-', NEOLOGISM_CT_CLASS);
   $property_url_str = str_replace('_', '-', NEOLOGISM_CT_PROPERTY);
   
   // Links to add term to the vocabulary. TODO: manage the multi vocabulary situation, and create a /parent path
-  if (user_access('edit neologism')) {
-    $output .= '<p id="add_terms_link" class="neologism">' . l('Add class', 'node/add/'.$class_url_str, array('query' => "v=$node->nid")) .' '. l('Add property', 'node/add/'.$property_url_str, array('query' => "v=$node->nid")) . ' </p>';
-  }
+  
   
   //Vocabulary at glance
-  $output .= '<h2 id="sec_glance" class="neologism">' . check_plain($node->title) . ' at a glance</h2>';
+  $output .= '<h2 id="sec_glance" class="neologism">'.$vocabulary_title.' at a glance</h2>';
   if ($classes || $properties) {
     $output .= '<div id="atglance">';
   }
@@ -267,81 +398,101 @@ function neologism_export_html($node) {
     $output .= '</div>';
   }
   
-
-//// Treeview
-  // Treeview
-  $output .= '<h2 id="sec_treeview" class="neologism">' . check_plain($node->title) . ' treeview</h2>';
-	
-	// guidocecilio - 20 july 2009
-	// the sequence of (array) cast is to prevent the warning when trying to iterate 
-	// through an array that may sometimes have no data in it  
-		
-  // Tweak the classes for later HTML list output
-  foreach ( (array) $classes as $id => $class) {
-    $classes[$id]['data'] = '<a href="#' . $class['id'] . '" title="class ' . check_plain($node->title) . ':'. check_plain($class['title']) . '">' . check_plain($class['title']) . '</a>';
+  // add the links for add classes or properties if there is right 
+  if (user_access('edit neologism')) {
+    $output .= '<p id="add_terms_link" class="neologism">'. l('Add class', 'node/add/'.$class_url_str, array('query' => "v=$node->nid")) .'| '. l('Add property', 'node/add/'.$property_url_str, array('query' => "v=$node->nid")) . '</p>';
   }
-
-  // We'll use a temporary array which will be emptied as we build the tree.
-  $classes_flat = $classes;
-  // Find parents.
-  foreach ( (array) $classes_flat as $class) {
-    if ($class['superclass'] == NULL) {
-      $tree[$node->title . ':' . $class['id']] = $class;
-      unset($classes_flat[$class['id']]);
-    }
-  }
+  
+  ext_load_library();
+  drupal_add_js( array('neologism' => array('voc_id' => $node->nid, 'voc_title' => $node->title)), 'setting');
+  
+  if ($classes) {
+    $output .= '<div id="class-tree" ></div>';
     
-	// guidocecilio - 20 july 2009
-	// this condition is to prevent the warning when trying to iterate through 
-	// an array that may sometimes have no data in it  
-	if( $tree ) {
-		ksort($tree);
-	}
-		
-  // TODO use recursive function here.
-  // Children.
-  foreach ( (array) $tree as $id => $class) {
-    if ($children = get_children($classes_flat, $id)) {
-      $tree[$id]['children'] = $children;
-    }
+    $opts = array('absolute' => TRUE);
+    $json_url = url('neologism/json', $opts);
+      
+    //create the variable into the namespace neologism
+    // eg: Drupal.settings.neologism.json_url
+    drupal_add_js( array('neologism' => array('json_url' => $json_url)), 'setting');
+    drupal_add_js( drupal_get_path('module', NEOLOGISM) . '/js/class_treeview.js');
   }
-  // Children depth 2.
-  foreach ( (array) $tree as $id => $class) {
-    if (isset($class['children']) && is_array($class['children'])) {
-      foreach ($class['children'] as $id2 => $class2) {
-        if ($children = get_children($classes_flat, 'birf:' . $id2)) {
-          $tree[$id]['children'][$id2]['children'] = $children;
-        }
-      }
-      ksort($tree[$id]['children']);
-    }
+  
+  if ($properties) {
+    // object property hierarchy tree
+    $output .= '<div id="object-property-tree" ></div>';
+    
+    $opts = array('absolute' => TRUE);
+    $json_url = url('neologism/json/objectpropertytree', $opts);
+    drupal_add_js( array('neologism' => array('property_json_url' => $json_url)), 'setting');
+    drupal_add_js( drupal_get_path('module', NEOLOGISM) . '/js/object_property_treeview.js');
   }
-
-  $output .= <<<END
- <div id="treecontrol">
-      <a title="Collapse the entire tree below" href="#">Collapse All</a>
-      <a title="Expand the entire tree below" href="#">Expand All</a>
-      <a title="Toggle the tree below, opening closed branches, closing open branches" href="#">Toggle All</a>
-  </div>
-END;
-
-  $output .= theme('neologism_item_list', $tree, NULL, 'ul', array('id' => 'tree'));
-//// End Treeview
+  
+  //drupal_add_css( drupal_get_path('module', NEOLOGISM) . '/ext/css/xtheme-darkgray.css');
+  //drupal_add_css( drupal_get_path('module', NEOLOGISM) . '/ext/css/xtheme-slickness.css');
+  
+  /*
+  // embend the diagram
+  $base = base_path();
+  $swf = $base . drupal_get_path('module','neologism').'/includes/Neologism.swf';
+  $img_legend = $base . drupal_get_path('module','neologism').'/includes/legend.png';
+  $edit_mode = user_access('edit neologism');
+  $prefix = $base . $node->path . '/';
+  $token = drupal_get_token();
+  
+  // TODO The vocabulary parameter is not used anymore and could be removed from the flex viewer.
+  $flex_params = "vocabulary=&editMode=$edit_mode&prefix=$prefix&token=$token";
+  $output .= '
+    <div id="diagram">
+    <object classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000"
+        id="Neologism" width="100%" height="600px"
+        codebase="http://fpdownload.macromedia.com/get/flashplayer/current/swflash.cab">
+            <param name="movie" value="'.$swf.'" />
+            <param name="quality" value="high" />
+            <param name="bgcolor" value="#869ca7" />
+            <param name="flashVars" value="'.$flex_params.'" />
+            <param name="allowScriptAccess" value="sameDomain" />
+            <embed src="'.$swf.'" quality="high" bgcolor="#869ca7"
+                width="100%"
+                height="600px"
+                name="Neologism"
+                align="middle"
+                play="true"
+                loop="false"
+                quality="high"
+                allowScriptAccess="sameDomain"
+                type="application/x-shockwave-flash"
+                pluginspage="http://www.adobe.com/go/getflashplayer"
+                flashVars="'.$flex_params.'">
+            </embed>
+    </object>
+  </div>';
+  */
+  
+  // insert the vocabulary's dscription
+  $output .= '<div id="description">'.check_markup($node->body).'</div>';
 
   //Display complete reference
-  $output .= '<h2 id="sec_reference" class="neologism">' . check_plain($node->title) . ' classes and properties</h2>';
   if ($classes) {
+    $output .= '<h2 id="sec_reference" class="neologism">' . $vocabulary_title . ' Classes</h2>';
     foreach ($classes as $class) {
-        $output .= node_view(node_load($class['nid']), 1, check_plain($node->title));
+      $output .= theme('class_view', node_load($class['nid']), $node->title, TRUE );
+      //  $output .= node_view(node_load($class['nid']), 1, $vocabulary_title);
     }
   }
+   
   if ($properties) {
+    $output .= '<h2 id="sec_reference" class="neologism">' . $vocabulary_title . ' Properties</h2>';
     foreach ($properties as $property) {
-        $output .= theme('neo_property_node_view', node_load($property['nid']), 1, check_plain($node->title)); 
+        //$output .= theme('neo_property_node_view', node_load($property['nid']), 1, $node->title);
+        $output .= theme('property_view', node_load($property['nid']), $node->title, TRUE );
     }
   }
   
   $output .= theme('pager', NULL, variable_get('default_nodes_main', 10));
+ 
+  $output .= '</div>';
+  
   return $output;
 }
 
@@ -433,7 +584,7 @@ function neologism_export_rdfxml($node) {
     $ontology = substr($request_uri, 0, strlen($request_uri)-4) . "#";
     $model = neologism_get_rdf_model($node, $ontology, $request_uri);
     $ser = new RDFSerializer();
-    $rdf =& $ser->serialize($model);
+    $rdf = & $ser->serialize($model);
     $model->close();
 
     header("Content-Type: application/rdf+xml; charset=utf-8");
@@ -454,7 +605,7 @@ function neologism_export_n3($node) {
     $ontology = substr($request_uri, 0, strlen($request_uri)-3) . "#";
     $model = neologism_get_rdf_model($node, $ontology, $request_uri);
     $ser = new N3Serializer();
-    $n3 =& $ser->serialize($model);
+    $n3 = & $ser->serialize($model);
     $model->close();
 
     header("Content-Type: text/rdf+n3; charset=utf-8");
@@ -584,7 +735,6 @@ function neologism_show_diagram($node) {
   $output = <<<EXCERPT
 
 <div id="flex_diagram">
-
     <object classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000"
         id="Neologism" width="800px" height="600px"
         codebase="http://fpdownload.macromedia.com/get/flashplayer/current/swflash.cab">
@@ -607,10 +757,6 @@ function neologism_show_diagram($node) {
                 flashVars='$flex_params'>
             </embed>
     </object>
-
-    <img src="$img_legend"
-         alt="green arrows mean property, red inheritance"
-         width="226" height="80" id="legend" />
 
 </div>
 
@@ -678,64 +824,6 @@ function neologism_link($type, $node = NULL, $teaser = FALSE) {
     return $links;
 }
 
-/**
- * Implementation of hook_form_alter().
- */
-//TODO check the new form_alter
-function neologism_form_alter(&$form, &$form_state, $form_id) {
-  // Select the vocabulary when adding a class or a property from a vocabulary page
-  if (($form_id == NEOLOGISM_CT_CLASS.'_node_form' || $form_id == NEOLOGISM_CT_PROPERTY.'_node_form')
-      && isset($_GET['v']) && isset($form['field_vocabulary']['#default_value'])) {
-    $vocabulary_id = (int)$_GET['v'];
-    $form['field_vocabulary']['#default_value'][0]['nid'] = $vocabulary_id;
-  }
-  // Select the parent class if provided in the url of type node/add/class/parent/9
-  if ($form_id == NEOLOGISM_CT_CLASS.'_node_form' && arg(3) == 'parent' && isset($form['field_subclassof']['#default_value'])) {
-    $form['field_subclassof']['#default_value'][0]['nid'] = arg(4);
-  }
-  // Select the domain of a property if provided in the url of type node/add/property/classparent/3
-  if ($form_id == NEOLOGISM_CT_PROPERTY.'_node_form' && arg(3) == 'classparent' && isset($form['field_domain']['#default_value'])) {
-    $form['field_domain']['#default_value'][0]['nid'] = arg(4);
-  }
-  // Select the parent class if provided in the url of type node/add/property/parent/11
-  if ($form_id == NEOLOGISM_CT_PROPERTY.'_node_form' && arg(3) == 'parent' && isset($form['field_subpropertyof']['#default_value'])) {
-    $form['field_subpropertyof']['#default_value'][0]['nid'] = arg(4);
-  }
-
-  // Hide the menu settings fieldset in class and property forms
-  // as it is not likely to be used here and also steps in the middle of the form flow.
-  if (($form_id == NEOLOGISM_CT_CLASS.'_node_form' || $form_id == NEOLOGISM_CT_PROPERTY.'_node_form') && isset($form['menu'])) {
-    unset($form['menu']);
-  }
-  // Set the size of the description field to 5 rows in class and property forms.
-  if (($form_id == NEOLOGISM_CT_CLASS.'_node_form' || $form_id == NEOLOGISM_CT_PROPERTY.'_node_form') && isset($form['body_field']['body']['#rows'])) {
-    $form['body_field']['body']['#rows'] = 4;
-  }
-  // Hide the layout field of the vocublary page since it's only used
-  // internally by the viewer to store the diagram layout.
-  if ($form_id == NEOLOGISM_CT_VOCABULARY.'_node_form' && isset($form['field_layout'])) {
-    unset($form['field_layout']);
-  }
-  // Collapse the URL path fieldset to prevent people from messing with it.
-  if ($form_id == NEOLOGISM_CT_VOCABULARY.'_node_form' && isset($form['path']['#collapsed'])) {
-    $form['path']['#collapsed'] = TRUE;
-  }
-  // Set the weight of the menu settings for it to appear after the description field.
-  if ($form_id == NEOLOGISM_CT_VOCABULARY.'_node_form' && isset($form['menu']['#weight'])) {
-    $form['menu']['#weight'] = 1;
-  }
-  
-  // add the validation handler to both content type
-  if( $form_id == NEOLOGISM_CT_CLASS.'_node_form' )
-  {
-    $form['#validate'][] = '_neologism_neo_class_node_form_validate';
-  }
-  
-  if( $form_id == NEOLOGISM_CT_PROPERTY.'_node_form' )
-  {
-    $form['#validate'][] = '_neologism_neo_property_node_form_validate';
-  }
-}
 
 /**
  * Implementation of hook_nodeapi().
@@ -768,6 +856,11 @@ function neologism_nodeapi(&$node, $op, $teaser, $page) {
         
       // catching the view event
       case 'view':
+        /*
+        if( $node->type == NEOLOGISM_CT_VOCABULARY ) {
+          $node->title = $node->field_title[0]['value'];
+        }
+        */
         /*
         if( $node->type == NEOLOGISM_CT_CLASS ) {
           //$node = node_load(arg(1));
@@ -1016,21 +1109,46 @@ function get_all_classes($node) {
  * Get the best content type requested
  */
 function neologism_get_preferred_content($accept) {
-    if (isset($accept)) {
-        include(CONTENT_NEGOTATION_DIR . "content_negotiation.inc.php");
-        $best = content_negotiation::mime_best_negotiation();
-        if ($best == "application/rdf+xml")
-            return RDF;
-        else if ($best == "text/rdf+n3")
-            return N3;
-        else if ($best == "application/xml")
-            return XML;
-        else
-            return HTML;
-    } else {
-        return RDF;
-    }
+  if (isset($accept)) {
+    include_once(CONTENT_NEGOTATION_DIR . "content_negotiation.inc.php");
+    // Stupid browsers that send */* should get HTML, so give
+    // highest preference ot that. We prefer XHTML over HTML if
+    // both are supported. Among RDF formats, RDF/XML has precedence
+    // over Turtle and N3. We also map application/xml to
+    // RDF/XML.
+    $supported_types = array(
+      'type' => array(
+        'application/xhtml+xml',
+        'text/html',
+        'application/rdf+xml',
+        'text/turtle',
+        'text/rdf+n3',
+        'application/xml',
+      ),
+      'app_preference' => array(
+        1.00,
+        0.99,
+        0.90,
+        0.89,
+        0.88,
+        0.50,
+      ),
+    );
+    
+    $best = content_negotiation::mime_best_negotiation($supported_types);
+    if ($best == "application/rdf+xml")
+      return RDF;
+    else if ($best == "text/rdf+n3" || $best == "text/turtle")
+      return N3;
+    else if ($best == "application/xml")
+      return RDF;
+    else
+      return HTML;
+   } else {
+     return RDF;
+   }
 }
+
 
 /**
  * Get the best uri requested
@@ -1130,6 +1248,7 @@ function _neologism_neo_class_node_form_validate($form, &$form_state) {
       // TODO do a global select and then compare with the selected value. 
       // This way consume too much resources whether there exist many classes.
       foreach( $form_state['values']['field_superclass2'] as $value ) {
+        // FIXME there is some error with external superclasses that doesn't has superclasses
         if( !evoc_term_exists(NULL, $value['evoc_term'], FALSE) ) {
             form_set_error('field_superclass2', t('You must select a super class from one of the class that match your criterial. If that class does not exists in the system, please import it.'));
         }
@@ -1191,6 +1310,157 @@ function _neologism_neo_property_node_form_validate($form, &$form_state) {
 // end validation node section
 //-------------------------------------------------------------------------------------------------------
 
+//-------------------------------------------------------------------------------------------------------
+// theming section
+
+function theme_class_view($node, $vocabulary = NULL, $teaser = FALSE, $page = FALSE, $links = TRUE) {
+	$node = (object)$node;
+  $output = '';
+  
+  $node = node_build_content($node, $teaser, $page);
+  
+  $superclasses = '';
+  if ( !empty($node->content['field_superclass2']['field']['items'][0]['#item']['evoc_term']) ) {
+    $superclasses .= '<div class="row"><div class="column-title">subclass-of:</div><div class="column-values">';
+    foreach ( $node->content['field_superclass2']['field']['items'] as $value ) {
+      $superclasses .= theme('evocreference_formatter_default', $value).'&nbsp';
+    }
+    $superclasses .= '</div></div>';
+  }
+  
+  $disjointwith = '';
+  if ( !empty($node->content['field_disjointwith2']['field']['items'][0]['#item']['evoc_term']) ) {
+    $disjointwith .= '<div class="row"><div class="column-title">disjoint-with:</div><div class="column-values">';
+    foreach ( $node->content['field_disjointwith2']['field']['items'] as $value ) {
+      $disjointwith .= theme('evocreference_formatter_default', $value).'&nbsp';
+    }
+    $disjointwith .= '</div></div>';
+  }
+  
+  $comment = '';
+  if ( !empty($node->field_comment) ) {
+    $comment .= $node->field_comment[0]['value'];
+  }
+  
+  $output .= '
+  <div id="classview">
+    <h3 id="'.$node->title.'">Class: '.$vocabulary.':'.$node->title.'</h3>';
+  
+  if( !empty($node->body) ) {    
+    $output .= '<div class="abstract"><em>'.$node->title.'</em> - '.$node->body.'</div>';
+  }
+  
+  $output .= '
+      <div class="properties-block">
+          '.$superclasses.'
+          '.$disjointwith.'
+      </div>
+     <div class="description">'.$comment.'</div>';
+     
+  if ( $teaser ) {
+    $output .= '<div class="linkontop">[<a href="#sec_glance">back to top</a>]</div>';  
+  }
+	
+  if ( $taxonomy ) {
+    $output .= '<div class="terms">'.$terms.'</div>';
+  }
+ 
+  if ( $links ) {
+    $node->links = module_invoke_all('link', 'node', $node, $teaser);
+    drupal_alter('link', $node->links, $node);
+    $output .= '<div class="links">'.theme('links', $node->links).'</div>';
+  }
+  
+  $output .= '</div>';
+ 
+  return $output; 
+}
+
+function theme_property_view($node, $vocabulary = NULL, $teaser = FALSE, $page = FALSE, $links = TRUE) {
+	$node = (object)$node;
+  $output = '';
+  
+  // build context to use the evoc fields values
+  $node = node_build_content($node, $teaser, $page);
+  
+  $domain = '';
+  if ( !empty($node->content['field_domain2']['field']['items'][0]['#item']['evoc_term']) ) {
+    $domain .= '<div class="row"><div class="column-title">Domain:</div><div class="column-values">';
+    foreach ( $node->content['field_domain2']['field']['items'] as $value ) {
+      $domain .= theme('evocreference_formatter_default', $value).'&nbsp';
+    }
+    $domain .= '</div></div>';
+  }
+  
+  $range = '';
+  if ( !empty($node->content['group_range']['group']['field_range2']['field']['items'][0]['#item']['evoc_term']) ) {
+    $range .= '<div class="row"><div class="column-title">Range:</div><div class="column-values">';
+    foreach ( $node->content['group_range']['group']['field_range2']['field']['items'] as $value ) {
+      $range .= theme('evocreference_formatter_default', $value).'&nbsp';
+    }
+    $range .= '</div></div>';
+  }
+  
+  $inverse = '';
+  if ( !empty($node->content['field_inverse2']['field']['items'][0]['#item']['evoc_term']) ) {
+    $inverse .= '<div class="row"><div class="column-title">Inverse:</div><div class="column-values">';
+    foreach ( $node->content['field_inverse2']['field']['items'] as $value ) {
+      $inverse .= theme('evocreference_formatter_default', $value).'&nbsp';
+    }
+    $inverse .= '</div></div>';
+  }
+  
+  $subproperty_of = '';
+  if ( !empty($node->content['field_superproperty2']['field']['items'][0]['#item']['evoc_term']) ) {
+    $subproperty_of .= '<div class="row"><div class="column-title">subproperty-of:</div><div class="column-values">';
+    foreach ( $node->content['field_superproperty2']['field']['items'] as $value ) {
+      $subproperty_of .= theme('evocreference_formatter_default', $value).'&nbsp';
+    }
+    $subproperty_of .= '</div></div>';
+  }
+  
+  $comment = '';
+  if ( !empty($node->field_comment) ) {
+    $comment .= $node->field_comment[0]['value'];
+  }
+  
+  $output .= '
+  <div id="classview">
+    <h3 id="'.$node->title.'">Property: '.$vocabulary.':'.$node->title.'</h3>';
+    
+  if( !empty($node->body) ) {    
+    $output .= '<div class="abstract"><em>'.$node->title.'</em> - '.$node->body.'</div>';
+  }
+  
+  $output .= '
+      <div class="properties-block">
+          '.$inverse.'
+          '.$subproperty_of.'
+          '.$domain.'
+          '.$range.'
+      </div>
+     <div class="description">'.$comment.'</div>';
+     
+  if ( $teaser ) {
+    $output .= '<div class="linkontop">[<a href="#sec_glance">back to top</a>]</div>';  
+  }
+	
+  if ( $taxonomy ) {
+    $output .= '<div class="terms">'.$terms.'</div>';
+  }
+ 
+  if ( $links ) {
+    $node->links = module_invoke_all('link', 'node', $node, $teaser);
+    drupal_alter('link', $node->links, $node);
+    $output .= '<div class="links">'.theme('links', $node->links).'</div>';
+  }
+  
+  $output .= '</div>';
+ 
+  return $output; 
+}
+
+
 /**
  * 
  * @param object $node
@@ -1233,6 +1503,10 @@ function theme_neo_property_node_view($node, $teaser = FALSE, $page = FALSE, $li
 
   return theme('node', $node, $teaser, $page);
 }
+
+// end theming section
+//-------------------------------------------------------------------------------------------------------
+
 
 /**
 * Implementation of hook_rdf_namespaces().
@@ -1455,5 +1729,6 @@ function on_deleted_property_node($node, $vocabulary_title = NULL) {
  * @return an instance of StdClass containing the nid and title of the vocabulary node that match with the class' node
  */
 function get_vocabulary_from_class_id($class_node) {
- return db_fetch_object( db_query(db_rewrite_sql("SELECT n.nid, n.title FROM {content_field_vocabulary} c INNER JOIN {node} n ON c.field_vocabulary_nid = n.nid WHERE c.nid = %d AND n.type = '%s'"), $class_node->nid, NEOLOGISM_CT_VOCABULARY) );
+  return db_fetch_object( db_query(db_rewrite_sql("SELECT n.nid, n.title FROM {content_field_vocabulary} c INNER JOIN {node} n ON c.field_vocabulary_nid = n.nid WHERE c.nid = %d AND n.type = '%s'"), $class_node->nid, NEOLOGISM_CT_VOCABULARY) );
 }
+
