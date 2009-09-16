@@ -1,0 +1,259 @@
+/*
+ * ZEN STYLES
+ *
+ * This is an add-on stylesheet for dark colored Zen sub-themes,
+ * it features basic color and icon replacements.
+ *
+ * 2008-08-20  Christian W. Zuckschwerdt  <christian@zuckschwerdt.org>
+ */
+
+/* overrides for menu tree icons */
+ li.collapsed {
+   list-style-image: url(menu-collapsed-rtl.png);
+ }
+ li.expanded {
+   list-style-image: url(menu-expanded.png);
+ }
+ li.collapsed {
+   list-style-image: url(menu-collapsed.png); /* LTR */
+ }
+ li.leaf {
+   list-style-image: url(menu-leaf.png);
+ }
+ html.js fieldset.collapsed legend a {
+   background-image: url(menu-collapsed-rtl.png);
+ }
+ html.js fieldset.collapsible legend a {
+   background-image: url(menu-expanded.png); /* LTR */
+ }
+ html.js fieldset.collapsed legend a {
+   background-image: url(menu-collapsed.png); /* LTR */
+ }
+
+/* original theme looks -- you'll override these */
+a:link	{ text-decoration: none; color: #eee; }
+a:visited	{ text-decoration: none; color: #eee; }
+a:active	{ text-decoration: underline; color: #fff; }
+a:hover	{ text-decoration: underline; color: #fff; }
+
+strong { color: #fff; font-weight: normal; }
+
+h1, h2, h3 { color: #ccc; }
+
+/*  */
+table { background: #111;}
+.draggable td { background: #111;}
+.draggable td { border-bottom: 1px solid #222;}
+
+
+#skip-to-nav a:link, #skip-to-nav a:visited
+{
+  color: #000; /* Same as background color of page */
+}
+
+#skip-to-nav a:hover
+{
+  color: #888;
+}
+
+
+/** body **/
+  body
+  {
+	color: #888;
+	background: #000;
+  }
+
+  #page-inner
+  {
+	background: #000;
+  }
+
+/** header **/
+  #header
+  {
+	background: #000;
+  }
+
+  #site-name a:link,
+  #site-name a:visited
+  {
+    color: #aaa;
+  }
+
+  #site-slogan /* The slogan (or tagline) of a website */
+  {
+    color: #888;
+  }
+
+  div.messages /* Important messages (status, warning, and error) for the user */
+  {
+    border: 2px solid #222;
+    color: #aaa;
+    background-color: #111;
+  }
+
+  div.warning,
+  tr.warning,
+  body.section-admin tr.warning
+  {
+	color: #999;
+    background: #222;
+  }
+
+  div.error,
+  tr.error,
+  body.section-admin tr.error
+  {
+	color: #800;
+  }
+
+  div.ok, tr.ok {
+    color: #040;
+  }
+
+
+  .node-unpublished /* Unpublished nodes */
+  {
+    /* background-color: #fff4f4; */ /* Drupal core uses a #fff4f4 background */
+  }
+
+  .node-unpublished div.unpublished, /* The word "Unpublished" displayed beneath the content. */
+  .comment-unpublished div.unpublished
+  {
+    color: #100;
+  }
+
+  .marker /* "New" or "Updated" marker for content that is new or updated for the current user */
+  {
+    color: #c00;
+  }
+
+
+  .comment-unpublished /* Unpublished comments */
+  {
+    /* background-color: #fff4f4; */ /* Drupal core uses a #fff4f4 background */
+  }
+
+  .new /* "New" marker for comments that are new for the current user */
+  {
+    color: #c00;
+  }
+
+
+/** Miscellaneous Drupal styles **/
+  .error /* Errors that are separate from div.messages status messages (see above.) */
+  {
+    /* color: #e55; */ /* Drupal core uses a #e55 background */
+  }
+
+  .warning /* Warnings that are separate from div.messages status messages (see above.) */
+  {
+    /* color: #e09010; */ /* Drupal core uses a #e09010 background */
+  }
+
+  tr.even
+  {
+    /* background-color: #eee; */ /* Drupal core uses a #eee background */
+  }
+
+  tr.odd
+  {
+    /* background-color: #eee; */ /* Drupal core uses a #eee background */
+  }
+
+  li a.active /* The active item in a Drupal menu */
+  {
+    color: #000;
+  }
+
+
+/** Drupal forms **/
+  .form-item input.error, /* Highlight the form elements that caused a form submission error */
+  .form-item textarea.error,
+  .form-item select.error
+  {
+    border: 2px solid #c00;
+  }
+
+  .form-required /* The part of the label that indicates a required field */
+  {
+    color: #c00;
+  }
+
+
+/** Drupal admin tables **/
+  .section-admin tbody
+  {
+    border-top: 1px solid #222;
+  }
+
+  .section-admin th
+  {
+    text-align: left;
+    padding-right: 1em;
+    border-bottom: 3px solid #222;
+  }
+
+  .section-admin tbody th
+  {
+    border-bottom: 1px solid #222;
+  }
+
+  .section-admin thead th
+  {
+    text-align: left;
+    padding-right: 1em;
+    border-bottom: 3px solid #222;
+  }
+
+  .section-admin tr.even,
+  .section-admin tr.odd
+  {
+    background-color: #111;
+    border-bottom: 1px solid #222;
+    padding: 0.1em 0.6em;
+  }
+
+  /*
+  ** Formatting for administration page
+  */
+  div.admin-dependencies, div.admin-required {
+    color: #444;
+  }
+  span.admin-disabled {
+    color: #622;
+  }
+  span.admin-enabled {
+    color: #242;
+  }
+  span.admin-missing {
+    color: #c00;
+  }
+
+  fieldset { border-color: #333;}
+
+  .form-item input,
+  .form-item textarea,
+  .form-item select
+  {
+	border-color: #999;
+    background: #666;
+  }
+
+/* modules/update/update.css */
+
+  .update tr td {
+    border-top: 1px solid #222;
+    border-bottom: 1px solid #222;
+  }
+
+/*
+ * Rollover edit links for blocks
+ */
+
+  div.block div.edit
+  {
+    border: 1px solid #222 ! important;
+    background-color: #111 ! important;
+  }

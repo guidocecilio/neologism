@@ -1,0 +1,22 @@
+; $Id$
+name = Black IMP
+description = IMP theme design
+screenshot = screenshot.png
+core = 6.x
+engine = phptemplate
+
+; css' declarations
+stylesheets[all][] = style.css
+; it is for extjs themes
+;stylesheets[all][] = ext/css/xtheme-darkgray.css
+
+; Information added by drupal.org packaging script on 2009-07-01
+version = "6.13"
+project = "imp"
+
+regions[right] = Right sidebar
+regions[content] = Content
+regions[footer] = Footer
+
+
+
