@@ -1,0 +1,21 @@
+; $Id
+name = Ext Json
+description = "Outputs a views object as a json object"
+package = Ext
+version = "6.x-1.x-dev"
+core = 6.x
+dependencies[] = views
+dependencies[] = ext
+; Information added by drupal.org packaging script on 2009-08-08
+version = "6.x-1.x-dev"
+core = "6.x"
+project = "ext"
+datestamp = "1249733329"
+
+
+; Information added by drupal.org packaging script on 2009-08-18
+version = "6.x-1.x-dev"
+core = "6.x"
+project = "ext"
+datestamp = "1250618965"
+

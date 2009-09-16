@@ -1,0 +1,4 @@
+/* Overriden Styles */
+div#extjs-grid table {margin: 0!important;}
+div#extjs-grid td, th {padding:0!important;}
+li.x-menu-list-item {background: none!important;margin-left: 0!important;}
