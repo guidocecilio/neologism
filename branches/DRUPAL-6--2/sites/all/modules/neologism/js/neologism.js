@@ -1,24 +1,24 @@
-if (Drupal.jsEnabled) {
-  $(document).ready(
-    function neo_autofill() {
-      $('#edit-title').bind('blur', function() {
-        if ($('#edit-field-label-0-value').val() == '') {
-          $('#edit-field-label-0-value').val(this.value);
-        }
-      });
-    }
-  );
-}
+// declare Neologism namespace
+var Neologism = {};
 
-if (Drupal.jsEnabled) {
-  $(document).ready(
-      function(){
-	    $("#tree").treeview({
-          persist: "location",
-          collapsed: true,
-          control: "#treecontrol",
-          animated: "fast",
-        });
-      }
-  );
+if( Drupal.jsEnabled ) {
+  
+  $(document).ready( function() {
+    $('#edit-field-literal-as-range-value').click(Neologism.checkRangeField);
+    // check if the checkbox is checked is so, then hide rangeField show it otherwise
+    Neologism.checkRangeField();
+  }); // ready
+  
+  Neologism.checkRangeField = function() {
+    var rangeField = $('#range-field');  
+    var literalAsRangeCheckBox = $('#edit-field-literal-as-range-value');
+    
+    if( literalAsRangeCheckBox.is(':checked') ) { 
+      rangeField.hide();
+    }
+    else {
+      rangeField.show();
+    }
+  }
+  
 }
