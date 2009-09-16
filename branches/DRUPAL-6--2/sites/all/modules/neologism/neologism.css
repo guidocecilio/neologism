@@ -7,7 +7,7 @@ h2.neologism {
 }
 
 div#atglance {
-  border: 2px dotted;
+  border: 1px dotted;
   padding: 0.8em;
 }
 
@@ -32,3 +32,183 @@ img#legend {
 #add_terms_link a {
   padding-right : 4px;
 }
+
+/* treeview objects and classes */
+#class-tree {
+  margin: 10px 0 0 0;
+}
+
+#object-property-tree {
+  margin: 10px 0 0 0;
+}
+
+.class-samevoc {
+    background-image: url(images/icons/class_samevoc.gif) !important;
+}
+
+.class-othervoc {
+    background-image: url(images/icons/class_samevoc.gif) !important;
+}
+
+.property-samevoc {
+    background-image: url(images/icons/property_samevoc.gif) !important;
+}
+
+.icon-expand-all {
+    background-image: url(images/icons/expand-all.gif) !important;
+}
+.icon-collapse-all {
+    background-image: url(images/icons/collapse-all.gif) !important;
+}
+
+.complete .x-tree-node-anchor span {
+  text-decoration: line-through;
+  color: #777;
+}
+
+.currentvoc .x-tree-node-anchor span {
+  font-weight: bold;
+  color: #000000;
+  /*color: #777;*/
+}
+
+
+#vocabulary-view {
+  margin: 0px 0px 0px 0px;
+  padding: 0px;
+}
+
+#vocabulary-view h1 {
+  font-size: 25px;
+  margin-bottom: 10px;
+}
+
+#vocabulary-view h2 {
+  font-size: 20px;
+  /*margin-bottom: 10px;*/
+}
+
+#vocabulary-view h3 {
+  font-size: 17px;
+  font-stretch: normal;
+  font-weight: bold;
+  /*margin-bottom: 10px;*/
+}
+
+#vocabulary-view #abstract {
+  border-top: #000000 solid 1px; 
+  border-bottom: #000000 solid 1px;
+  margin-top: 30px;
+  padding: 10px 0px 10px 0px;
+}
+
+#vocabulary-view #abstract .title {
+  font-size: 18px;
+  margin-bottom: 3px;
+}
+
+#vocabulary-view #description {
+  font-size: 12px;
+  margin: 30px 0px 0px 0px;
+}
+
+#vocabulary-view #last-update {
+  margin: 10px 0px 10px 0px;
+}
+
+#vocabulary-view #last-update #last-update-value{
+  margin: 0px 0px 0px 20px;
+}
+
+#vocabulary-view #authors {
+  margin: 10px 0px 10px 0px;
+}
+
+#vocabulary-view #authors #author-value{
+  margin: 0px 0px 0px 20px;
+}
+
+#namespace {
+  margin: 10px 0px 10px 0px;
+}
+
+#namespace #namespace-value {
+	margin: 0px 0px 0px 20px; 
+}
+
+
+.block {
+  display: block;
+}
+
+/* class view */
+#classview {
+  margin: 10px 0px 10px 0px;
+  padding: 0px;
+  display: block;
+  border-bottom: #ccc solid 2px;
+}
+
+#classview h3 {
+  font-size: 14px;
+  margin: 0px 0px 3px 0px;
+}
+
+#classview .abstract {
+  font-size: 12px;
+  margin: 0px 0px 0px 0px;
+}
+
+#classview .abstract em {
+  font-style: italic;
+}
+
+#classview .properties-block {
+  display: block;
+  margin: 10px 0px 0px 0px;
+  /*background-color: #add;*/
+}
+
+#classview .row {
+  /*background-color: #ff0000;*/
+  clear: both;
+  display: block;
+}
+
+#classview .properties-block .row .column-title {
+  width: 85px;
+  float: left;
+  /*background-color: #00ff00;*/
+}
+
+#classview .properties-block .row .column-values {
+
+}
+
+#classview .description {
+  font-size: 12px;
+  margin: 10px 0px 15px 0px;
+}
+
+#classview .links {
+  font-size: 12px;  
+}
+
+
+.icon-n3 {
+    background-image: url(images/icons/n3.gif) !important;
+}
+
+.icon-rdf {
+    background-image: url(images/icons/rdf_w3c_icon.48.gif) !important;
+}
+
+#icons img, .icon {
+  float: right; /* LTR */
+  padding: 0px 0px 0px 5px;
+}
+
+#vocabulary-view #diagram {
+  margin: 10px 0px 10px 0px;
+}
+
