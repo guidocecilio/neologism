@@ -1,4 +1,5 @@
 // $Id: README.txt,v 1.1.2.2 2009/02/08 15:02:05 scor Exp $
+// $Id: README.txt,v 2.0.0.0 2009/09/17 15:02:05 scor Exp $
 
 RDF external vocabulary importer
 ================================

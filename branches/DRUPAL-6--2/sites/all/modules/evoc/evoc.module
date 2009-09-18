@@ -1,10 +1,5 @@
 <?php
-// $Id: evoc.module,v 1.1.2.10 2009/07/11 16:16:51 scor Exp $
-
-/**
- * @file
- * Defines mappings between CCK fields and RDF, and exports nodes as RDF.
- */
+// $Id: evoc.module, v2.0.0.0 2009/09/17 16:16:51 guidocecilio Exp $
 
 /**
  * Implementation of hook_init().
@@ -26,6 +21,15 @@ function evoc_menu() {
     'page arguments' => array('evoc_import_form'),
     'access arguments' => array('administer content types'),
   );
+  
+  $items['evoc/remove'] = array(
+    'title' => 'Remove RDF vocabulary from the system',
+    'description' => "Remove RDF vocabulary from the system.",
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('evoc_remove_form'),
+    'access arguments' => array('administer content types'),
+  );
+
 
   return $items;
 }
@@ -70,6 +74,102 @@ function evoc_import_form_submit($form, &$form_state) {
 
   evoc_import_vocabulary($form_state['values']['ns_uri'], $form_state['values']['prefix']);
 }
+
+//-------------------------------------------------------------------------------------------------------------
+// the remove vocabulary form behaviour for evoc must be discused with all the developer team to see how 
+// we can select the namespace that will be remove. For the moment we has only one table where all the  
+// namespaces are registered, but all the namespaces are not registered in that table so, how we can select  
+// the a namespace that is not in such a table, because it is in the global array of namespaces?. How we can 
+// know that such namespace it is not a vocabulary in neologism?
+// 
+
+/**
+ * 
+ * @param object $form_state
+ * @return 
+ */
+function evoc_remove_form($form_state) {
+  
+  // get the available namespaces in the system
+  $rdf_namespaces = function_exists('rdf_db_rdf_namespaces') ? rdf_db_rdf_namespaces() : rdf_rdf_namespaces();
+  
+  $values = array();
+  foreach ( $rdf_namespaces as $key => $value ) {
+    $values[$key] = $key.' : '.$value; 
+  }
+  
+  $form['help'] = array(
+    '#value' => 'This form allows you to remove RDF vocabularies from the system. 
+    Some vocabulary always will be listed in the form because they reside in the 
+    array defined by the RDF module. So only the terms such as classes and properties 
+    belongings to evoc will be removed.
+    ',
+  );
+  
+  $form['prefix'] = array(
+    '#type' => 'select',
+    '#title' => t('Prefix'),
+    '#required' => TRUE,
+    '#default_value' => $values[0],
+    '#options' => $values,
+    '#description' => "Select the one o more vocabularies to remove it from evoc's repository.",
+    '#multiple' => TRUE,
+    '#required' => TRUE,
+  );
+  
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => 'Submit',
+  );
+  
+  return $form;
+}
+
+function evoc_remove_form_submit($form, &$form_state) {
+  $form_state['storage']['values'] = $form_state['values'];
+  $form_state['rebuild'] = true;
+
+  // don't do anything for the moment.... see commet about remove vocabulary above
+  foreach ( $form_state['values']['prefix'] as $value ) {
+    evoc_remove_vocabulary($value);    
+  }
+}
+
+/**
+ * This fucntion remove a namespace from the system
+ * @param object $prefix namespace prefix
+ * @return 
+ */
+function evoc_remove_vocabulary($prefix) {
+  
+  // remove classes that belong to that namespace
+  $result = db_query(db_rewrite_sql('delete from {evoc_rdf_classes} where prefix="%s"'), $prefix);
+  if( $result ) {
+    drupal_set_message( t( 'Classes from '.$class['prefix'].' has been successfully removed from the system.') );
+  }
+  else {
+    drupal_set_message( t( 'There is some problem removing classes from '.$class['prefix'].' namespace.') );
+  }
+  
+  // remove properties that belong to that namespace
+  $result = db_query(db_rewrite_sql('delete from {evoc_rdf_properties} where prefix="%s"'), $prefix);
+  if( $result ) {
+    drupal_set_message( t( 'Properties from '.$class['prefix'].' has been successfully removed from the system.') );
+  }
+  else {
+    drupal_set_message( t( 'There is some problem removing properties from '.$prefix.' namespace.') );
+  }
+  
+  // we need to remove the namespaces from rdf_namespaces table
+  $result = db_query("delete from {rdf_namespaces} where prefix = '%s'", $prefix);
+  if( $result ) {
+    drupal_set_message( t( 'The namespace '.$class['prefix'].' has been successfully removed from the system.') );
+  }
+  else {
+    drupal_set_message( t( 'There is some problem removing the namespace '.$prefix.'.') );
+  }
+}
+
 
 /*
 foaf
@@ -129,11 +229,12 @@ function evoc_import_vocabulary($vocabulary_uri, $vocabulary_prefix) {
  */
 function evoc_fetch_vocabulary($vocabulary_uri, $vocabulary_prefix, $ignore_base_ns = FALSE, $ns_uri = NULL) {
   global $rdf_namespaces;
+  // this function execute all rdf_namespaces hook available in the drupal instance
+  // and update the global array $rdf_namespaces 
   rdf_get_namespaces();
 
   // TODO make sure the URI is valid either finishing with / or #
   // TODO make sure the prefix and the terms are not containing any forbidden characters.
-
 
   if (!in_array($vocabulary_uri, $rdf_namespaces)) {
     // Add momentarily the namespace in memory to be able to convert the URIs to QNames.
@@ -219,7 +320,8 @@ function evoc_fetch_vocabulary($vocabulary_uri, $vocabulary_prefix, $ignore_base
       $term['comment'] = !empty($res_term['comment']->value) ? $res_term['comment']->value : NULL;
       switch ($type) {
         case 'class' :
-          $term['superclass'] = !empty($res_term['superclass']->uri) ? rdf_uri_to_qname($res_term['superclass']->uri) : NULL;
+          // change in evoc v2.0.0.0. now superclass is an array that hold multiple superclasses
+          $term['superclass'][] = !empty($res_term['superclass']->uri) ? rdf_uri_to_qname($res_term['superclass']->uri) : NULL;
           break;
 
         case 'property' :
@@ -232,13 +334,37 @@ function evoc_fetch_vocabulary($vocabulary_uri, $vocabulary_prefix, $ignore_base
 
       // We only import the terms with the specified prefix unless $ignore_base_ns is TRUE.
       if ($term_prefix == $vocabulary_prefix || $ignore_base_ns) {
-        $fetched_terms[] = $term;
+        
+        // added in evoc v2.0.0.0
+        // this' a filter to add just new term and insert the superclasses for the terms class that has
+        // more than 1 superclass.
+        $term_exist = FALSE;
+        $just_updated = FALSE;
+        foreach ($fetched_terms as &$term_value) {
+          if ( $term_value['id'] == $term['id'] && $term_value['type'] == $term['type'] ) {
+            $term_exist = TRUE;
+            if( !in_array($term['superclass'][0], $term_value['superclass']) ) {
+              $term_value['superclass'][] = $term['superclass'][0];
+              $just_updated = TRUE;
+              // jump if it is just an update
+              break;       
+            }
+            // jump if the term exists
+            break;  
+          }
+        }
+        unset($term_value);
+        
+        // if not just_updated and not exists such a term add it to the array
+        if ( !$term_exist && !$just_updated ) {
+          $fetched_terms[] = $term;
+        }
+        
       }
     }
 
   }
-  // @TODO Clean up the terms to import and remove any duplicate? SPARQL should have done that already.
-
+  
   return $fetched_terms;
 }
 
@@ -247,20 +373,29 @@ function evoc_fetch_vocabulary($vocabulary_uri, $vocabulary_prefix, $ignore_base
  */
 function _evoc_save_rdf_terms($ns, $prefix, $terms) {
   // Namespace management.
-  // Get the existing namespaces stored in the system.
+  // Get the existing namespaces stored in the system 
+  // (including some predefined array and the namespaces added to the database in the table rdf_namespaces).
   // Here we want to make sure we have the namespace stored in the db in case
   // the module defining this ns in hook_rdf_namespaces() is disabled.
   // This function was renamed, leaving the old one for compatibility. To
   // remove later.
   $rdf_namespaces = function_exists('rdf_db_rdf_namespaces') ? rdf_db_rdf_namespaces() : rdf_rdf_namespaces();
-
+  
   if (!in_array($ns, $rdf_namespaces)) { //FIXME: check also the prefix and raise a warning
     db_query("INSERT INTO {rdf_namespaces} (prefix, uri) VALUES ('%s', '%s')", $prefix, $ns);
     drupal_set_message(t("The namespace for $prefix has been created."));
   }
   elseif ($rdf_namespaces[$prefix] != $ns) {
-    db_query("UPDATE {rdf_namespaces} SET prefix = '%s', uri = '%s' WHERE prefix = '%s'", $prefix, $uri, $key);
-    drupal_set_message(t('The namespace has been updated.'));
+    // FIXME added in v2.0.0.0
+    // we need to check first if the namespace exists in the database because some 
+    // namespaces are just included in the global array $rdf_namespaces
+    $exists_namespace = (db_result(db_query(db_rewrite_sql("select count(*) from {rdf_namespaces} where prefix = '%s'"), $prefix)) > 0);
+    // if exists the namespace update it with the new uri 
+    if( $exists_namespace ) {
+      // TODO discover what is the idea with the $key variable -guidocecilio
+      db_query("UPDATE {rdf_namespaces} SET prefix = '%s', uri = '%s' WHERE prefix = '%s'", $prefix, $uri, $key);
+      drupal_set_message(t('The namespace has been updated.'));
+    }
   }
 
   // RDF terms management.
@@ -281,22 +416,61 @@ function _evoc_save_rdf_terms($ns, $prefix, $terms) {
  * Store an external RDF class in the database.
  */
 function evoc_write_class($class) {
-    // Check whether this class is already in the system.
-    // TODO optimize this by loading the whole prefix terms from the db and then check against it in memory
-    $res = db_query(db_rewrite_sql('SELECT * FROM {evoc_rdf_classes} WHERE prefix="%s" AND id = "%s"'), $class['prefix'], $class['id']);
+  // Check whether this class is already in the system.
+  $count_class = db_result(db_query(db_rewrite_sql('SELECT count(*) FROM {evoc_rdf_classes} WHERE prefix="%s" AND id = "%s"'), $class['prefix'], $class['id']));
 
-    if (!db_fetch_object($res)) {
-      if (drupal_write_record('evoc_rdf_classes', $class)) {
-        drupal_set_message($class['prefix'] . ":" . $class['id'] . " successfully imported.");
+  if( $count_class > 0 ) {
+    drupal_set_message($class['prefix'] . ":" . $class['id'] . " already exists in the system.", 'status', FALSE);
+  }
+  else {
+    $has_superclass = FALSE;
+    if( !empty($class['superclass']) ) {
+      $has_superclass = TRUE;
+      foreach ( $class['superclass'] as $superclass ) {
+        db_query(db_rewrite_sql('insert into {evoc_rdf_superclasses} (prefix, id, superclass) values ("%s", "%s", "%s")'), $class->prefix, $class->id, $superclass);
       }
-      else {
-        drupal_set_message($class['prefix'] . ":" . $class['id'] . " could not be saved.", 'warning');
-      }
+    }
+    
+    if( db_query(db_rewrite_sql('insert into {evoc_rdf_classes} (prefix, id, label, comment, has_superclass) 
+      values ("%s", "%s", "%s", "%s", "%d")'), $class->prefix, $class->id, $class->label, $class->comment, $has_superclass) ) {
+      drupal_set_message($class['prefix'].":".$class['id']." successfully imported.");          
     }
     else {
-      drupal_set_message($class['prefix'] . ":" . $class['id'] . " already exists in the system.", 'status', FALSE);
+      drupal_set_message($class['prefix'].":".$class['id']." could not be saved.", 'warning');
     }
+  }
 }
+
+/**
+ * Remove class term form evoc's repository
+ * @param object $class
+ * @return 
+ */
+function evoc_remove_class($class) {
+  
+  // if has_superclass property is not provided query for it. Then remove all the dependences if there is someone
+  if( empty($class['has_superclass']) ) {
+    $class = db_fetch_object(db_query(db_rewrite_sql('select has_superclass from {evoc_rdf_classes} where prefix="%s" AND id = "%s"'), $class['prefix'], $class['id']));
+    if( $class->has_superclass ) {
+      $result = db_query(db_rewrite_sql('delete from {evoc_rdf_superclasses} where prefix="%s" and id = "%s"'), $class['prefix'], $class['id']);
+      if( $result ) {
+        drupal_set_message("Superclasses dependences has been successfully removed from the system.");
+      }
+      else {
+        drupal_set_message("There is some error when trying to remove superclasses dependences.", 'warning');
+      }
+    }
+  }
+  
+  $result = db_query(db_rewrite_sql('delete from {evoc_rdf_classes} where prefix="%s" and id = "%s"'), $class['prefix'], $class['id']);
+  if( $result ) {
+    drupal_set_message($class['prefix'].":".$class['id']." has been successfully removed from the system.");
+  }
+  else {
+    drupal_set_message($class['prefix'].":".$class['id']." not found in the system.", 'warning');
+  }
+}
+
 
 /**
  * Store an external RDF property in the database.
@@ -306,7 +480,7 @@ function evoc_write_property($property) {
     // TODO optimize this by loading the whole prefix terms from the db and then check against it in memory
     $res = db_query(db_rewrite_sql('SELECT * FROM {evoc_rdf_properties} WHERE prefix="%s" AND id = "%s"'), $property['prefix'], $property['id']);
 
-    if (!db_fetch_object($res)) {
+    if ( !($p = db_fetch_object($res)) ) {
       if (drupal_write_record('evoc_rdf_properties', $property)) {
         drupal_set_message($property['prefix'] . ":" . $property['id'] . " successfully imported.");
       }
@@ -315,6 +489,13 @@ function evoc_write_property($property) {
       }
     }
     else {
+      /* this was used for debug
+      if( $p->prefix == $property['prefix'] && $p->id == $property['id'] ) {
+        if( $p->rdf_domain != $property['rdf_domain'] || $p->rdf_range != $property['rdf_range'] ) {
+          $property['prefix'] = $property['prefix'];  
+        }
+      }
+      */
       drupal_set_message($property['prefix'] . ":" . $property['id'] . " already exists in the system.", 'status', FALSE);
     }
 }
@@ -329,7 +510,7 @@ function evoc_write_property($property) {
  * @return TRUE whether the term exists and FALSE in otherwise 
  */
 function evoc_term_exists($term, $string_term, $class_term = TRUE) {
-  $table = $class_term ? "evoc_rdf_properties2" : "evoc_rdf_classes";
+  $table = $class_term ? "evoc_rdf_properties" : "evoc_rdf_classes";
   
   if( !$term ) {
     if( ($pos = strpos($string_term, ":")) > 0 ) {
@@ -346,20 +527,6 @@ function evoc_term_exists($term, $string_term, $class_term = TRUE) {
   return $count > 0;  
 }
 
-/**
- * Remove class term form evoc's repository
- * @param object $class
- * @return 
- */
-function evoc_remove_class($class) {
-  $res = db_query(db_rewrite_sql('DELETE FROM {evoc_rdf_classes} WHERE prefix="%s" AND id = "%s"'), $class['prefix'], $class['id']);
-  if( $res ) {
-    drupal_set_message($class['prefix'] . ":" . $class['id'] . " has been successfully removed from the system.");
-  }
-  else {
-    drupal_set_message($class['prefix'] . ":" . $class['id'] . " not found in the system.", 'warning');
-  }
-}
 
 /**
  * Remove property term form evoc's repository

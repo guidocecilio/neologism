@@ -1,5 +1,5 @@
 <?php
-// $Id: evoc.install,v 1.1.2.4 2009/06/21 12:53:17 scor Exp $
+// $Id: evoc.install,v 2.0.0.0 2009/09/17 12:53:17 guidocecilio Exp $
 
 /**
  * Implementation of hook_schema().
@@ -60,8 +60,10 @@ function evoc_enable() {
   drupal_load('module', 'rdf');
   drupal_load('module', 'sparql');
   drupal_load('module', 'evoc');
+  
   // Force schema rebuild, see http://drupal.org/node/200931
   drupal_get_schema(NULL, TRUE);
+  
   evoc_import_vocabulary('http://purl.org/dc/elements/1.1/', 'dc');
   evoc_import_vocabulary('http://xmlns.com/foaf/0.1/', 'foaf');
   evoc_import_vocabulary('http://rdfs.org/sioc/ns#', 'sioc');
@@ -80,3 +82,72 @@ function evoc_update_6001() {
   db_change_field($ret, 'evoc_rdf_properties', 'range', 'rdf_range', $fields['rdf_range']);
   return $ret;
 }
+
+/**
+ * Implementation of hook_update_N.
+ *
+ * Rename columns to avoid reserved word conflicts (specifically with MySQL 5.1)
+ */
+function evoc_update_6200() {
+  $ret = array('#finished' => 0);
+  
+  $schema = evoc_schema();
+  
+  $schema['evoc_rdf_superclasses'] = array(
+    'fields' => array(
+      'id' => array('type' => 'serial', 'unsigned' => 'TRUE','size' => 'normal', 'not null' => TRUE),
+      'prefix' => array('type' => 'varchar', 'length' => '32', 'not null' => TRUE, 'description' => 'this is the CURIE reference or Id'),
+      'reference' => array('type' => 'varchar', 'length' => '32', 'not null' => TRUE, 'description' => 'this is the CURIE reference or Id'),
+      'superclass' => array('type' => 'varchar', 'length' => '32', 'not null' => TRUE),
+    ),
+    'primary key' => array('id'),
+  );
+
+  db_create_table($ret, 'evoc_rdf_superclasses', $schema['evoc_rdf_superclasses']);
+  db_add_field($ret, 'evoc_rdf_classes', 'has_superclass', array(
+    'type' => 'int',
+    'size' => 'tiny', 
+    'unsigned' => TRUE, 
+    'not null' => TRUE, 
+    'default' => 0)
+  );
+  
+  // create all the superclasses in the table evoc_rdf_superclasses for each class 
+  // in evoc_rdf_classes that its superclass column has some value
+  if (!isset($sandbox['progress'])) {
+    $sandbox['progress'] = 0;
+    $sandbox['max'] = db_result(db_query('select count(*) from {evoc_rdf_classes}'));
+  }
+  
+  $classes = db_query("select prefix, id, superclass from {evoc_rdf_classes}");
+  while ($class = db_fetch_object($classes)) {
+    $has_superclass = 0;
+    if( !empty($class->superclass) ) {
+      $query = 'insert into {evoc_rdf_superclasses} (prefix, reference, superclass) values ("'.$class->prefix.'", "'.$class->id.'", "'.$class->superclass.'")';  
+      $ret[] = update_sql($query);
+      $has_superclass = 1;
+    }
+    else {
+      $has_superclass = 0;
+    }
+    
+    $ret[] = update_sql('update {evoc_rdf_classes} set has_superclass = "'.$has_superclass.'" where prefix = "'.$class->prefix.'" and  id = "'.$class->id.'"');
+    
+    $sandbox['progress']++;
+  }
+  
+  $ret['#finished'] = empty($sandbox['max']) ? 1 : ($sandbox['progress'] / $sandbox['max']);
+  
+  // remove the field superclass from evoc_rdf_classes
+  db_drop_field($ret, 'evoc_rdf_classes', 'superclass');
+  
+  //$fields = $schema['evoc_rdf_classes']['fields'];
+  // TODO the field name must be changed in the schema
+  //db_change_field($ret, 'evoc_rdf_classes', 'id', 'reference', $fields['reference']);
+  //$fields = $schema['evoc_rdf_properties']['fields'];
+  // TODO the field name must be changed in the schema
+  //db_change_field($ret, 'evoc_rdf_properties', 'id', 'reference', $fields['reference']);
+  
+  return $ret;
+}
+
