@@ -204,21 +204,14 @@ function mxcheckboxselect_process($element, $edit, $form_state, $form) {
     $selected_values = $element['#post'][$field_name.'_values'];
   }
   else if (!empty($element['#default_value']) ) {
-    foreach ( $element['#default_value'] as $key => $value ) {   
-      $selected_values[] = trim($value[$field_key]);
+    foreach ( $element['#default_value'] as $key => $value ) { 
+      // be sure there is not a bad default value.
+      $tvalue = trim($value[$field_key]);
+      if ( !empty($tvalue) ) {  
+        $selected_values[] = $tvalue;
+      }
     }
   }
-
-  /* 
-  if (isset($elements['#evocwidget_values_alter'])) {
-        $function = $elements['#evocwidget_values_alter']; 
-        foreach ($elements['#evocwidget_values_alter'] as $function) {
-          if (function_exists($function)) {
-            $content = $function($content, $elements);
-          }
-        }
-      }
-*/
 
   $url = !empty($element['#neo_behaviour']['url_gateway']) ? $element['#neo_behaviour']['url_gateway'] : 'neologism/json/fulltree';   
   $opts = array('absolute' => TRUE);
