@@ -143,18 +143,33 @@ function evoc_remove_form_submit($form, &$form_state) {
 function evoc_remove_vocabulary($prefix) {
   
   // remove classes that belong to that namespace
+  $classes = db_query(db_rewrite_sql('select * from {evoc_rdf_classes} where prefix="%s"'), $prefix);
+  // remove superclasses references
+  while ( $class = db_fetch_object($classes) ) {
+    if( $class->has_superclass ) {
+      $result = db_query(db_rewrite_sql('delete from {evoc_rdf_superclasses} where prefix="%s" and reference="%s"'), $prefix, $class->id);
+      if( $result ) {
+        drupal_set_message( t('References to superclasses were removed successfully.') );
+      }
+      else {
+        drupal_set_message( t('There is some problem removing superclasses references for the class '.$prefix.':'.$class->id.'.') );
+      }  
+    }  
+  }
+  // removing all the classes
   $result = db_query(db_rewrite_sql('delete from {evoc_rdf_classes} where prefix="%s"'), $prefix);
   if( $result ) {
-    drupal_set_message( t( 'Classes from '.$class['prefix'].' has been successfully removed from the system.') );
+    drupal_set_message( t('Classes from '.$prefix.' has been successfully removed from the system.') );
   }
   else {
-    drupal_set_message( t( 'There is some problem removing classes from '.$class['prefix'].' namespace.') );
+    drupal_set_message( t('There is some problem removing classes from '.$prefix.' namespace.') );
   }
   
+  /*
   // remove properties that belong to that namespace
   $result = db_query(db_rewrite_sql('delete from {evoc_rdf_properties} where prefix="%s"'), $prefix);
   if( $result ) {
-    drupal_set_message( t( 'Properties from '.$class['prefix'].' has been successfully removed from the system.') );
+    drupal_set_message( t( 'Properties from '.$prefix.' has been successfully removed from the system.') );
   }
   else {
     drupal_set_message( t( 'There is some problem removing properties from '.$prefix.' namespace.') );
@@ -163,11 +178,12 @@ function evoc_remove_vocabulary($prefix) {
   // we need to remove the namespaces from rdf_namespaces table
   $result = db_query("delete from {rdf_namespaces} where prefix = '%s'", $prefix);
   if( $result ) {
-    drupal_set_message( t( 'The namespace '.$class['prefix'].' has been successfully removed from the system.') );
+    drupal_set_message( t( 'The namespace '.$prefix.' has been successfully removed from the system.') );
   }
   else {
     drupal_set_message( t( 'There is some problem removing the namespace '.$prefix.'.') );
   }
+  */
 }
 
 
@@ -281,6 +297,7 @@ function evoc_fetch_vocabulary($vocabulary_uri, $vocabulary_prefix, $ignore_base
   OPTIONAL {?property rdfs:label ?label}.
   OPTIONAL {?property rdfs:domain ?domain}.
   OPTIONAL {?property rdfs:range ?range}.
+  OPTIONAL {?property rdfs:subPropertyOf ?subpropertyof}
   OPTIONAL {?property rdfs:comment ?comment}.
   }
   limit 1000
@@ -326,14 +343,18 @@ function evoc_fetch_vocabulary($vocabulary_uri, $vocabulary_prefix, $ignore_base
 
         case 'property' :
           // Extract some information like domain and range.
-          $term['rdf_domain'] = !empty($res_term['domain']->uri) ? rdf_uri_to_qname($res_term['domain']->uri) : NULL;
-          $term['rdf_range'] = !empty($res_term['range']->uri) ? rdf_uri_to_qname($res_term['range']->uri) : NULL;
+          // change in evoc v2.0.0.0. added subpropertyof array to hold when a property is subproperty of a property
+          $term['subpropertyof'][] = !empty($res_term['subpropertyof']->uri) ? rdf_uri_to_qname($res_term['subpropertyof']->uri) : NULL;
+          // change in evoc v2.0.0.0. now domain and range are arrays that hold multiple domains and ranges
+          $term['rdf_domain'][] = !empty($res_term['domain']->uri) ? rdf_uri_to_qname($res_term['domain']->uri) : NULL;
+          $term['rdf_range'][] = !empty($res_term['range']->uri) ? rdf_uri_to_qname($res_term['range']->uri) : NULL;
           break;
-
       }
 
       // We only import the terms with the specified prefix unless $ignore_base_ns is TRUE.
       if ($term_prefix == $vocabulary_prefix || $ignore_base_ns) {
+          
+        var_dump($term);
         
         // added in evoc v2.0.0.0
         // this' a filter to add just new term and insert the superclasses for the terms class that has
@@ -343,12 +364,24 @@ function evoc_fetch_vocabulary($vocabulary_uri, $vocabulary_prefix, $ignore_base
         foreach ($fetched_terms as &$term_value) {
           if ( $term_value['id'] == $term['id'] && $term_value['type'] == $term['type'] ) {
             $term_exist = TRUE;
-            if( !in_array($term['superclass'][0], $term_value['superclass']) ) {
-              $term_value['superclass'][] = $term['superclass'][0];
-              $just_updated = TRUE;
-              // jump if it is just an update
-              break;       
+            
+            if ( $term['type'] == 'class') {
+              if ( !in_array($term['superclass'][0], $term_value['superclass']) ) {
+                $term_value['superclass'][] = $term['superclass'][0];
+              }
             }
+            elseif ( $term['type'] == 'property') {
+              if ( !in_array($term['subpropertyof'][0], $term_value['subpropertyof']) ) {
+                $term_value['subpropertyof'][] = $term['subpropertyof'][0];
+              }
+              if ( !in_array($term['rdf_domain'][0], $term_value['rdf_domain']) ) {
+                $term_value['rdf_domain'][] = $term['rdf_domain'][0];
+              }
+              if ( !in_array($term['rdf_range'][0], $term_value['rdf_range']) ) {
+                $term_value['rdf_range'][] = $term['rdf_range'][0];
+              }
+            }
+            
             // jump if the term exists
             break;  
           }
@@ -356,11 +389,11 @@ function evoc_fetch_vocabulary($vocabulary_uri, $vocabulary_prefix, $ignore_base
         unset($term_value);
         
         // if not just_updated and not exists such a term add it to the array
-        if ( !$term_exist && !$just_updated ) {
+        if ( !$term_exist ) {
           $fetched_terms[] = $term;
         }
-        
       }
+      
     }
 
   }
@@ -414,36 +447,42 @@ function _evoc_save_rdf_terms($ns, $prefix, $terms) {
 
 /**
  * Store an external RDF class in the database.
+ * 
+ * @param object $class it's a keyed array containing the class information to be added. 
+ *               e.g: class = array('id' => 'someid', 'type' => 'class', 'label' => 'class label', 
+ *                       'comment' => 'some comment', 'superclasses' => array('rdfs:Resource', 'sioc:Container'));  
+ *          
+ * @return 
  */
 function evoc_write_class($class) {
   // Check whether this class is already in the system.
-  $count_class = db_result(db_query(db_rewrite_sql('SELECT count(*) FROM {evoc_rdf_classes} WHERE prefix="%s" AND id = "%s"'), $class['prefix'], $class['id']));
+  $exists_class = db_result(db_query(db_rewrite_sql('SELECT count(*) FROM {evoc_rdf_classes} WHERE prefix="%s" AND id = "%s"'), $class['prefix'], $class['id'])) > 0;
 
-  if( $count_class > 0 ) {
-    drupal_set_message($class['prefix'] . ":" . $class['id'] . " already exists in the system.", 'status', FALSE);
+  if( $exists_class ) {
+    drupal_set_message($class['prefix']." : ".$class['id']." already exists in the system.", 'status', FALSE);
   }
   else {
     $has_superclass = FALSE;
-    if( !empty($class['superclass']) ) {
+    if( !empty($class['superclasses']) && is_array($class['superclasses']) ) {
       $has_superclass = TRUE;
-      foreach ( $class['superclass'] as $superclass ) {
-        db_query(db_rewrite_sql('insert into {evoc_rdf_superclasses} (prefix, id, superclass) values ("%s", "%s", "%s")'), $class->prefix, $class->id, $superclass);
+      foreach ( $class['superclasses'] as $superclass ) {
+        db_query(db_rewrite_sql('insert into {evoc_rdf_superclasses} (prefix, reference, superclass) values ("%s", "%s", "%s")'), $class['prefix'], $class['id'], $superclass);
       }
     }
     
     if( db_query(db_rewrite_sql('insert into {evoc_rdf_classes} (prefix, id, label, comment, has_superclass) 
-      values ("%s", "%s", "%s", "%s", "%d")'), $class->prefix, $class->id, $class->label, $class->comment, $has_superclass) ) {
-      drupal_set_message($class['prefix'].":".$class['id']." successfully imported.");          
+      values ("%s", "%s", "%s", "%s", "%d")'), $class['prefix'], $class['id'], $class['label'], $class['comment'], $has_superclass) ) {
+      drupal_set_message($class['prefix']." : ".$class['id']." successfully imported.");          
     }
     else {
-      drupal_set_message($class['prefix'].":".$class['id']." could not be saved.", 'warning');
+      drupal_set_message($class['prefix']." : ".$class['id']." could not be saved.", 'warning');
     }
   }
 }
 
 /**
  * Remove class term form evoc's repository
- * @param object $class
+ * @param object $class it's a keyed array containing the class information to be removed.
  * @return 
  */
 function evoc_remove_class($class) {
@@ -464,40 +503,67 @@ function evoc_remove_class($class) {
   
   $result = db_query(db_rewrite_sql('delete from {evoc_rdf_classes} where prefix="%s" and id = "%s"'), $class['prefix'], $class['id']);
   if( $result ) {
-    drupal_set_message($class['prefix'].":".$class['id']." has been successfully removed from the system.");
+    drupal_set_message($class['prefix']." : ".$class['id']." has been successfully removed from the system.");
   }
   else {
-    drupal_set_message($class['prefix'].":".$class['id']." not found in the system.", 'warning');
+    drupal_set_message($class['prefix']." : ".$class['id']." not found in the system.", 'warning');
   }
 }
 
-
 /**
  * Store an external RDF property in the database.
+ * @param object $property / $term = array();
+ *         $term['id'] = string
+ *         $term['type'] = string
+ *         $term['label'] = string
+ *         $term['comment'] = string
+ *         $term['rdf_domain'] = array();
+ *         $term['rdf_range'] = array();
+ *         $term['superproperties'] = array();
+ *         $term['prefix'] = string
+ * 
+ * 
+ * @return none 
  */
 function evoc_write_property($property) {
-    // Check whether this class is already in the system.
-    // TODO optimize this by loading the whole prefix terms from the db and then check against it in memory
-    $res = db_query(db_rewrite_sql('SELECT * FROM {evoc_rdf_properties} WHERE prefix="%s" AND id = "%s"'), $property['prefix'], $property['id']);
+  $exists_property = db_result(db_query(db_rewrite_sql('SELECT count(*) FROM {evoc_rdf_properties} WHERE prefix="%s" AND id = "%s"'), $property['prefix'], $property['id'])) > 0;
 
-    if ( !($p = db_fetch_object($res)) ) {
-      if (drupal_write_record('evoc_rdf_properties', $property)) {
-        drupal_set_message($property['prefix'] . ":" . $property['id'] . " successfully imported.");
+  if( $exists_property ) {
+    drupal_set_message($property['prefix']." : ".$property['id']." already exists in the system.", 'status', FALSE);
+  }
+  else {
+    $has_domain = FALSE;
+    if( !empty($property['rdf_domain']) && is_array($property['rdf_domain']) ) {
+      $has_domain = TRUE;
+      foreach ( $property['rdf_domain'] as $rdf_domain ) {
+        db_query(db_rewrite_sql('insert into {evoc_rdf_propertiesdomains} (prefix, reference, rdf_domain) values ("%s", "%s", "%s")'), $property['prefix'], $property['id'], $rdf_domain);
       }
-      else {
-        drupal_set_message($property['prefix'] . ":" . $property['id'] . " could not be saved.", 'warning');
+    }
+    
+    $has_range = FALSE;
+    if( !empty($property['rdf_range']) && is_array($property['rdf_range']) ) {
+      $has_range = TRUE;
+      foreach ( $property['rdf_range'] as $rdf_range ) {
+        db_query(db_rewrite_sql('insert into {evoc_rdf_propertiesranges} (prefix, reference, rdf_range) values ("%s", "%s", "%s")'), $property['prefix'], $property['id'], $rdf_range);
       }
+    }
+    
+    $has_superproperty = FALSE;
+    if( !empty($property['superproperties']) && is_array($property['superproperties']) ) {
+      $has_superproperty = TRUE;
+      foreach ( $property['superproperties'] as $superproperty ) {
+        db_query(db_rewrite_sql('insert into {evoc_rdf_superproperties} (prefix, reference, superproperty) values ("%s", "%s", "%s")'), $property['prefix'], $property['id'], $superproperty);
+      }
+    }
+    
+    if( db_query(db_rewrite_sql('insert into {evoc_rdf_properties} (prefix, id, label, comment, has_superproperty, has_domain, has_range) 
+      values ("%s", "%s", "%s", "%s", "%d", "%d", "%d")'), $property['prefix'], $property['id'], $property['label'], $property['comment'], $has_superproperty, $has_domain, $has_range) ) {
+      drupal_set_message($property['prefix']." : ".$property['id']." successfully imported.");          
     }
     else {
-      /* this was used for debug
-      if( $p->prefix == $property['prefix'] && $p->id == $property['id'] ) {
-        if( $p->rdf_domain != $property['rdf_domain'] || $p->rdf_range != $property['rdf_range'] ) {
-          $property['prefix'] = $property['prefix'];  
-        }
-      }
-      */
-      drupal_set_message($property['prefix'] . ":" . $property['id'] . " already exists in the system.", 'status', FALSE);
+      drupal_set_message($property['prefix']." : ".$property['id']." could not be saved.", 'warning');
     }
+  }
 }
 
 /**
@@ -536,9 +602,9 @@ function evoc_term_exists($term, $string_term, $class_term = TRUE) {
 function evoc_remove_property($property) {
   $res = db_query(db_rewrite_sql('DELETE FROM {evoc_rdf_properties} WHERE prefix="%s" AND id = "%s"'), $property['prefix'], $property['id']);
   if( $res ) {
-    drupal_set_message($property['prefix'] . ":" . $property['id'] . " has been successfully removed from the system.");
+    drupal_set_message($property['prefix'] . " : " . $property['id'] . " has been successfully removed from the system.");
   }
   else {
-    drupal_set_message($property['prefix'] . ":" . $property['id'] . " not found in the system.", 'warning');
+    drupal_set_message($property['prefix'] . " : " . $property['id'] . " not found in the system.", 'warning');
   }
 }
