@@ -298,44 +298,70 @@ function _in_array_property($superproperty, array $superproperties ) {
  * @return json with the tree structure 
  */
 function neologism_gateway_get_full_classes_tree() {
-
-  $path = drupal_get_path('module', 'evoc');
-  include( $path."/modules/mxcheckboxselect/mxcheckboxselect.gateway.php" );
- 
   $nodes = array();
   
   $node = $_REQUEST['node'];
-  $nodes = array();
-  
+    
   if ( $node == 'root' ) {
-    $classes = db_query(db_rewrite_sql("SELECT prefix, id, comment FROM {evoc_rdf_classes}"));
+    $classes = db_query(db_rewrite_sql("SELECT prefix, id FROM {evoc_rdf_classes}"));
 
     $root_superclasses = array();
     while ($class = db_fetch_object($classes)) {
       $class->prefix = trim($class->prefix);
       $class->id = trim($class->id);
-      $root_superclasses = mxcheckboxselect_get_root_superclasses($class->prefix.':'.$class->id);
+      $root_superclasses = neologism_gateway_get_root_superclasses($class->prefix.':'.$class->id);
     }
   
     foreach ($root_superclasses as $class) {
-      $children = neologism_gateway_get_children($class, TRUE);
-      //$leaf = (count($children_of_children = mxcheckboxselect_gateway_get_children($class)) == 0 );
-      //$checked = (!empty($classes_array) && in_array($class, $classes_array)) ? TRUE : FALSE;
-      //$nodes[] = array('text' => $class, 'id' => $class, 'leaf' => $leaf, 'iconCls' => 'class-samevoc', 'checked' => $checked, 'qtip' => 'there is no information available yet...');
-      $leaf = count($children) == 0;
-      $nodes[] = array(
-        'text' => $class, 
-        'id' => $class, 
-        'leaf' => $leaf, 
-        'iconCls' => 'class-samevoc', 
-        'children' => $children, 
-        'checked' => false
-      );        
+      $qname_parts = explode(':', $class);
+      $object = db_fetch_object(db_query(db_rewrite_sql("SELECT prefix, id, label, comment FROM {evoc_rdf_classes} where prefix = '%s' and id = '%s'"), $qname_parts[0], $qname_parts[1]));
+      if( $object ) {
+        $children = neologism_gateway_get_children2($class);
+        $qtip = '<b>'.$object->label.'</b><br/>'.$object->comment;
+        $leaf = count($children) == 0;
+        $nodes[] = array(
+          'text' => $class, 
+          'id' => $class, 
+          'leaf' => $leaf, 
+          'iconCls' => 'class-samevoc', 
+          'children' => $children, 
+          'checked' => false,
+          'qtip' => $qtip
+        );        
+      }
     }
+
   }
 
   drupal_json($nodes);
 }
+
+function neologism_gateway_get_root_superclasses($class) {
+ 
+  static $root_superclasses = array();
+  
+  $term_qname_parts = explode(':', $class);
+  $prefix = $term_qname_parts[0];
+  $id = $term_qname_parts[1];
+  
+  $object = db_fetch_object(db_query(db_rewrite_sql("select has_superclass from {evoc_rdf_classes} where prefix = '%s' and id = '%s'"), $prefix, $id));
+  $has_superclass = ($object->has_superclass == '1');
+  if ( $has_superclass ) {
+    $superclass = db_query(db_rewrite_sql("SELECT superclass FROM {evoc_rdf_superclasses} where prefix = '%s' and reference = '%s'"), $prefix, $id);
+    while ( $term = db_fetch_object($superclass) ) {
+      $term->superclass = trim($term->superclass);
+      $root_superclasses = neologism_gateway_get_root_superclasses($term->superclass);  
+    }
+  }
+  else {
+    if( !_neologism_gateway_in_array($class, $root_superclasses) ) {
+      $root_superclasses[] = $class;  
+    }
+  }
+  
+  return $root_superclasses;
+}
+
 
 /**
  * This recursive function return all the children from $node
@@ -346,7 +372,8 @@ function neologism_gateway_get_children($node, $reset = false) {
   $nodes = array();
   
   // search for the children in all the tables
-  $children = db_query(db_rewrite_sql("select n.title, n.nid from content_field_superclass2 as c inner join node as n on c.nid = n.nid 
+  $children = db_query(db_rewrite_sql("select n.title, n.nid from 
+    content_field_superclass2 as c inner join node as n on c.nid = n.nid 
     where c.field_superclass2_evoc_term = '%s'"), $node);
    
   // get children from vocabularies on Drupal content 
@@ -403,6 +430,40 @@ function neologism_gateway_get_children($node, $reset = false) {
   return $nodes;
 }
 
+/**
+ * 
+ * @param object $node
+ * @param object $reset [optional]
+ * @return 
+ */
+function neologism_gateway_get_children2($node) {
+  $nodes = array();
+  
+  $children = db_query('select prefix, reference from {evoc_rdf_superclasses} where superclass = "'.$node.'"');
+    
+  while ($child = db_fetch_object($children)) {
+    $class = db_fetch_object(db_query('select * from evoc_rdf_classes where prefix = "'.$child->prefix.'" and id = "'.$child->reference.'" '));
+    if ( $class ) {
+      $class->prefix = trim($class->prefix);
+      $class->id = trim($class->id); 
+      $class_qname = $class->prefix.':'.$class->id;
+      $children_nodes = neologism_gateway_get_children2($class_qname);  
+      $leaf = count($children_nodes) == 0;
+      $qtip = '<b>'.$class->label.'</b><br/>'.$class->comment;
+      $nodes[] = array(
+        'text' => $class_qname, 
+        'id' => $class_qname, 
+        'leaf' => $leaf, 
+        'iconCls' => 'class-samevoc', 
+        'children' => $children_nodes, 
+        'checked' => false,
+        'qtip' => $qtip
+      );
+    }
+  }
+  
+  return $nodes;
+}
 
 // properties
 
