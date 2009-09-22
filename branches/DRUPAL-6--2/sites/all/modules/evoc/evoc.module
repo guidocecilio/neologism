@@ -353,8 +353,8 @@ function evoc_fetch_vocabulary($vocabulary_uri, $vocabulary_prefix, $ignore_base
 
       // We only import the terms with the specified prefix unless $ignore_base_ns is TRUE.
       if ($term_prefix == $vocabulary_prefix || $ignore_base_ns) {
-          
-        var_dump($term);
+        
+        //var_dump($term);
         
         // added in evoc v2.0.0.0
         // this' a filter to add just new term and insert the superclasses for the terms class that has
