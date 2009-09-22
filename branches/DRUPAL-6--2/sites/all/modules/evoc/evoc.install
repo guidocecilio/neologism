@@ -13,85 +13,29 @@ function evoc_schema() {
       'id' => array('type' => 'varchar', 'length' => '32', 'not null' => TRUE),
       'label' => array('type' => 'varchar', 'length' => '32', 'not null' => TRUE),
       'comment' => array('type' => 'text', 'not null' => TRUE),
-      'superclass' => array('type' => 'varchar', 'length' => '32', 'not null' => TRUE),
+      'has_superclass' => array('type' => 'int', 'size' => 'tiny', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0)
     ),
     'primary key' => array(
       'prefix',
       'id',
     ),
   );
+ 
   $schema['evoc_rdf_properties'] = array(
     'fields' => array(
       'prefix' => array('type' => 'varchar', 'length' => '32', 'not null' => TRUE),
       'id' => array('type' => 'varchar', 'length' => '32', 'not null' => TRUE),
       'label' => array('type' => 'varchar', 'length' => '32', 'not null' => TRUE),
       'comment' => array('type' => 'text', 'not null' => TRUE),
-      'rdf_domain' => array('type' => 'varchar', 'length' => '32', 'not null' => TRUE),
-      'rdf_range' => array('type' => 'varchar', 'length' => '32', 'not null' => TRUE),
+      'has_superproperty' => array('type' => 'int', 'size' => 'tiny', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0),
+      'has_domain' => array('type' => 'int', 'size' => 'tiny', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0),
+      'has_range' => array('type' => 'int', 'size' => 'tiny', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0)
     ),
     'primary key' => array(
       'prefix',
       'id',
     ),
   );
-
-  return $schema;
-}
-
-/**
- * Implementation of hook_install().
- */
-function evoc_install() {
-  drupal_install_schema('evoc');
-}
-
-/**
- * Implementation of hook_uninstall().
- */
-function evoc_uninstall() {
-  drupal_uninstall_schema('evoc');
-}
-
-/**
- * Implementation of hook_enable().
- */
-function evoc_enable() {
-  // Import a few popular vocabularies.
-  drupal_load('module', 'rdf');
-  drupal_load('module', 'sparql');
-  drupal_load('module', 'evoc');
-  
-  // Force schema rebuild, see http://drupal.org/node/200931
-  drupal_get_schema(NULL, TRUE);
-  
-  evoc_import_vocabulary('http://purl.org/dc/elements/1.1/', 'dc');
-  evoc_import_vocabulary('http://xmlns.com/foaf/0.1/', 'foaf');
-  evoc_import_vocabulary('http://rdfs.org/sioc/ns#', 'sioc');
-}
-
-/**
- * Implementation of hook_update_N.
- *
- * Rename columns to avoid reserved word conflicts (specifically with MySQL 5.1)
- */
-function evoc_update_6001() {
-  $ret = array();
-  $schema = evoc_schema();
-  $fields = $schema['evoc_rdf_properties']['fields'];
-  db_change_field($ret, 'evoc_rdf_properties', 'domain', 'rdf_domain', $fields['rdf_domain']);
-  db_change_field($ret, 'evoc_rdf_properties', 'range', 'rdf_range', $fields['rdf_range']);
-  return $ret;
-}
-
-/**
- * Implementation of hook_update_N.
- *
- * Rename columns to avoid reserved word conflicts (specifically with MySQL 5.1)
- */
-function evoc_update_6200() {
-  $ret = array('#finished' => 0);
-  
-  $schema = evoc_schema();
   
   $schema['evoc_rdf_superclasses'] = array(
     'fields' => array(
@@ -133,42 +77,77 @@ function evoc_update_6200() {
     'primary key' => array('id'),
   );
 
+  return $schema;
+}
+
+/**
+ * Implementation of hook_install().
+ */
+function evoc_install() {
+  drupal_install_schema('evoc');
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function evoc_uninstall() {
+  drupal_uninstall_schema('evoc');
+}
+
+/**
+ * Implementation of hook_enable().
+ */
+function evoc_enable() {
+  // Import a few popular vocabularies.
+  drupal_load('module', 'rdf');
+  drupal_load('module', 'sparql');
+  drupal_load('module', 'evoc');
+  
+  // Force schema rebuild, see http://drupal.org/node/200931
+  drupal_get_schema(NULL, TRUE);
+  
+  evoc_import_vocabulary('http://www.w3.org/1999/02/22-rdf-syntax-ns#', 'rdf');
+  evoc_import_vocabulary('http://www.w3.org/2000/01/rdf-schema#', 'rdfs');
+  evoc_import_vocabulary('http://purl.org/dc/elements/1.1/', 'dc');
+  evoc_import_vocabulary('http://xmlns.com/foaf/0.1/','foaf');
+  evoc_import_vocabulary('http://www.w3.org/2002/07/owl#','owl');
+
+}
+
+/**
+ * Implementation of hook_update_N.
+ *
+ * Rename columns to avoid reserved word conflicts (specifically with MySQL 5.1)
+ */
+function evoc_update_6001() {
+  $ret = array();
+  $schema = evoc_schema();
+  $fields = $schema['evoc_rdf_properties']['fields'];
+  db_change_field($ret, 'evoc_rdf_properties', 'domain', 'rdf_domain', $fields['rdf_domain']);
+  db_change_field($ret, 'evoc_rdf_properties', 'range', 'rdf_range', $fields['rdf_range']);
+  return $ret;
+}
+
+/**
+ * Implementation of hook_update_N.
+ *
+ * Rename columns to avoid reserved word conflicts (specifically with MySQL 5.1)
+ */
+function evoc_update_6200() {
+  $ret = array('#finished' => 0);
+  
+  $schema = evoc_schema();
+  
+  db_add_field($ret, 'evoc_rdf_classes', 'has_superclass', $schema['evoc_rdf_classes']['fields']['has_superclass']);
+  db_add_field($ret, 'evoc_rdf_properties', 'has_superproperty', $schema['evoc_rdf_properties']['fields']['has_superproperty']);
+  db_add_field($ret, 'evoc_rdf_properties', 'has_domain', $schema['evoc_rdf_properties']['fields']['has_domain']);
+  db_add_field($ret, 'evoc_rdf_properties', 'has_range', $schema['evoc_rdf_properties']['fields']['has_range']);
+  
   db_create_table($ret, 'evoc_rdf_superclasses', $schema['evoc_rdf_superclasses']);
-  db_add_field($ret, 'evoc_rdf_classes', 'has_superclass', array(
-    'type' => 'int',
-    'size' => 'tiny', 
-    'unsigned' => TRUE, 
-    'not null' => TRUE, 
-    'default' => 0)
-  );
-  
   db_create_table($ret, 'evoc_rdf_superproperties', $schema['evoc_rdf_superproperties']);
-  db_add_field($ret, 'evoc_rdf_properties', 'has_superproperty', array(
-    'type' => 'int',
-    'size' => 'tiny', 
-    'unsigned' => TRUE, 
-    'not null' => TRUE, 
-    'default' => 0)
-  );
-  
   db_create_table($ret, 'evoc_rdf_propertiesdomains', $schema['evoc_rdf_propertiesdomains']);
-  db_add_field($ret, 'evoc_rdf_properties', 'has_domain', array(
-    'type' => 'int',
-    'size' => 'tiny', 
-    'unsigned' => TRUE, 
-    'not null' => TRUE, 
-    'default' => 0)
-  );
-  
   db_create_table($ret, 'evoc_rdf_propertiesranges', $schema['evoc_rdf_propertiesranges']);
-  db_add_field($ret, 'evoc_rdf_properties', 'has_range', array(
-    'type' => 'int',
-    'size' => 'tiny', 
-    'unsigned' => TRUE, 
-    'not null' => TRUE, 
-    'default' => 0)
-  );
-  
+
   // create all the superclasses in the table evoc_rdf_superclasses for each class 
   // in evoc_rdf_classes that its superclass column has some value
   if (!isset($sandbox['progress'])) {
