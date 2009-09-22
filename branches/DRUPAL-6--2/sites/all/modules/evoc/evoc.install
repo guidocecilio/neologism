@@ -13,7 +13,7 @@ function evoc_schema() {
       'id' => array('type' => 'varchar', 'length' => '32', 'not null' => TRUE),
       'label' => array('type' => 'varchar', 'length' => '32', 'not null' => TRUE),
       'comment' => array('type' => 'text', 'not null' => TRUE),
-      'has_superclass' => array('type' => 'int', 'size' => 'tiny', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0)
+      'superclasses' => array('type' => 'int', 'size' => 'tiny', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0)
     ),
     'primary key' => array(
       'prefix',
@@ -27,9 +27,9 @@ function evoc_schema() {
       'id' => array('type' => 'varchar', 'length' => '32', 'not null' => TRUE),
       'label' => array('type' => 'varchar', 'length' => '32', 'not null' => TRUE),
       'comment' => array('type' => 'text', 'not null' => TRUE),
-      'has_superproperty' => array('type' => 'int', 'size' => 'tiny', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0),
-      'has_domain' => array('type' => 'int', 'size' => 'tiny', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0),
-      'has_range' => array('type' => 'int', 'size' => 'tiny', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0)
+      'superproperties' => array('type' => 'int', 'size' => 'tiny', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0),
+      'domains' => array('type' => 'int', 'size' => 'tiny', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0),
+      'ranges' => array('type' => 'int', 'size' => 'tiny', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0)
     ),
     'primary key' => array(
       'prefix',
@@ -132,16 +132,19 @@ function evoc_update_6001() {
  * Implementation of hook_update_N.
  *
  * Rename columns to avoid reserved word conflicts (specifically with MySQL 5.1)
+ * Remark
+ * as at the beginning all the superclasses and superproperties were only one the parameter look as a boolean
+ * value but it is supose to be and int, but 1 = TRUE = supouse cuantity of superclasses or superproperties
  */
 function evoc_update_6200() {
   $ret = array('#finished' => 0);
   
   $schema = evoc_schema();
   
-  db_add_field($ret, 'evoc_rdf_classes', 'has_superclass', $schema['evoc_rdf_classes']['fields']['has_superclass']);
-  db_add_field($ret, 'evoc_rdf_properties', 'has_superproperty', $schema['evoc_rdf_properties']['fields']['has_superproperty']);
-  db_add_field($ret, 'evoc_rdf_properties', 'has_domain', $schema['evoc_rdf_properties']['fields']['has_domain']);
-  db_add_field($ret, 'evoc_rdf_properties', 'has_range', $schema['evoc_rdf_properties']['fields']['has_range']);
+  db_add_field($ret, 'evoc_rdf_classes', 'superclasses', $schema['evoc_rdf_classes']['fields']['superclasses']);
+  db_add_field($ret, 'evoc_rdf_properties', 'superproperties', $schema['evoc_rdf_properties']['fields']['superproperties']);
+  db_add_field($ret, 'evoc_rdf_properties', 'domains', $schema['evoc_rdf_properties']['fields']['domains']);
+  db_add_field($ret, 'evoc_rdf_properties', 'ranges', $schema['evoc_rdf_properties']['fields']['ranges']);
   
   db_create_table($ret, 'evoc_rdf_superclasses', $schema['evoc_rdf_superclasses']);
   db_create_table($ret, 'evoc_rdf_superproperties', $schema['evoc_rdf_superproperties']);
@@ -165,7 +168,7 @@ function evoc_update_6200() {
       $has_superclass = TRUE;
     }
    
-    $ret[] = update_sql('update {evoc_rdf_classes} set has_superclass = "'.$has_superclass.'" where prefix = "'.$class->prefix.'" and  id = "'.$class->id.'"');
+    $ret[] = update_sql('update {evoc_rdf_classes} set superclasses = "'.$has_superclass.'" where prefix = "'.$class->prefix.'" and  id = "'.$class->id.'"');
     $sandbox['progress']++;
   }
   
@@ -187,7 +190,7 @@ function evoc_update_6200() {
       $has_range = TRUE;
     }
    
-    $ret[] = update_sql('update {evoc_rdf_properties} set has_domain = "'.$has_domain.'", has_range = "'.$has_range.'" where prefix = "'.$property->prefix.'" and  id = "'.$property->id.'"');
+    $ret[] = update_sql('update {evoc_rdf_properties} set domains = "'.$has_domain.'", ranges = "'.$has_range.'" where prefix = "'.$property->prefix.'" and  id = "'.$property->id.'"');
     $sandbox['progress']++;
   }
   
