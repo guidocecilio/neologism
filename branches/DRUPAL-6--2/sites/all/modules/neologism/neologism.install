@@ -28,9 +28,7 @@ function neologism_update_1() {
   return $ret;
 }
 
-
-
-/**
- * Implementation of hook_uninstall().
- */
-
+function neologism_update_6200() {
+  $ret = array();
+  return $ret;
+}

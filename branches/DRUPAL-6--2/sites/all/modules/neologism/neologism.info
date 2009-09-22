@@ -13,4 +13,4 @@ dependencies[] = evoc
 dependencies[] = ext
 package = RDF
 core = 6.x
-version = "6.x-0.34-dev"
+version = "6.x-2.00-dev"
