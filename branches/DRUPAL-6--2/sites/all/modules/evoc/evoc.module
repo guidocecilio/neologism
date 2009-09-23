@@ -511,10 +511,10 @@ function evoc_remove_class($class, $remove_references = FALSE) {
     drupal_set_message("Impossible remove a class without prefix and id.", 'warning');  
   }
   else {
-    $count_superclasses = db_fetch_object(db_query(db_rewrite_sql('select has_superclass from {evoc_rdf_classes} where prefix="%s" and id = "%s"'), $class['prefix'], $class['id']));  
+    $current_class = db_fetch_object(db_query(db_rewrite_sql('select superclasses from {evoc_rdf_classes} where prefix="%s" and id = "%s"'), $class['prefix'], $class['id']));  
     
     // if has_superclass property is not provided query for it. Then remove all the dependences if there is someone
-    if( $count_superclasses > 0 ) {
+    if( $current_class->superclasses > 0 ) {
       $result = db_query(db_rewrite_sql('delete from {evoc_rdf_superclasses} where prefix="%s" and reference = "%s"'), $class['prefix'], $class['id']);
       if( $result ) {
         drupal_set_message("Superclasses dependences has been successfully removed from the system.");
