@@ -213,7 +213,7 @@ function mxcheckboxselect_process($element, $edit, $form_state, $form) {
     }
   }
 
-  $url = !empty($element['#neo_behaviour']['url_gateway']) ? $element['#neo_behaviour']['url_gateway'] : 'neologism/json/fulltree';   
+  $url = !empty($element['#mxcbs_behaviour']['url_gateway']) ? $element['#mxcbs_behaviour']['url_gateway'] : 'neologism/json/fulltree';   
   $opts = array('absolute' => TRUE);
   $json_url = url($url, $opts);
   //create the variable into the namespace neologism
@@ -235,11 +235,11 @@ function mxcheckboxselect_process($element, $edit, $form_state, $form) {
     ), 'setting');
 
   $js = '';
-  if( !empty($element['#neo_behaviour']['handler']) ) {
+  if( !empty($element['#mxcbs_behaviour']['handler']) ) {
     $js = '
       Ext.onReady( function() {
         Ext.QuickTips.init();
-        '.$element['#neo_behaviour']['handler'].'("'.$field_name.'");
+        '.$element['#mxcbs_behaviour']['handler'].'("'.$field_name.'");
       });
     ';  
   } else { // add default behaviour
@@ -253,11 +253,13 @@ function mxcheckboxselect_process($element, $edit, $form_state, $form) {
   drupal_add_js($js, 'inline');
   
   // Call methods to create prefix. (ie the non-selected table, etc)
-  $prefix = '<div class="form-item"><label for="edit-title">'. t($element['#title']) .':';
-  if ($field['required']) {
-    $prefix .= '<span class="form-required" title="'. t('This field is required.') .'"> * </span>';
+  if( !isset($element['#mxcbs_behaviour']['owntitle']) ) {
+    $prefix = '<div class="form-item"><label for="edit-title">'. t($element['#title']) .':';
+    if ($field['required']) {
+      $prefix .= '<span class="form-required" title="'. t('This field is required.') .'"> * </span>';
+    }
+    $prefix .= "</label>\n";
   }
-  $prefix .= "</label>\n";
 
   $prefix .= "<div id=\"".$obj_to_render_id."\"></div>\n";
  
