@@ -505,7 +505,7 @@ function evoc_write_class($class) {
  * @param object $class it's a keyed array containing the class information to be removed.
  * @return 
  */
-function evoc_remove_class($class) {
+function evoc_remove_class($class, $remove_references = FALSE) {
   if( empty($class['prefix']) || empty($class['id']) )
   {
     drupal_set_message("Impossible remove a class without prefix and id.", 'warning');  
@@ -534,7 +534,30 @@ function evoc_remove_class($class) {
     
     // should I remove all the domains and ranges belonging to this class?
     // TODO if I do, add that behaviour here
-        
+    if ( $remove_references ) {
+      $qname = $class['prefix'].':'.$class['id']; 
+      
+      // removing domains references for properties
+      $result = db_query(db_rewrite_sql('select prefix, reference from {evoc_rdf_propertiesdomains} where rdf_domain = "%s"'), $qname);
+      while ( $property = db_fetch_object($result) ) {
+        $result = db_query(db_rewrite_sql('delete from {evoc_rdf_propertiesdomains} where prefix = "%s" and reference = "%s"'), $property->prefix, $property->reference);
+        if ( $result ) {
+          $pd = db_fetch_object(db_query(db_rewrite_sql('select domains from {evoc_rdf_properties} where prefix = "%s" and id = "%s"'), $property->prefix, $property->reference));
+          $result = db_query(db_rewrite_sql('update {evoc_rdf_properties} set domains = "%d" where prefix = "%s" and id = "%s"'), --$pd->domains, $property->prefix, $property->reference);
+        }
+      }
+      
+      // removing ranges references for properties
+      $result = db_query(db_rewrite_sql('select prefix, reference from {evoc_rdf_propertiesranges} where rdf_range = "%s"'), $qname);
+      while ( $property = db_fetch_object($result) ) {
+        $result = db_query(db_rewrite_sql('delete from {evoc_rdf_propertiesranges} where prefix = "%s" and reference = "%s"'), $property->prefix, $property->reference);
+        if ( $result ) {
+          $pr = db_fetch_object(db_query(db_rewrite_sql('select ranges from {evoc_rdf_properties} where prefix = "%s" and id = "%s"'), $property->prefix, $property->reference));
+          $result = db_query(db_rewrite_sql('update {evoc_rdf_properties} set ranges = "%d" where prefix = "%s" and id = "%s"'), --$pr->ranges, $property->prefix, $property->reference);
+        }
+      }
+    } // $remove_references 
+           
   }
 }
 
