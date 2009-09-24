@@ -6,9 +6,14 @@ h2.neologism {
   font-size: 2em;
 }
 
-div#atglance {
+#atglance {  
   border: 1px dotted;
+  
   padding: 0.8em;
+}
+
+#atglance p {
+  text-align: left;
 }
 
 div#atglance > p {
@@ -64,6 +69,11 @@ img#legend {
 .complete .x-tree-node-anchor span {
   text-decoration: line-through;
   color: #777;
+}
+
+.locked-for-edition .x-tree-node-anchor span {
+  text-decoration: overline;
+  color: #ff0000; 
 }
 
 .currentvoc .x-tree-node-anchor span {
@@ -143,7 +153,7 @@ img#legend {
 
 /* class view */
 #classview {
-  margin: 10px 0px 10px 0px;
+  margin: 10px 0px 25px 0px;
   padding: 0px;
   display: block;
   border-bottom: #ccc solid 2px;
@@ -210,5 +220,9 @@ img#legend {
 
 #vocabulary-view #diagram {
   margin: 10px 0px 10px 0px;
+}
+
+#field_disjointwith2_id {
+  margin: 15px 0px 15px 0px;
 }
 
