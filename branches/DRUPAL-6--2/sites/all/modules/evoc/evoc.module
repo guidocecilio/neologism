@@ -701,6 +701,98 @@ function evoc_write_property($property) {
 }
 
 /**
+ * Update an external RDF class in the database.
+ * 
+ * @param object $property / $term it's a keyed array containing the class information to be added. 
+ *                 $term['id'] = string
+ *                 $term['type'] = string
+ *                 $term['label'] = string
+ *         $term['comment'] = string
+ *         $term['rdf_domain'] = array();
+ *         $term['rdf_range'] = array();
+ *         $term['subpropertyof'] = array();
+ *         $term['prefix'] = string 
+ *         $term['previous_id'] = 'some_valid_previous_id'
+ *                 );  
+ *          
+ * @return 
+ */
+function evoc_update_property($property, $cascade_update = TRUE) {
+  if( !isset($class['previous_id']) ) {
+    evoc_set_message('This function need $property[\'previous_id\'] = id_to_update.', 'warning');
+    return;
+  } 
+  
+  $currentproperty = db_fetch_object(db_query(db_rewrite_sql('select * from {evoc_rdf_property} where prefix="%s" and id = "%s"'), $property['prefix'], $property['previous_id']));
+  
+  if( $currentproperty ) {
+    $previous_qname = $property['prefix'].':'.$property['previous_id'];
+    $new_qname = $property['prefix'].':'.$property['id'];
+    
+    if( $previous_qname != $new_qname && $cascade_update ) {
+      $result = db_query(db_rewrite_sql('select * from {evoc_rdf_superproperties} where superproperty = "%s"'), $previous_qname);    
+      // update all the subclassesof $previous_qname
+      while ( $subpropertyof = db_fetch_object($result) ) {
+        $result = db_query(db_rewrite_sql('update {evoc_rdf_superproperties} set superproperty = "%s" where prefix = "%s" and reference = "%s"'), $new_qname, $subclassof->prefix, $subpropertyof->reference);  
+      }
+    }
+    
+    // now it's time to update the property
+    // check for rdf_domains, if has domains then remove them
+    if( $currentproperty->domains > 0 ) {
+      $result = db_query(db_rewrite_sql('delete from {evoc_rdf_propertiesdomains} where prefix = "%s" and reference = "%s"'), $currentproperty->prefix, $currentproperty->id);
+    }
+    $count_domains = 0;
+    if( !empty($property['rdf_domain']) && is_array($property['rdf_domain']) ) {
+      $count_domains = count($property['rdf_domain']);
+      foreach ( $property['rdf_domain'] as $rdf_domain ) {
+        db_query(db_rewrite_sql('insert into {evoc_rdf_propertiesdomains} (prefix, reference, rdf_domain) values ("%s", "%s", "%s")'), $property['prefix'], $property['id'], $rdf_domain);
+      }
+    }
+    
+    // check for rdf_ranges, if has domains then remove them
+    if( $currentproperty->ranges > 0 ) {
+      $result = db_query(db_rewrite_sql('delete from {evoc_rdf_propertiesranges} where prefix = "%s" and reference = "%s"'), $currentproperty->prefix, $currentproperty->id);
+    }
+    $count_ranges = 0;
+    if( !empty($property['rdf_range']) && is_array($property['rdf_range']) ) {
+      $count_ranges = count($property['rdf_range']);
+      foreach ( $property['rdf_range'] as $rdf_range ) {
+        db_query(db_rewrite_sql('insert into {evoc_rdf_propertiesranges} (prefix, reference, rdf_range) values ("%s", "%s", "%s")'), $property['prefix'], $property['id'], $rdf_range);
+      }
+    }
+    
+    // check for superproperties, if does then remove them
+    if( $currentproperty->superproperties > 0 ) {
+      $result = db_query(db_rewrite_sql('delete from {evoc_rdf_superproperties} where prefix = "%s" and reference = "%s"'), $currentproperty->prefix, $currentproperty->id);
+    }
+    $count_superproperties = 0;
+    if( !empty($property['subpropertyof']) && is_array($property['subpropertyof']) ) {
+      $count_superproperties = count($property['subpropertyof']);
+      foreach ( $property['subpropertyof'] as $superproperty ) {
+        db_query(db_rewrite_sql('insert into {evoc_rdf_superproperties} (prefix, reference, superproperty) values ("%s", "%s", "%s")'), $property['prefix'], $property['id'], $superproperty);
+      }
+    }
+        
+    // update the property
+    $result = db_query(db_rewrite_sql('update {evoc_rdf_properties} set id = "%s", label = "%s", comment = "%s", superproperties = "%d", domains = "%d", ranges = "%d" where prefix = "%s" and id = "%s"'), 
+      $property['id'], $property['label'], $property['comment'], $count_superproperties, $count_domains, $count_ranges, $currentproperty->prefix, $currentproperty->id);
+      
+    if( $result ) {  
+      evoc_set_message("The property ".$new_qname." was successfully updated.");          
+    }
+    else {
+      evoc_set_message($previous_qname." could not be updated.", 'warning');
+    }
+    
+  }
+  else {
+    evoc_set_message("Class ".$class['prefix']." : ".$class['previous_id']." not found.", 'warning');
+  }
+  
+}
+
+/**
  * Remove property term form evoc's repository
  * @param object $property
  * @return 
