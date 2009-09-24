@@ -213,6 +213,11 @@ function mxcheckboxselect_process($element, $edit, $form_state, $form) {
     }
   }
 
+  //editing_value is aditional information for the widget, somethime this information
+  //is used when a node is being edited and we need to handle that value in the list of values
+  
+  $editing_value = !empty($element['#mxcbs_behaviour']['editing_value']) ? $element['#mxcbs_behaviour']['editing_value'] : NULL;
+
   $url = !empty($element['#mxcbs_behaviour']['url_gateway']) ? $element['#mxcbs_behaviour']['url_gateway'] : 'neologism/json/fulltree';   
   $opts = array('absolute' => TRUE);
   $json_url = url($url, $opts);
@@ -231,6 +236,7 @@ function mxcheckboxselect_process($element, $edit, $form_state, $form) {
         'field_id' => Array($field_name => $obj_to_render_id),
         // this hold the field values
         'field_values' => Array($field_name => json_encode($selected_values)), //Array()),
+        'editing_value' => Array($field_name => $editing_value),
       )
     ), 'setting');
 
