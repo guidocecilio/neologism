@@ -64,8 +64,10 @@ Neologism.createClassSelecctionWidget = function( field_name ) {
   
   var objectToRender = Drupal.settings.neologism.field_id[field_name];
   var dataUrl = Drupal.settings.neologism.json_url[field_name];
+  var editingValue = Drupal.settings.neologism.editing_value[field_name];
   //var baseParams = Drupal.settings.neologism.field_selected_values;
-   
+  
+  //alert(editingValue); 
   // we need to past the baseParams as and object, that is why we creat the baseParams object
   // and add the arrayOfValues array 
   var baseParams = {};
@@ -113,7 +115,7 @@ Neologism.createClassSelecctionWidget = function( field_name ) {
   
   Neologism.superclassesTreePanel = new Ext.tree.TreePanel({
     renderTo         : objectToRender,
-    title            : Drupal.t('Defined classes'),
+    title            : Drupal.t('Select superclasses'),
     useArrows        : true,  
     collapsible      : true,
     animCollapse     : true,
@@ -176,7 +178,7 @@ Neologism.createClassSelecctionWidget = function( field_name ) {
             
             if (!node.parentNode.isRoot) {
               node.bubble( function(){
-                if (node.id != this.id) {
+                if (node.id != this.id && node.getUI().nodeClass != 'locked-for-edition' ) {
                   this.getUI().checkbox.disabled = true;
                 }
                 //this.getUI().addClass('complete');
@@ -219,7 +221,7 @@ Neologism.createClassSelecctionWidget = function( field_name ) {
               
               if (!node.parentNode.isRoot) {
                 node.bubble( function(){
-                  if (node.id != this.id) {
+                  if (node.id != this.id && node.getUI().nodeClass != 'locked-for-edition') {
                     this.getUI().checkbox.disabled = false;
                   }
                   //this.getUI().addClass('complete');
@@ -257,17 +259,21 @@ Neologism.createClassSelecctionWidget = function( field_name ) {
           }    
         }
 
-        this.expandPath(node.getPath());
-        node.eachChild( function(currentNode){
-          currentNode.getUI().toggleCheck(checked);
-          if( currentNode.getUI().nodeClass != 'complete'  ) {
-            //alert(currentNode.id);
-            currentNode.getUI().checkbox.checked = false;
-            // if the parent is not checked the child is not checked as well
-            currentNode.getUI().checkbox.disabled = currentNode.parentNode.getUI().isChecked();
-            //currentNode.getUI().checkbox.disabled = checked;  
+        node.cascade( function(){
+          this.expand();
+          //alert(this.id + " == " + editingValue + " result = " + (this.id == editingValue) );
+          if ( this.id != editingValue ) {
+            if (this.id != node.id && this.getUI().nodeClass != 'locked-for-edition' && this.getUI().nodeClass != 'complete') {
+              this.getUI().checkbox.disabled = node.getUI().checkbox.checked;
+            }
+          }
+          else if ( this.id == editingValue ) {
+            this.getUI().addClass('locked-for-edition');
+            this.getUI().checkbox.disabled = true;
+            this.getUI().checkbox.checked = false;
           }
         });
+        
       } // checkchange
     }
   });
@@ -283,6 +289,16 @@ Neologism.createClassSelecctionWidget = function( field_name ) {
       node.getOwnerTree().expandPath(currentNode.getPath());
       currentNode.cascade( function() {
         for (var j = 0, lenValues = baseParams.arrayOfValues.length; j < lenValues; j++) {
+          
+          /*
+          if ( editingValue && this.id == editingValue ) {
+            alert(this.id);
+            this.getUI().addClass('locked-for-edition');
+            this.getUI().checkbox.disabled = false;
+            this.getUI().checkbox.checked = false;
+          }
+          */
+          
           if ( this.id == baseParams.arrayOfValues[j] ) {
             this.getUI().toggleCheck(true);
             //this.getUI().checkbox.checked = true;
@@ -304,6 +320,7 @@ Neologism.createClassSelecctionWidget = function( field_name ) {
 Neologism.createDisjointWithSelecctionWidget = function( field_name ) {
   
   var objectToRender = Drupal.settings.neologism.field_id[field_name];
+  var editingValue = Drupal.settings.neologism.editing_value[field_name];
   Neologism.objectToRender = objectToRender; 
   
   var dataUrl = Drupal.settings.neologism.json_url[field_name];
@@ -324,6 +341,13 @@ Neologism.createDisjointWithSelecctionWidget = function( field_name ) {
         node.eachChild(function(currentNode){
           node.getOwnerTree().expandPath(currentNode.getPath());
           currentNode.cascade( function() {
+            
+            if ( this.id == editingValue ) {
+              this.getUI().addClass('locked-for-edition');
+              this.getUI().checkbox.disabled = true;
+              this.getUI().checkbox.checked = false;
+            }
+            
             for (var j = 0, lenValues = baseParams.arrayOfValues.length; j < lenValues; j++) {
               if (this.id == baseParams.arrayOfValues[j]) {
                 this.getUI().toggleCheck(true);
@@ -453,13 +477,32 @@ Neologism.createDisjointWithSelecctionWidget = function( field_name ) {
             }
           }    
         }
-
+        
+        /*
         node.getOwnerTree().expandPath(node.getPath());
         node.eachChild( function(currentNode){
-          currentNode.getUI().toggleCheck(checked);  
-          currentNode.getUI().checkbox.disabled = checked;
+          currentNode.getUI().toggleCheck(checked);
+          currentNode.getUI().checkbox.checked = false;
+          currentNode.getUI().checkbox.disabled = currentNode.parentNode.getUI().isChecked();  
         });
+        */
        
+       node.cascade( function(){
+          this.expand();
+          //alert(this.id);
+          if ( this.id == editingValue ) {
+            this.getUI().addClass('locked-for-edition');
+            this.getUI().checkbox.disabled = true;
+            this.getUI().checkbox.checked = false;
+          }
+          else {
+            if ( this.id != node.id ) {
+              this.getUI().checkbox.disabled = node.getUI().checkbox.checked;
+            }
+          }
+          
+        });
+        
       }
     } // listeners
   });
