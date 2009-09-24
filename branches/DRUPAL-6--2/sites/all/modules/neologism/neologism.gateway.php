@@ -1,292 +1,236 @@
 <?php
 
 /**
- * Contruct a tree structure
+ * Construct a tree structure for an specific vocabulary
  * @return json with the tree structure 
  */
-function neologism_get_classes_tree() {
+function neologism_gateway_get_classes_tree() {
   $voc['id'] = $_POST['voc_id'];
   $voc['title'] = $_POST['voc_title'];
   
   $node = $_POST['node'];
   $nodes = array();
   if ( $node == 'super' ) {
-    $classes = db_query(db_rewrite_sql("SELECT n.nid, n.title FROM {content_field_vocabulary} c INNER JOIN {node} n ON c.nid = n.nid 
-      WHERE c.field_vocabulary_nid = %d AND n.type = '%s'"), $voc['id'], NEOLOGISM_CT_CLASS);
-    
-    $result = db_query(db_rewrite_sql("SELECT n.nid, n.title FROM {node} n WHERE n.type = '%s'"), NEOLOGISM_CT_VOCABULARY);
-    while ($v = db_fetch_object($result)) {
-      $vocs[] = $v->title;
-    }
-    
+    $classes = db_query(db_rewrite_sql('SELECT superclass FROM {evoc_rdf_superclasses} where prefix = "%s"'), $voc['title']);
+
     $root_superclasses = array();
     while ($class = db_fetch_object($classes)) {
-      $root_superclasses = _get_superclass($class->nid, $voc, $vocs);
+      $root_superclasses = neologism_gateway_get_root_superclasses($class->superclass);
     }
     
-    foreach ($root_superclasses as $snode) {
-      $leaf = (count($children_of_children = neologism_gateway_get_onedepth_children($snode->field_superclass2_evoc_term, $voc['title'])) == 0 );
-      $term_qname_parts = explode(':', $snode->field_superclass2_evoc_term);      
+    foreach ($root_superclasses as $class) {
+      $qname_splitted = explode(':', $class);
+      $object = db_fetch_object(db_query(db_rewrite_sql("SELECT prefix, id, label, comment FROM {evoc_rdf_classes} where prefix = '%s' and id = '%s'"), $qname_splitted[0], $qname_splitted[1]));
+      if( $object ) {
+        $children = neologism_gateway_get_children($class, $voc['title']);
+        if( $qname_splitted[0] == $voc['title'] || _neologism_gateway_in_nodes($voc['title'], $children) ) {
+          $qtip = '<b>'.$object->label.'</b><br/>'.$object->comment;
+          $leaf = count($children) == 0;
+          $nodes[] = array(
+            'text' => $class, 
+            'id' => $class, 
+            'leaf' => $leaf, 
+            'iconCls' => 'class-samevoc',
+            'cls' => ($qname_splitted[0] == $voc['title']) ? 'currentvoc' : '', 
+            'children' => $children, 
+            'qtip' => $qtip
+          );        
+        }
+      }
+    }
+    
+    //we need to add properties without superproperties belonging to the $voc as well
+    $classes = db_query(db_rewrite_sql('SELECT * FROM {evoc_rdf_classes} where prefix = "%s" and superclasses = "0"'), $voc['title']);
+    while ($class = db_fetch_object($classes)) {
+      $qname = $class->prefix.':'.$class->id;
+      $qtip = '<b>'.$class->label.'</b><br/>'.$class->comment;
       $nodes[] = array(
-        'text' => $snode->field_superclass2_evoc_term, 
-        'id' => $snode->field_superclass2_evoc_term, 
-        'leaf' => $leaf, 
+        'text' => $qname, 
+        'id' => $qname, 
+        'leaf' => true, 
         'iconCls' => 'class-samevoc',
-        'cls' => ($term_qname_parts[0] == $voc['title']) ? 'currentvoc' : '',
-        'qtip' => $snode->comment  
+        'cls' => 'currentvoc', 
+        'qtip' => $qtip
       );
     }
-  }
-  else {
-    $children = neologism_gateway_get_onedepth_children($node, $voc['title']);
-    foreach( $children as $child ) {
-      //if( $child['prefix'] == $voc['title'] ) {
-        $class_qname = $child['prefix'].':'.$child['id'];
-        $leaf = (count($children_of_children = neologism_gateway_get_onedepth_children($class_qname, $voc['title'])) == 0 );
-        $nodes[] = array(
-          'text' => $class_qname, 
-          'id' => $class_qname, 
-          'leaf' => $leaf, 
-          'iconCls' => 'class-samevoc',
-          'cls' => ($child['prefix'] == $voc['title']) ? 'currentvoc' : '',
-          'qtip' => $child['comment']  
-        );
-    }
+  
   }
 
   drupal_json($nodes);
 }
 
-function _get_superclass($class_id, $voc, array $vocs) {
-  static $superclasses_array = array();
-  
-  $superclasses = db_query(db_rewrite_sql("SELECT s.field_superclass2_evoc_term, n.title, n.nid 
-    FROM {content_field_vocabulary} as c left JOIN {node} as n ON c.nid = n.nid
-    left join {content_field_superclass2} as s on n.nid = s.nid
-    WHERE c.field_vocabulary_nid = %d /*voc*/ AND n.type = '%s' and n.nid = %d /*class*/"), $voc['id'], NEOLOGISM_CT_CLASS, $class_id);
-    
-  while ($superclass = db_fetch_object($superclasses)) {
-    if ( $superclass->field_superclass2_evoc_term != NULL ) {
-      // clear the field, sometimes come with spaces
-      $superclass->field_superclass2_evoc_term = trim($superclass->field_superclass2_evoc_term); 
-      $term_qname_parts = explode(':', $superclass->field_superclass2_evoc_term);
-      $term_prefix = $term_qname_parts[0];
-
-      if( !in_array($term_prefix, $vocs) ) { 
-        if( !_in_array($superclass, $superclasses_array) ) {
-          $comment = db_result(db_query(db_rewrite_sql("SELECT comment FROM {evoc_rdf_classes} where prefix = '%s' and id = '%s'"), $term_prefix, $term_qname_parts[1]));
-          $superclass->comment = $comment; 
-          $superclasses_array[] = $superclass;  
-        }
-      }
-      else {
-        // check that you are using a $vocs variable that hold the vocabularies' title and id 
-        $class = db_fetch_object(db_query(db_rewrite_sql("SELECT n.nid, n.title, c.field_vocabulary_nid FROM 
-          {content_field_vocabulary} c INNER JOIN {node} n ON c.nid = n.nid 
-          where c.field_vocabulary_nid = (select nv.nid from {node} nv where nv.title = '%s' and nv.type = 'neo_vocabulary') and n.title = '%s'"), $term_prefix, $term_qname_parts[1])); 
-        $voc['id'] = $class->field_vocabulary_nid;
-        $superclasses_array = _get_superclass($class->nid, $voc, $vocs); 
-      }   
-    }
-  } 
-
-  return $superclasses_array; 
-}
-
-function neologism_gateway_get_onedepth_children($node, $vocabulary = "") {
-  $children = db_query(db_rewrite_sql("select n.title, n.nid from {content_field_superclass2} as c inner join {node} as n on c.nid = n.nid 
-    where c.field_superclass2_evoc_term = '%s'"), $node);
-  
-  /*
-  if ( $same_vocabulary ) {
-    $term_qname_parts = explode(':', $node);
-    $futher_constrain = "and e.prefix = '".$term_qname_parts[0]."'";
-  }
-  */
-  
-  // TODO check this more relaxed
-  $arr_children = array();  
-  while ($child = db_fetch_object($children)) {
-    $classes = db_query(db_rewrite_sql("select e.prefix, e.comment from {evoc_rdf_classes} as e where e.id = '%s'"), $child->title);
-    // may there is more than one class with the same title but belong to a different vocabulary
-    while ($class = db_fetch_object($classes)) {
-      if ( $vocabulary != "" && $class->prefix == $vocabulary ) {
-        $arr = array('prefix' => $class->prefix, 'id' => $child->title, 'comment' => $class->comment);
-        if( !in_array($arr, $arr_children) ) {
-          $arr_children[] = $arr; 
-        }
-      } else if( $vocabulary == "" ) {
-        $arr = array('prefix' => $class->prefix, 'id' => $child->title, 'comment' => $class->comment);
-        if( !in_array($arr, $arr_children) ) {
-          $arr_children[] = $arr; 
-        }
-      } 
-    }
-  }
-  
-  return $arr_children;
-}
-
-/**
- * Check if the superclass is in superclasses array usign the evoc term field (field_superclass2_evoc_term)
- * @param object $superclass
- * @param object $superclasses [optional]
- * @return 
- */
-function _in_array($superclass, array $superclasses ) {
-  foreach ($superclasses as $superc) {
-    if( $superc->field_superclass2_evoc_term == $superclass->field_superclass2_evoc_term ) {
+function _neologism_gateway_in_nodes($prefix, array $nodes) {
+  foreach ($nodes as $node) {    
+    $qterm_splited = explode(':', $node['id']);
+    if( $prefix == $qterm_splited[0] ) {
       return true;
     }
   }
-  
-  return false;
+  return false;  
 }
+
+/**
+ * This recurive function search for chindren of $node return class from the same $voc. 
+ * If the parent does not belong to the $voc but has children that does, this parent is added as well.
+ * @param object $node
+ * @param object $voc
+ * @param object $add_checkbox [optional]
+ * @return 
+ */
+function neologism_gateway_get_children($node, $voc, $add_checkbox = FALSE) {
+  $nodes = array();
+  
+  $children = db_query('select prefix, reference from {evoc_rdf_superclasses} where superclass = "'.$node.'"');
+    
+  while ($child = db_fetch_object($children)) {
+    $class = db_fetch_object(db_query('select * from evoc_rdf_classes where prefix = "'.$child->prefix.'" and id = "'.$child->reference.'" '));
+    if ( $class ) {
+      $class->prefix = trim($class->prefix);
+      $class->id = trim($class->id); 
+      $class_qname = $class->prefix.':'.$class->id;
+      $children_nodes = neologism_gateway_get_children($class_qname, $voc, $add_checkbox);  
+      if( $class->prefix == $voc || _neologism_gateway_in_nodes($voc, $children_nodes) ) {
+        $leaf = count($children_nodes) == 0;
+        $qtip = '<b>'.$class->label.'</b><br/>'.$class->comment;
+        $nodes[] = array(
+          'text' => $class_qname, 
+          'id' => $class_qname, 
+          'leaf' => $leaf, 
+          'iconCls' => 'class-samevoc', 
+          'cls' => ($class->prefix == $voc) ? 'currentvoc' : '',
+          'children' => $children_nodes, 
+          'qtip' => $qtip
+        );
+        
+        if( $add_checkbox ) {
+          $nodes[0]['checked'] = false;
+        }
+      }
+      
+    }
+  }
+  
+  return $nodes;
+}
+
 
 //-----------------------------------------------------------------------------------------------------------------
 // functions for objectproperty_tree
-
-/**
- * 
- * @return 
- */
-function neologism_get_objectproperty_tree() {
-  
+function neologism_gateway_get_properties_tree() {
   $voc['id'] = $_POST['voc_id'];
   $voc['title'] = $_POST['voc_title'];
   
   $node = $_POST['node'];
   $nodes = array();
-  if( $node == 'super' ) {
-    $properties = db_query(db_rewrite_sql("SELECT n.nid, n.title FROM {content_field_vocabulary} c INNER JOIN {node} n ON c.nid = n.nid 
-      WHERE c.field_vocabulary_nid = %d AND n.type = '%s'"), $voc['id'], NEOLOGISM_CT_PROPERTY);
-    
-    $result = db_query(db_rewrite_sql("SELECT n.nid, n.title FROM {node} n WHERE n.type = '%s'"), NEOLOGISM_CT_VOCABULARY);
-    while ($v = db_fetch_object($result)) {
-      $vocs[] = $v->title;
-    }
-    
+  
+  if ( $node == 'super' ) {
+    $properties = db_query(db_rewrite_sql('SELECT superproperty FROM {evoc_rdf_superproperties} where prefix = "%s"'), $voc['title']);
+
     $root_superproperties = array();
     while ($property = db_fetch_object($properties)) {
-      $root_superproperties = _get_superproperties($property->nid, $voc, $vocs);
+      $root_superproperties = neologism_gateway_get_root_superproperties($property->superproperty);
     }
     
-    foreach ($root_superproperties as $snode) {
-      $leaf = (count($children_of_children = neologism_gateway_get_property_children($snode->field_superproperty2_evoc_term, $voc['title'])) == 0 );
-      $term_qname_parts = explode(':', $snode->field_superclass2_evoc_term);   
+    foreach ($root_superproperties as $property) {
+      $qname_splitted = explode(':', $property);
+      $object = db_fetch_object(db_query(db_rewrite_sql("SELECT label, comment FROM {evoc_rdf_properties} where prefix = '%s' and id = '%s'"), $qname_splitted[0], $qname_splitted[1]));
+      if( $object ) {
+        $children = neologism_gateway_get_property_children($property, $voc['title']);
+        if( $qname_splitted[0] == $voc['title'] || _neologism_gateway_in_nodes($voc['title'], $children) ) {
+          $qtip = '<b>'.$object->label.'</b><br/>'.$object->comment;
+          $leaf = count($children) == 0;
+          $nodes[] = array(
+            'text' => $property, 
+            'id' => $property, 
+            'leaf' => $leaf, 
+            'iconCls' => 'property-samevoc',
+            'cls' => ($qname_splitted[0] == $voc['title']) ? 'currentvoc' : '', 
+            'children' => $children, 
+            'qtip' => $qtip
+          );        
+        }
+      }
+    }
+    
+    //we need to add properties without superproperties belonging to the $voc as well
+    $properties = db_query(db_rewrite_sql('SELECT * FROM {evoc_rdf_properties} where prefix = "%s" and superproperties = "0"'), $voc['title']);
+    while ($property = db_fetch_object($properties)) {
+      $qname = $property->prefix.':'.$property->id;
+      $qtip = '<b>'.$property->label.'</b><br/>'.$property->comment;
       $nodes[] = array(
-        'text' => $snode->field_superproperty2_evoc_term, 
-        'id' => $snode->field_superproperty2_evoc_term, 
-        'leaf' => $leaf, 
+        'text' => $qname, 
+        'id' => $qname, 
+        'leaf' => true, 
         'iconCls' => 'property-samevoc',
-        'cls' => ($term_qname_parts[0] == $voc['title']) ? 'currentvoc' : '',
-        'qtip' => $snode->comment  
+        'cls' => 'currentvoc', 
+        'qtip' => $qtip
       );
     }
-  }
-  else {
-    $children = neologism_gateway_get_property_children($node, $voc['title']);
-    foreach( $children as $child ) {
-      $property_qname = $child['prefix'].':'.$child['id'];
-      $leaf = (count($children_of_children = neologism_gateway_get_property_children($property_qname, $voc['title'])) == 0 );
-      $nodes[] = array(
-        'text' => $property_qname, 
-        'id' => $property_qname, 
-        'leaf' => $leaf, 
-        'iconCls' => 'property-samevoc',
-        'cls' => ($child['prefix'] == $voc['title']) ? 'currentvoc' : '',
-        'qtip' => $child['comment']  
-      );  
-    }
+    
   }
 
   drupal_json($nodes);
 }
 
-function _get_superproperties($property_id, $voc, array $vocs) {
-  //static $superproperties_array = array();
-  $superproperties_array = array();
+function neologism_gateway_get_root_superproperties($property) {
+  static $root_superproperties = array();
   
-  //vid, nid, delta, field_superproperty2_evoc_term
-  $superproperties = db_query(db_rewrite_sql("SELECT s.field_superproperty2_evoc_term, n.title, n.nid 
-    FROM {content_field_vocabulary} as c left JOIN {node} as n ON c.nid = n.nid
-    left join {content_field_superproperty2} as s on n.nid = s.nid
-    WHERE c.field_vocabulary_nid = %d /*voc*/ AND n.type = '%s' and n.nid = %d /*property*/"), $voc['id'], NEOLOGISM_CT_PROPERTY, $property_id);
+  $term_qname_parts = explode(':', $property);
+  $prefix = $term_qname_parts[0];
+  $id = $term_qname_parts[1];
   
-  while ($superproperty = db_fetch_object($superproperties)) {
-    if ( $superproperty->field_superproperty2_evoc_term != NULL ) {
-      $term_qname_parts = explode(':', $superproperty->field_superproperty2_evoc_term);
-      $term_prefix = $term_qname_parts[0];
-
-      if( !in_array($term_prefix, $vocs) ) { 
-        if( !_in_array_property($superproperty, $superproperties_array) ) {
-          // get comment from evoc_rdf_classes because there is where all classes has its cooment stored
-          $comment = db_result(db_query(db_rewrite_sql("SELECT comment FROM {evoc_rdf_classes} where prefix = '%s' and id = '%s'"), $term_prefix, $term_qname_parts[1]));
-          $superproperty->comment = $comment; 
-          $superproperties_array[] = $superproperty;  
-        }
-      }
-      else {
-        // check that you are using a $vocs variable that hold the vocabularies' title and id 
-        $property = db_fetch_object(db_query(db_rewrite_sql("SELECT n.nid, n.title, c.field_vocabulary_nid 
-          FROM {content_field_vocabulary} c INNER JOIN {node} n ON c.nid = n.nid 
-          where c.field_vocabulary_nid = (select nv.nid from {node} nv where nv.title = '%s' 
-          and nv.type = 'neo_vocabulary') and n.title = '%s'"), $term_prefix, $term_qname_parts[1])); 
-        $voc['id'] = $property->field_vocabulary_nid;
-        $superproperties_array = _get_superproperties($property->nid, $voc, $vocs); 
-      }   
+  $object = db_fetch_object(db_query(db_rewrite_sql("select superproperties from {evoc_rdf_properties} where prefix = '%s' and id = '%s'"), $prefix, $id));
+  if ( $object->superproperties > 0 ) {
+    $superproperty = db_query(db_rewrite_sql("SELECT superproperty FROM {evoc_rdf_superproperties} where prefix = '%s' and reference = '%s'"), $prefix, $id);
+    while ( $term = db_fetch_object($superproperty) ) {
+      $term->superproperty = trim($term->superproperty);
+      $root_superproperties = neologism_gateway_get_root_superclasses($term->superproperty);  
     }
-    else {
-      if( !_in_array_property($superproperty, $superproperties_array) ) {
-          // ajust the evoc term with the same prefix          
-          $superproperty->field_superproperty2_evoc_term = $voc['title'].':'.$superproperty->title;
-          $superproperties_array[] = $superproperty;  
-        }
+  }
+  else {
+    if( !_neologism_gateway_in_array($property, $root_superproperties) ) {
+      $root_superproperties[] = $property;  
     }
-  } 
-
-  return $superproperties_array; 
+  }
+  
+  return $root_superproperties;
 }
 
-function neologism_gateway_get_property_children($node, $vocabulary = "") {
-  $children = db_query(db_rewrite_sql("select n.title from content_field_superproperty2 as c inner join node as n on c.nid = n.nid 
-    where c.field_superproperty2_evoc_term = '%s'"), $node);
+
+function neologism_gateway_get_property_children($node, $voc, $add_checkbox = FALSE) {
+  $nodes = array();
   
-  $arr_children = array();  
+  $children = db_query('select prefix, reference from {evoc_rdf_superproperties} where superproperty = "'.$node.'"');
+    
   while ($child = db_fetch_object($children)) {
-    $properties = db_query(db_rewrite_sql("select e.prefix, e.comment from {evoc_rdf_properties} as e where e.id = '%s'"), $child->title);
-    while ($property = db_fetch_object($properties)) {
-      if ( $vocabulary != "" && $property->prefix == $vocabulary ) {
-        $arr = array('prefix' => $property->prefix, 'id' => $child->title, 'comment' => $property->comment);
-        if( !in_array($arr, $arr_children) ) {
-          $arr_children[] = $arr; 
-        }
-      } else if( $vocabulary == "" ) {
-        $arr = array('prefix' => $property->prefix, 'id' => $child->title, 'comment' => $property->comment);
-        if( !in_array($arr, $arr_children) ) {
-          $arr_children[] = $arr; 
+    $property = db_fetch_object(db_query('select * from evoc_rdf_properties where prefix = "'.$child->prefix.'" and id = "'.$child->reference.'" '));
+    if ( $property ) {
+      $property->prefix = trim($property->prefix);
+      $property->id = trim($property->id); 
+      $qname = $property->prefix.':'.$property->id;
+      $children_nodes = neologism_gateway_get_property_children($qname, $voc, $add_checkbox);  
+      if( $property->prefix == $voc || _neologism_gateway_in_nodes($voc, $children_nodes) ) {
+        $leaf = count($children_nodes) == 0;
+        $qtip = '<b>'.$property->label.'</b><br/>'.$property->comment;
+        $nodes[] = array(
+          'text' => $qname, 
+          'id' => $qname, 
+          'leaf' => $leaf, 
+          'iconCls' => 'property-samevoc', 
+          'cls' => ($property->prefix == $voc) ? 'currentvoc' : '',
+          'children' => $children_nodes, 
+          'qtip' => $qtip
+        );
+        
+        if( $add_checkbox ) {
+          $nodes[0]['checked'] = false;
         }
       }
-    }
-  }
-
-  return $arr_children;
-}
-
-/**
- * Check if the superproperty is in superclasses array usign the evoc term field (field_superclass2_evoc_term)
- * @param object $superclass
- * @param object $superclasses [optional]
- * @return 
- */
-function _in_array_property($superproperty, array $superproperties ) {
-  foreach ($superproperties as $superp) {
-    if( $superp->field_superproperty2_evoc_term == $superproperty->field_superproperty2_evoc_term ) {
-      return true;
+      
     }
   }
   
-  return false;
+  return $nodes;
 }
 
 //-----------------------------------------------------------------------------------------------------------
@@ -344,9 +288,8 @@ function neologism_gateway_get_root_superclasses($class) {
   $prefix = $term_qname_parts[0];
   $id = $term_qname_parts[1];
   
-  $object = db_fetch_object(db_query(db_rewrite_sql("select has_superclass from {evoc_rdf_classes} where prefix = '%s' and id = '%s'"), $prefix, $id));
-  $has_superclass = ($object->has_superclass == '1');
-  if ( $has_superclass ) {
+  $object = db_fetch_object(db_query(db_rewrite_sql("select superclasses from {evoc_rdf_classes} where prefix = '%s' and id = '%s'"), $prefix, $id));
+  if ( $object->superclasses > 0 ) {
     $superclass = db_query(db_rewrite_sql("SELECT superclass FROM {evoc_rdf_superclasses} where prefix = '%s' and reference = '%s'"), $prefix, $id);
     while ( $term = db_fetch_object($superclass) ) {
       $term->superclass = trim($term->superclass);
@@ -362,12 +305,12 @@ function neologism_gateway_get_root_superclasses($class) {
   return $root_superclasses;
 }
 
-
 /**
  * This recursive function return all the children from $node
  * @param object $node
  * @return 
  */
+/*
 function neologism_gateway_get_children($node, $reset = false) {
   $nodes = array();
   
@@ -429,6 +372,7 @@ function neologism_gateway_get_children($node, $reset = false) {
   
   return $nodes;
 }
+*/
 
 /**
  * 
@@ -525,6 +469,7 @@ function neologism_gateway_get_full_properties_tree() {
  * @param object $property
  * @return 
  */
+/*
 function neologism_gateway_get_root_superproperties($property){
   static $root_superproperties = array();
   
@@ -560,7 +505,7 @@ function neologism_gateway_get_root_superproperties($property){
   
   return $root_superproperties;
 }
-
+*/
 
 /**
  * This recursive function return all the children from $node
