@@ -40,10 +40,14 @@ Ext.onReady(function() {
         
         listeners: {
           click: function(node, e){
+            e.stopEvent();
             var term = node.id.split(":"); 
-            parent.location='#' + term[1].toString();
-            //Ext.Msg.alert('Info!', term[0].toString());  
+            window.location = '#' + term[1].toString();
+            //alert(window.location);
+            
+            //Ext.Msg.alert('Info!',  window.location.href);  
             //Ext.Msg.alert('Info!', term[1].toString());
+            return false;
           }
         },
         
