@@ -618,6 +618,16 @@ function evoc_remove_class($class, $remove_references = FALSE) {
       if ( $remove_references ) {
         $qname = $class['prefix'].':'.$class['id']; 
         
+        // remove subclass dependence
+        $result = db_query(db_rewrite_sql('select prefix, reference from {evoc_rdf_superclasses} where superclass = "%s"'), $qname);
+        while ( $subclass = db_fetch_object($result) ) {
+          $result = db_query(db_rewrite_sql('delete from {evoc_rdf_superclasses} where prefix = "%s" and reference = "%s"'), $subclass->prefix, $subclass->reference);
+          if ( $result ) {
+            $cd = db_fetch_object(db_query(db_rewrite_sql('select superclasses from {evoc_rdf_classes} where prefix = "%s" and id = "%s"'), $subclass->prefix, $subclass->reference));
+            $result = db_query(db_rewrite_sql('update {evoc_rdf_classes} set superclasses = "%d" where prefix = "%s" and id = "%s"'), --$cd->superclasses, $subclass->prefix, $subclass->reference);
+          }
+        }
+        
         // removing domains references for properties
         $result = db_query(db_rewrite_sql('select prefix, reference from {evoc_rdf_propertiesdomains} where rdf_domain = "%s"'), $qname);
         while ( $property = db_fetch_object($result) ) {
@@ -718,12 +728,12 @@ function evoc_write_property($property) {
  * @return 
  */
 function evoc_update_property($property, $cascade_update = TRUE) {
-  if( !isset($class['previous_id']) ) {
+  if( !isset($property['previous_id']) ) {
     evoc_set_message('This function need $property[\'previous_id\'] = id_to_update.', 'warning');
     return;
   } 
   
-  $currentproperty = db_fetch_object(db_query(db_rewrite_sql('select * from {evoc_rdf_property} where prefix="%s" and id = "%s"'), $property['prefix'], $property['previous_id']));
+  $currentproperty = db_fetch_object(db_query(db_rewrite_sql('select * from {evoc_rdf_properties} where prefix="%s" and id = "%s"'), $property['prefix'], $property['previous_id']));
   
   if( $currentproperty ) {
     $previous_qname = $property['prefix'].':'.$property['previous_id'];
@@ -803,12 +813,12 @@ function evoc_remove_property($property) {
     evoc_set_message("Impossible remove a class without prefix and id.", 'warning');  
   }
   else {
-    $property = db_fetch_object(db_query(db_rewrite_sql('select superproperties, domains, ranges from {evoc_rdf_properties} 
+    $currentproperty = db_fetch_object(db_query(db_rewrite_sql('select * from {evoc_rdf_properties} 
       where prefix="%s" and id = "%s"'), $property['prefix'], $property['id']));  
     
-    if( $property ) {
-      if( $property->superproperties > 0 ) {
-        $result = db_query(db_rewrite_sql('delete from {evoc_rdf_superproperties} where prefix="%s" and reference = "%s"'), $property['prefix'], $property['id']);
+    if( $currentproperty ) {
+      if( $currentproperty->superproperties > 0 ) {
+        $result = db_query(db_rewrite_sql('delete from {evoc_rdf_superproperties} where prefix="%s" and reference = "%s"'), $currentproperty->prefix, $currentproperty->id);
         if( $result ) {
           evoc_set_message("Superproperties dependences has been successfully removed successfully.");
         }
@@ -817,8 +827,8 @@ function evoc_remove_property($property) {
         }
       }
       
-      if( $property->domains > 0 ) {
-        $result = db_query(db_rewrite_sql('delete from {evoc_rdf_propertiesdomains} where prefix="%s" and reference = "%s"'), $property['prefix'], $property['id']);
+      if( $currentproperty->domains > 0 ) {
+        $result = db_query(db_rewrite_sql('delete from {evoc_rdf_propertiesdomains} where prefix="%s" and reference = "%s"'), $currentproperty->prefix, $currentproperty->id);
         if( $result ) {
           evoc_set_message("Domain dependences has been successfully removed successfully.");
         }
@@ -827,8 +837,8 @@ function evoc_remove_property($property) {
         }
       }
       
-      if( $property->ranges > 0 ) {
-        $result = db_query(db_rewrite_sql('delete from {evoc_rdf_propertiesranges} where prefix="%s" and reference = "%s"'), $property['prefix'], $property['id']);
+      if( $currentproperty->ranges > 0 ) {
+        $result = db_query(db_rewrite_sql('delete from {evoc_rdf_propertiesranges} where prefix="%s" and reference = "%s"'), $currentproperty->prefix, $currentproperty->id);
         if( $result ) {
           evoc_set_message("Range dependences has been successfully removed successfully.");
         }
@@ -838,7 +848,7 @@ function evoc_remove_property($property) {
       }
     }
     
-    $result = db_query(db_rewrite_sql('delete from {evoc_rdf_properties} where prefix="%s" and id = "%s"'), $property['prefix'], $property['id']);
+    $result = db_query(db_rewrite_sql('delete from {evoc_rdf_properties} where prefix="%s" and id = "%s"'), $currentproperty->prefix, $currentproperty->id);
     if( $result ) {
       evoc_set_message($property['prefix']." : ".$property['id']." has been successfully removed from the system.");
     }
@@ -859,7 +869,7 @@ function evoc_remove_property($property) {
  * @return TRUE whether the term exists and FALSE in otherwise 
  */
 function evoc_term_exists($term, $string_term, $class_term = TRUE) {
-  $table = $class_term ? "evoc_rdf_properties" : "evoc_rdf_classes";
+  $table = $class_term ? "evoc_rdf_classes" : "evoc_rdf_properties";
   
   if( !$term ) {
     if( ($pos = strpos($string_term, ":")) > 0 ) {
