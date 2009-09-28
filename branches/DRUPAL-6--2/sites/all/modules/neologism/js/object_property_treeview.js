@@ -37,9 +37,10 @@ Ext.onReady(function() {
     listeners: {
       click: function(node, e){
         var term = node.id.split(":"); 
-        parent.location='#' + term[1].toString();
+        window.location = '#' + term[1].toString();
         //Ext.Msg.alert('Info!', term[1].toString());  
         //Ext.Msg.alert('Info!', term[1].toString());
+        return false;
       }
     },
     
