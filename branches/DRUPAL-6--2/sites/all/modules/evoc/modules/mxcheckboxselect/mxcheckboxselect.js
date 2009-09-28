@@ -62,11 +62,11 @@ EvocWidget.createStandardClassSelecctionWidget = function( field_name ) {
   
   var objectToRender = Drupal.settings.neologism.field_id[field_name];
   var dataUrl = Drupal.settings.neologism.json_url[field_name];
+  var editingValue = Drupal.settings.neologism.editing_value[field_name];
    
   // we need to past the baseParams as and object, that is why we creat the baseParams object
   // and add the arrayOfValues array 
   var baseParams = {};
-  //Drupal.settings.neologism.field_values[field_name] = Drupal.parseJson(Drupal.settings.neologism.field_values[field_name]);
   Drupal.settings.neologism.field_values[field_name] = Ext.util.JSON.decode(Drupal.settings.neologism.field_values[field_name]);
   baseParams.arrayOfValues = Drupal.settings.neologism.field_values[field_name];
  
@@ -161,14 +161,23 @@ EvocWidget.createStandardClassSelecctionWidget = function( field_name ) {
             }
           }    
         }
-
-        this.expandPath(node.getPath());
-        node.eachChild( function(currentNode){
-          currentNode.getUI().toggleCheck(checked);
-          if( currentNode.getUI().nodeClass != 'complete' ) {
-            currentNode.getUI().checkbox.disabled = checked;  
+        
+        node.getOwnerTree().expandPath(node.getPath());
+        node.cascade( function(){
+          this.expand();
+          //alert(this.id + " == " + editingValue + " result = " + (this.id == editingValue) );
+          if ( this.id != editingValue ) {
+            if ( this.id != node.id ) {
+              this.getUI().checkbox.disabled = node.getUI().checkbox.checked;
+            }
+          }
+          else if ( this.id == editingValue ) {
+            this.getUI().addClass('locked-for-edition');
+            this.getUI().checkbox.disabled = true;
+            this.getUI().checkbox.checked = false;
           }
         });
+        
       } // checkchange
     }
   });
