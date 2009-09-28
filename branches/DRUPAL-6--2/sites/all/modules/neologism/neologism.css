@@ -51,12 +51,16 @@ img#legend {
     background-image: url(images/icons/class_samevoc.gif) !important;
 }
 
-.class-othervoc {
-    background-image: url(images/icons/class_samevoc.gif) !important;
+.class-diffvoc {
+    background-image: url(images/icons/class_diffvoc.gif) !important;
 }
 
 .property-samevoc {
     background-image: url(images/icons/property_samevoc.gif) !important;
+}
+
+.property-diffvoc {
+    background-image: url(images/icons/property_diffvoc.gif) !important;
 }
 
 .icon-expand-all {
@@ -198,6 +202,7 @@ img#legend {
 #classview .description {
   font-size: 12px;
   margin: 10px 0px 15px 0px;
+  text-align: justify;
 }
 
 #classview .links {
@@ -224,5 +229,45 @@ img#legend {
 
 #field_disjointwith2_id {
   margin: 15px 0px 15px 0px;
+}
+
+
+/* temporal classes */
+.vocabulary-view {
+  margin: 10px 0px 25px 0px;
+  padding: 0px;
+  display: block;
+  border-bottom: #ccc solid 2px;
+}
+
+.vocabulary-view h2 {
+  font-size: 17px;
+  margin: 0px 0px 5px 0px;
+}
+
+.vocabulary-view .authors {
+  font-size: 12px;
+  margin: 0px 0px 5px 0px;
+}
+
+.vocabulary-view .authors h3 {
+  display: inline;
+  /*float: left;*/
+}
+
+.vocabulary-view .authors .value {
+  font-size: 12px;
+  margin: 0px 0px 0px 3px;
+}
+
+.vocabulary-view .abstract {
+  display:block;
+  margin: 7px 0 10px 0px;
+  /*padding: 10px 0px 10px 0px;*/
+}
+
+.vocabulary-view .abstract h3 {
+  font-size: 12px;
+  margin: 0px 0px 3px 0px;
 }
 
