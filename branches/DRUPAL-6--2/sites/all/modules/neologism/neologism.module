@@ -1526,7 +1526,7 @@ function theme_class_view($node, $vocabulary = NULL, $teaser = FALSE, $page = FA
   if ( !empty($node->content['field_superclass2']['field']['items'][0]['#item']['evoc_term']) ) {
     $superclasses .= '<div class="row"><div class="column-title">subclass-of:</div><div class="column-values">';
     foreach ( $node->content['field_superclass2']['field']['items'] as $value ) {
-      $superclasses .= theme('evocreference_formatter_default', $value).'&nbsp';
+      $superclasses .= theme('evocreference_formatter_default', $value).'&nbsp; ';
     }
     $superclasses .= '</div></div>';
   }
@@ -1535,7 +1535,7 @@ function theme_class_view($node, $vocabulary = NULL, $teaser = FALSE, $page = FA
   if ( !empty($node->content['field_disjointwith2']['field']['items'][0]['#item']['evoc_term']) ) {
     $disjointwith .= '<div class="row"><div class="column-title">disjoint-with:</div><div class="column-values">';
     foreach ( $node->content['field_disjointwith2']['field']['items'] as $value ) {
-      $disjointwith .= theme('evocreference_formatter_default', $value).'&nbsp';
+      $disjointwith .= theme('evocreference_formatter_default', $value).'&nbsp ';
     }
     $disjointwith .= '</div></div>';
   }
@@ -1595,7 +1595,7 @@ function theme_property_view($node, $vocabulary = NULL, $teaser = FALSE, $page =
   if ( !empty($node->content['field_domain2']['field']['items'][0]['#item']['evoc_term']) ) {
     $domain .= '<div class="row"><div class="column-title">Domain:</div><div class="column-values">';
     foreach ( $node->content['field_domain2']['field']['items'] as $value ) {
-      $domain .= theme('evocreference_formatter_default', $value).'&nbsp';
+      $domain .= theme('evocreference_formatter_default', $value).'&nbsp ';
     }
     $domain .= '</div></div>';
   }
@@ -1604,7 +1604,7 @@ function theme_property_view($node, $vocabulary = NULL, $teaser = FALSE, $page =
   if ( !empty($node->content['group_range']['group']['field_range2']['field']['items'][0]['#item']['evoc_term']) ) {
     $range .= '<div class="row"><div class="column-title">Range:</div><div class="column-values">';
     foreach ( $node->content['group_range']['group']['field_range2']['field']['items'] as $value ) {
-      $range .= theme('evocreference_formatter_default', $value).'&nbsp';
+      $range .= theme('evocreference_formatter_default', $value).'&nbsp ';
     }
     $range .= '</div></div>';
   }
@@ -1613,7 +1613,7 @@ function theme_property_view($node, $vocabulary = NULL, $teaser = FALSE, $page =
   if ( !empty($node->content['field_inverse2']['field']['items'][0]['#item']['evoc_term']) ) {
     $inverse .= '<div class="row"><div class="column-title">Inverse:</div><div class="column-values">';
     foreach ( $node->content['field_inverse2']['field']['items'] as $value ) {
-      $inverse .= theme('evocreference_formatter_default', $value).'&nbsp';
+      $inverse .= theme('evocreference_formatter_default', $value).'&nbsp ';
     }
     $inverse .= '</div></div>';
   }
@@ -1622,7 +1622,7 @@ function theme_property_view($node, $vocabulary = NULL, $teaser = FALSE, $page =
   if ( !empty($node->content['field_superproperty2']['field']['items'][0]['#item']['evoc_term']) ) {
     $subproperty_of .= '<div class="row"><div class="column-title">subproperty-of:</div><div class="column-values">';
     foreach ( $node->content['field_superproperty2']['field']['items'] as $value ) {
-      $subproperty_of .= theme('evocreference_formatter_default', $value).'&nbsp';
+      $subproperty_of .= theme('evocreference_formatter_default', $value).'&nbsp ';
     }
     $subproperty_of .= '</div></div>';
   }
@@ -1966,6 +1966,79 @@ function neologism_neo_property_form_submit($form, &$form_state) {
  * @return 
  */
 function neologism_removed_external_vocabulary($prefix) {
-  var_dump($prefix);      
+  $classes = db_query(db_rewrite_sql("select nid from {node} where type = '%s'"), NEOLOGISM_CT_CLASS);
+  while ( $class = db_fetch_object($classes) ) {
+    $nclass = (object) node_load($class->nid);
+    $need_update = FALSE;
+    
+    if( isset($nclass->field_superclass2[0]['evoc_term']) ) {
+      foreach ( $nclass->field_superclass2 as &$value ) {
+        $qname_splitted = explode(':', $value['evoc_term']); 
+        if( $qname_splitted[0] == $prefix ) {
+          $value['evoc_term'] = NULL;
+          $need_update = TRUE;
+        }
+      }
+    }
+    
+    if( isset($nclass->field_disjointwith2[0]['evoc_term']) ) {
+      foreach ( $nclass->field_disjointwith2 as &$value ) {
+        $qname_splitted = explode(':', $value['evoc_term']);
+        if( $qname_splitted[0] == $prefix ) {
+          $value['evoc_term'] = NULL;
+          $need_update = TRUE;
+        }
+      }
+    }
+    
+    if ( $need_update ) {
+      $nclass->update_by_reference = TRUE;
+      node_save($nclass);
+    }
+    
+  }
+  
+  // check for properties
+  $properties = db_query(db_rewrite_sql("select nid from {node} where type = '%s'"), NEOLOGISM_CT_PROPERTY); 
+  while( $property = db_fetch_object($properties) ) {
+    // if there exist any class that has $class as superclass change it to default superclass rdfs:Resource
+    $nproperty = (object) node_load($property->nid);
+    $need_update = FALSE;
+    
+    if( isset($nproperty->field_domain2[0]['evoc_term']) ) {
+      foreach($nproperty->field_domain2 as &$value) {
+        $qname_splitted = explode(':', $value['evoc_term']);
+        if( $qname_splitted[0] == $prefix ) {
+          $value['evoc_term'] = NULL;
+          $need_update = TRUE;
+        }
+      }
+    }
+    
+    if( isset($nproperty->field_range2[0]['evoc_term']) ) {
+      foreach($nproperty->field_range2 as &$value) {
+        $qname_splitted = explode(':', $value['evoc_term']);
+        if( $qname_splitted[0] == $prefix ) {
+          $value['evoc_term'] = NULL;
+          $need_update = TRUE;
+        }
+      }
+    }
+    
+    if( isset($nproperty->field_superproperty2[0]['evoc_term']) ) {
+      foreach($nproperty->field_superproperty2 as &$value) {
+        $qname_splitted = explode(':', $value['evoc_term']);
+        if( $qname_splitted[0] == $prefix ) {
+          $value['evoc_term'] = NULL;
+          $need_update = TRUE;
+        }
+      }
+    }
+    
+    if( $need_update ) {
+      $nclass->update_by_reference = TRUE;
+      node_save($nproperty);
+    }
+  } // check for properties
 }
 
