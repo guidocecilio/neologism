@@ -256,7 +256,19 @@ function neologism_form_alter(&$form, &$form_state, $form_id) {
   
   if( $form_id == NEOLOGISM_CT_PROPERTY.'_node_form' ) {
     // add validation function for create or edition of properties form
+    if( arg(2) == 'edit' && isset($form['#node']) ) {
+      $nid = $form['#node']->field_vocabulary[0]['nid']; // there is different way to get this value
+      $prefix = db_fetch_object(db_query(db_rewrite_sql('select title from {node} where nid = "%d" and type = "%s"'), $nid, NEOLOGISM_CT_VOCABULARY));
+      $id = $form['#node']->title;
+      $qname = $prefix->title.':'.$id;
+      
+      // why need to inform to the widget that there is comming an edition for a value, so the widget can
+      // handle the situation.
+      $form['field_superproperty2']['#mxcbs_behaviour']['editing_value'] = $qname;
+    }
+    
     $form['#validate'][] = '_neologism_neo_property_node_form_validate';
+    $form['buttons']['submit']['#submit'][] = 'neologism_neo_property_form_submit';
     
     // add behaviours for evoc fields if they are using the MXCheckBox selection widget
     $form['field_superproperty2']['#mxcbs_behaviour']['owntitle'] = TRUE;
@@ -301,6 +313,8 @@ function neologism_form_alter(&$form, &$form_state, $form_id) {
     $form['field_disjointwith2']['#mxcbs_behaviour']['owntitle'] = TRUE;
     $form['field_disjointwith2']['#mxcbs_behaviour']['handler'] = 'Neologism.createDisjointWithSelecctionWidget'; 
     $form['field_disjointwith2']['#mxcbs_behaviour']['url_gateway'] = 'neologism/json/fulltree'; 
+  
+    $form['buttons']['submit']['#submit'][] = 'neologism_neo_class_form_submit';
   }
   
   // Hide the menu settings fieldset in class and property forms
@@ -343,8 +357,10 @@ function neologism_vocabulary_load($nid) {
  * Output the HTML version of the vocabulary specified as input.
  */
 function neologism_export_html($node) {
-
   $vocabulary_title = check_plain($node->field_title[0]['value']);
+  
+  //$head_title = $vocabulary_title;
+  
   $output = '<div id="vocabulary-view">';
   
   $image = theme('image', drupal_get_path('module', 'neologism') .'/images/icons/rdf_w3c_icon.48.gif', t('RDF/XML version of this vocabulary.'), t('RDF/XML version of this vocabulary.'));
@@ -356,7 +372,7 @@ function neologism_export_html($node) {
   $output .= '<h1>'.$vocabulary_title.'</h1>';
     
   // clear the title so we can print our formatted title
-  drupal_set_title('');
+  drupal_set_title($vocabulary_title);
   
   $classes = get_all_classes($node);
   $properties = get_all_properties($node);
@@ -860,20 +876,17 @@ function neologism_link($type, $node = NULL, $teaser = FALSE) {
  * Implementation of hook_nodeapi().
  */
 function neologism_nodeapi(&$node, $op, $teaser, $page) {
-// This feature is disabled so that people can view the term page and leave comments.
-//  // Redirect to the vocabulary page when viewing a class or a property.
-//  if ($op == 'view' && !$teaser && isset($node->field_vocabulary[0]['nid']) &&
-//      ($node->type == NEOLOGISM_CT_CLASS || $node->type == NEOLOGISM_CT_PROPERTY)) {
-//    drupal_goto('node/'. $node->field_vocabulary[0]['nid']);
-//  }
-
   if (module_exists('path')) {
     switch ($op) {
       case 'prepare':
         if( $node->type == NEOLOGISM_CT_CLASS ) {
-          variable_set('previous_class_value', $node->title);
+          variable_set('previous_class_title', $node->title);
         }
-    	break;
+        elseif( $node->type == NEOLOGISM_CT_PROPERTY ) {
+          variable_set('previous_property_title', $node->title);
+        }
+   
+    	  break;
         
       case 'load':
         
@@ -890,11 +903,18 @@ function neologism_nodeapi(&$node, $op, $teaser, $page) {
         
       // catching the view event
       case 'view':
-        /*
         if( $node->type == NEOLOGISM_CT_VOCABULARY ) {
-          $node->title = $node->field_title[0]['value'];
+          $node->authors = array();
+          foreach($node->field_authors as $author) {
+            $author = user_load($author);
+            if( empty($author->name) ) {
+              $node->authors[] = 'anonymous';
+            }
+            else {
+              $node->authors[] = l($author->name, 'user/'. $author->uid, array('attributes' => array('title' => $author->name)));
+            }
+          }
         }
-        */
         /*
         if( $node->type == NEOLOGISM_CT_CLASS ) {
           //$node = node_load(arg(1));
@@ -924,13 +944,16 @@ function neologism_nodeapi(&$node, $op, $teaser, $page) {
         }
         */
         break;
+        
       case 'update':
         if($node->type == NEOLOGISM_CT_VOCABULARY) {
           _neologism_update_aliases($node);
         }
         elseif( $node->type == NEOLOGISM_CT_CLASS ) {
           $term = array();
-          $term['previous_id'] = variable_get('previous_class_value', NULL);
+          
+          // $node->update_by_reference is used when an update comes from other references than a normal update
+          $term['previous_id'] = !isset($node->update_by_reference) ? variable_get('previous_class_title', NULL) : $node->title;
           $term['id'] = $node->title;
           $term['type'] = 'class';
           $term['label'] = $node->field_label[0]['value']; 
@@ -951,6 +974,49 @@ function neologism_nodeapi(&$node, $op, $teaser, $page) {
           $term['prefix'] = $vocabulary->title; 
           
           evoc_update_class($term);  
+        }
+        elseif( $node->type == NEOLOGISM_CT_PROPERTY ) {
+          $term = array();
+          // $node->update_by_reference is used when an update comes from other references than a normal update
+          $term['previous_id'] = !isset($node->update_by_reference) ? variable_get('previous_property_title', NULL) : $node->title;
+          $term['id'] = $node->title;
+          $term['type'] = 'property';
+          $term['label'] = $node->field_label[0]['value']; 
+          $term['comment'] = $node->field_comment[0]['value'];
+          
+          // normaliza the evoc's fields
+          $term['rdf_domain'] = array();
+          if( !empty($node->field_domain2) && is_array($node->field_domain2) ) {
+            foreach ( $node->field_domain2 as $value ) {
+              if( !empty($value['evoc_term']) ) {
+                $term['rdf_domain'][] = $value['evoc_term'];
+              }
+            }
+          }
+          
+          $term['rdf_range'] = array();
+          if( !empty($node->field_range2) && is_array($node->field_range2) ) {
+            foreach ( $node->field_range2 as $value ) {
+              if( !empty($value['evoc_term']) ) {
+                $term['rdf_range'][] = $value['evoc_term'];
+              }
+            }
+          }
+          
+          $term['subpropertyof'] = array();
+          if( !empty($node->field_superproperty2) && is_array($node->field_superproperty2) ) {
+            foreach ( $node->field_superproperty2 as $value ) {
+              if( !empty($value['evoc_term']) ) {
+                $term['subpropertyof'][] = $value['evoc_term'];
+              }
+            }
+          }
+   
+          // load vocabulary's node to get its title as namespace/prefix for this class 
+          $vocabulary = node_load($node->field_vocabulary[0][nid]);
+          $term['prefix'] = $vocabulary->title; 
+          
+          evoc_update_property($term);  
         }
         
         break;
@@ -1017,11 +1083,11 @@ function neologism_nodeapi(&$node, $op, $teaser, $page) {
             }
           }
           
-          $term['superproperties'] = array();
+          $term['subpropertyof'] = array();
           if( !empty($node->field_superproperty2) && is_array($node->field_superproperty2) ) {
             foreach ( $node->field_superproperty2 as $value ) {
               if( !empty($value['evoc_term']) ) {
-                $term['rdf_superproperties'][] = $value['evoc_term'];
+                $term['subpropertyof'][] = $value['evoc_term'];
               }
             }
           }
@@ -1385,7 +1451,7 @@ function _neologism_neo_class_node_form_validate($form, &$form_state) {
       // This way consume too much resources whether there exist many classes.
       foreach( $form_state['values']['field_superclass2'] as $value ) {
         // FIXME there is some error with external superclasses that doesn't has superclasses
-        if( !evoc_term_exists(NULL, $value['evoc_term'], FALSE) ) {
+        if( !evoc_term_exists(NULL, $value['evoc_term'], TRUE) ) {
             form_set_error('field_superclass2', t('You must select a super class from one of the class that match your criterial. If that class does not exists in the system, please import it.'));
         }
       }
@@ -1752,6 +1818,9 @@ function _neologism_on_deleted_class_node($node, $vocabulary_title = NULL) {
   // at this point the current class has been removed. 
   // now we have to check for other classes or properties that might be subClasses or disjoints 
   // or properties that might has been using it as domain or range.
+  
+  //TODO: there is a proble somewhere this function
+  
   if( !$vocabulary_title ) {
     $vocabulary_title = db_fetch_object( db_query( db_rewrite_sql("SELECT n.title FROM {node} n WHERE n.nid = %d"), $node->field_vocabulary[0]['nid']) );
     $vocabulary_title = $vocabulary_title->title;  
@@ -1767,8 +1836,8 @@ function _neologism_on_deleted_class_node($node, $vocabulary_title = NULL) {
     foreach($nclass->field_superclass2 as &$value) {
       if( $value['evoc_term'] == $vocabulary_title.':'.$node->title ) {
         // if this is the only one superclass assign it the default superclass
-        if( count($nclass->field_superclass2) == 1 ) {
-          $value['evoc_term'] = DEFAULT_RDFS_SUPERCLASS;
+        if( count($nclass->field_superclass2) > 0 ) {
+          $value['evoc_term'] = $node->field_superclass2[0]['evoc_term'];//DEFAULT_RDFS_SUPERCLASS;
         }
         else {
           $value['evoc_term'] = NULL;
@@ -1785,8 +1854,10 @@ function _neologism_on_deleted_class_node($node, $vocabulary_title = NULL) {
     }
     
     if( $need_update ) {
+      $nclass->update_by_reference = TRUE;
       node_save($nclass);
     }
+    
   }
   
   // check for properties
@@ -1811,6 +1882,7 @@ function _neologism_on_deleted_class_node($node, $vocabulary_title = NULL) {
     }
     
     if( $need_update ) {
+      $nclass->update_by_reference = TRUE;
       node_save($nproperty);
     }
   } // check for properties
@@ -1854,6 +1926,7 @@ function _neologism_on_deleted_property_node($node, $vocabulary_title = NULL) {
     }
     
     if( $need_update ) {
+      $nclass->update_by_reference = TRUE;
       node_save($nproperty);
     }
   } 
@@ -1877,3 +1950,22 @@ function get_vocabulary_from_class_id($class_node) {
 function _neologism_is_valid_id($string) {
   return (ereg("^[a-zA-Z_]+[a-zA-Z0-9._-]*", $string, $reg) == strlen($string)); 
 }
+
+function neologism_neo_class_form_submit($form, &$form_state) {
+  $form_state['redirect'] = 'node/'.$form_state['values']['field_vocabulary'][0]['nid'];
+}
+
+function neologism_neo_property_form_submit($form, &$form_state) {
+  $form_state['redirect'] = 'node/'.$form_state['values']['field_vocabulary'][0]['nid'];
+}
+
+/**
+ * hook_removed_external_vocabulary($prefix)
+ * this hook is called by evoc module after a namespace is removed from its repository
+ * @param object $prefix removed
+ * @return 
+ */
+function neologism_removed_external_vocabulary($prefix) {
+  var_dump($prefix);      
+}
+
