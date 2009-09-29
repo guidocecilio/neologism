@@ -196,7 +196,8 @@ img#legend {
 }
 
 #classview .properties-block .row .column-values {
-
+  margin-left: 85px;
+  /*background-color: #0000ff;*/
 }
 
 #classview .description {
