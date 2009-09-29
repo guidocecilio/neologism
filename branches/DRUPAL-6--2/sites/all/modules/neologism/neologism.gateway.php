@@ -63,8 +63,8 @@ function neologism_gateway_get_class_children($node, $voc = NULL, $add_checkbox 
             'text' => $qname, 
             'id' => $qname, 
             'leaf' => $leaf, 
-            'iconCls' => 'class-samevoc', 
-            'cls' => 'currentvoc',
+            'iconCls' => ($class->prefix == $voc) ? 'class-samevoc' : 'class-diffvoc', 
+            'cls' => ($class->prefix == $voc) ? 'currentvoc' : '',            
             'children' => $children_nodes, 
             'qtip' => $qtip
           );
