@@ -165,6 +165,7 @@ Neologism.TermsTree = Ext.extend(Ext.tree.TreePanel, {
   filterNodes: function(pattern){
     // un-hide the nodes that were filtered last time
     Ext.each(this.hiddenNodes, function(n){
+      n.ui.removeClass('match-search');
       n.ui.show();
  		});
 
@@ -178,8 +179,13 @@ Neologism.TermsTree = Ext.extend(Ext.tree.TreePanel, {
 
     this.root.cascade( function(n){
       if (re.test(n.text)) {
+        n.ui.addClass('match-search');
         n.ui.show();
-        n.bubble(function(){ this.ui.show(); });
+        n.bubble( 
+          function() { 
+            this.ui.show(); 
+          }
+        );
       } else {
         n.ui.hide();
         this.hiddenNodes.push(n);
