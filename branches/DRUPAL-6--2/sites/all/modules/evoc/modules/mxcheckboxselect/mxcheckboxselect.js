@@ -70,80 +70,45 @@ EvocWidget.createStandardClassSelecctionWidget = function( field_name ) {
   Drupal.settings.neologism.field_values[field_name] = Ext.util.JSON.decode(Drupal.settings.neologism.field_values[field_name]);
   baseParams.arrayOfValues = Drupal.settings.neologism.field_values[field_name];
  
-  var treeLoader = new Ext.tree.TreeLoader({
-    dataUrl: dataUrl,
-    baseParams: baseParams,
+  var termsTree = new Neologism.TermsTree({
+    renderTo: objectToRender,
+    title: Drupal.t('Classes'),
+    disabled: false,
     
-    listeners: {
-      // load : ( Object This, Object node, Object response )
-      // Fires when the node has been successfuly loaded.
-      // added event to refresh the checkbox from its parent 
-      load: function(loader, node, response){
-        node.eachChild(function(currentNode){
-          node.getOwnerTree().expandPath(currentNode.getPath());
-          currentNode.cascade( function() {
-            for (var j = 0, lenValues = baseParams.arrayOfValues.length; j < lenValues; j++) {
-              if (this.id == baseParams.arrayOfValues[j]) {
-                this.getUI().toggleCheck(true);
+    loader: new Ext.tree.TreeLoader({
+      dataUrl: dataUrl,
+      baseParams: baseParams,
+      
+      listeners: {
+        // load : ( Object This, Object node, Object response )
+        // Fires when the node has been successfuly loaded.
+        // added event to refresh the checkbox from its parent 
+        load: function(loader, node, response){
+          node.eachChild(function(currentNode){
+            node.getOwnerTree().expandPath(currentNode.getPath());
+            currentNode.cascade( function() {
+              for (var j = 0, lenValues = baseParams.arrayOfValues.length; j < lenValues; j++) {
+                if (this.id == baseParams.arrayOfValues[j]) {
+                  this.getUI().toggleCheck(true);
+                }
               }
-            }
-          }, null);
-        });
-        
-        node.getOwnerTree().enable();
+            }, null);
+          });
+          
+          node.getOwnerTree().enable();
+        }
       }
-    }
-  });
+    }),
     
     // SET the root node.
-  var rootNode = new Ext.tree.AsyncTreeNode({
-    text	: Drupal.t('Thing / Superclass'),
-    id		: 'root',                  // this IS the id of the startnode
-    iconCls: 'class-samevoc',
-    disabled: true,
-    expanded: false,
-  });
+    root: new Ext.tree.AsyncTreeNode({
+      text	: Drupal.t('Thing / Superclass'),
+      id		: 'root',                  // this IS the id of the startnode
+      iconCls: 'class-samevoc',
+      disabled: true,
+      expanded: false,
+    }),
   
-  var tree = new Ext.tree.TreePanel({
-    renderTo         : objectToRender,
-    title            : Drupal.t('Defined classes'),
-    useArrows        : true,  
-    collapsible      : true,
-    animCollapse     : true,
-    border           : true,
-    autoScroll       : true,
-    animate          : true,
-    enableDD         : false,
-    containerScroll  : true,
-    height           : 400,
-    width            : '100%',
-    disabled         : true,
-    loader           : treeLoader,
-    rootVisible      : false,
-    root             : rootNode,
-    
-    tbar: {
-      cls:'top-toolbar',
-      items:[' ',
-        {
-          xtype: 'tbbutton',
-          iconCls: 'icon-expand-all', 
-          tooltip: Drupal.t('Expand all'),
-          handler: function(){ 
-            rootNode.expand(true); 
-          }
-        }, {
-          xtype: 'tbseparator' // equivalent to '-'
-        }, {
-          iconCls: 'icon-collapse-all',
-          tooltip: Drupal.t('Collapse all'),
-          handler: function(){ 
-            rootNode.collapse(true); 
-          }
-        }
-      ]
-    },
-     
     listeners: {
       // behaviour for on checkchange in superclassesTree TreePanel object 
       checkchange: function(node, checked) {
@@ -181,5 +146,4 @@ EvocWidget.createStandardClassSelecctionWidget = function( field_name ) {
       } // checkchange
     }
   });
-  
 }
