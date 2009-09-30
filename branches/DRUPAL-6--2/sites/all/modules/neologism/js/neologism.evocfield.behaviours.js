@@ -3,59 +3,6 @@
  */
 
 /**
- * Override TreePanel onClick and onDblClick events
- * @param {Object} e
- */ 
-Ext.override(Ext.tree.TreeNodeUI, {
-    onClick : function(e){ //debugger;
-        if ( this.dropping ){
-            e.stopEvent();
-            return;
-        }
-        if ( this.fireEvent("beforeclick", this.node, e) !== false ) {
-            var a = e.getTarget('a');
-            if ( !this.disabled && this.node.attributes.href && a ){
-                this.fireEvent("click", this.node, e);
-                return;
-            }else if ( a && e.ctrlKey ){
-                e.stopEvent();
-            }
-            e.preventDefault();
-            if(this.disabled){
-                return;
-            }
-            if( this.node.attributes.singleClickExpand && !this.animating && this.node.hasChildNodes() ){
-                //this.node.expand(); 
-                //this.node.toggle();
-            }
-
-            this.fireEvent("click", this.node, e);
-        }else{
-            e.stopEvent();
-        }
-    }
-});
-
-Ext.override(Ext.tree.TreeNodeUI, {
-    onDblClick : function(e){ //debugger;
-        e.preventDefault();
-        if ( this.disabled ){
-            return;
-        }
-        if ( this.checkbox ){
-            return;
-            // cancel the toggleCheck when dblclick
-            //this.toggleCheck();
-        }
-        if ( this.animating && this.node.hasChildNodes() ){
-            //this.node.toggle();
-            //this.node.expand();
-        }
-        this.fireEvent("dblclick", this.node, e);
-    }
-});
-
-/**
  * Create the class selection widget behaviour for filed_superclass2 
  * 
  * @param {Object} field_name
@@ -65,107 +12,59 @@ Neologism.createClassSelecctionWidget = function( field_name ) {
   var objectToRender = Drupal.settings.neologism.field_id[field_name];
   var dataUrl = Drupal.settings.neologism.json_url[field_name];
   var editingValue = Drupal.settings.neologism.editing_value[field_name];
-  //var baseParams = Drupal.settings.neologism.field_selected_values;
-  
-  //alert(editingValue); 
   // we need to past the baseParams as and object, that is why we creat the baseParams object
   // and add the arrayOfValues array 
   var baseParams = {};
   //Drupal.settings.neologism.field_values[field_name] = Drupal.parseJson(Drupal.settings.neologism.field_values[field_name]);
   Drupal.settings.neologism.field_values[field_name] = Ext.util.JSON.decode(Drupal.settings.neologism.field_values[field_name]);
   baseParams.arrayOfValues = Drupal.settings.neologism.field_values[field_name];
- 
-  var treeLoader = new Ext.tree.TreeLoader({
-    dataUrl: dataUrl,
-    baseParams: baseParams,
-    
-    listeners: {
-      // load : ( Object This, Object node, Object response )
-      // Fires when the node has been successfuly loaded.
-      // added event to refresh the checkbox from its parent 
-      load: function(loader, node, response){
-        node.eachChild(function(currentNode){
-          currentNode.cascade( function() {
-            // expand the node to iterate over it
-            this.getOwnerTree().expandPath(this.getPath());
-            
-            if ( this.id == editingValue ) {
-              this.getUI().addClass('locked-for-edition');
-              this.getUI().checkbox.disabled = true;
-              this.getUI().checkbox.checked = false;
-            }
-            
-            for (var j = 0, lenValues = baseParams.arrayOfValues.length; j < lenValues; j++) {
-              if (this.id == baseParams.arrayOfValues[j]) {
-                this.getUI().toggleCheck(true);
-              }
-            }
-          }, null);
-        });
-        
-        //node.expand(false);
-        Neologism.disjointWithTreePanel.render(Neologism.objectToRender);
-        //Neologism.disjointWithTreePanel.getRootNode().expand(true, false);
-              
-        // enable the superclasses treepanel
-        //node.getOwnerTree().enable();
-      }
-    }
-  });
-    
-    // SET the root node.
-  var rootNode = new Ext.tree.AsyncTreeNode({
-    text	: Drupal.t('Thing / Superclass'),
-    id		: 'root',                  // this IS the id of the startnode
-    iconCls: 'class-samevoc',
+
+  Neologism.superclassesTreePanel = new Neologism.TermsTree({
+    renderTo: objectToRender,
+    title: Drupal.t('Classes'),
     disabled: true,
-    expanded: false,
-  });
-  
-  Neologism.superclassesTreePanel = new Ext.tree.TreePanel({
-    renderTo         : objectToRender,
-    title            : Drupal.t('Select superclasses'),
-    useArrows        : true,  
-    collapsible      : true,
-    animCollapse     : true,
-    border           : true,
-    autoScroll       : true,
-    animate          : true,
-    enableDD         : false,
-    containerScroll  : true,
-    height           : 400,
-    width            : '100%',
-    disabled         : true,
-    loader           : treeLoader,
-    rootVisible      : false,
-    root             : rootNode,
-    singleClickExpand:true,
     
-    tbar: {
-      cls:'top-toolbar',
-      items:[' ',
-        {
-          xtype: 'tbbutton',
-          iconCls: 'icon-expand-all', 
-          tooltip: Drupal.t('Expand all'),
-          handler: function(){ 
-            rootNode.expand(true); 
-          }
-        }, {
-          xtype: 'tbseparator' // equivalent to '-'
-        }, {
-          iconCls: 'icon-collapse-all',
-          tooltip: Drupal.t('Collapse all'),
-          handler: function(){ 
-            rootNode.collapse(true); 
-          }
+    loader: new Ext.tree.TreeLoader({
+      dataUrl: dataUrl,
+      baseParams: baseParams,
+      listeners: {
+        // load : ( Object This, Object node, Object response )
+        // Fires when the node has been successfuly loaded.
+        // added event to refresh the checkbox from its parent 
+        load: function(loader, node, response){
+          node.eachChild(function(currentNode){
+            currentNode.cascade( function() {
+              // expand the node to iterate over it
+              this.getOwnerTree().expandPath(this.getPath());
+              
+              if ( this.id == editingValue ) {
+                this.getUI().addClass('locked-for-edition');
+                this.getUI().checkbox.disabled = true;
+                this.getUI().checkbox.checked = false;
+              }
+              
+              for (var j = 0, lenValues = baseParams.arrayOfValues.length; j < lenValues; j++) {
+                if (this.id == baseParams.arrayOfValues[j]) {
+                  this.getUI().toggleCheck(true);
+                }
+              }
+            }, null);
+          });
+          
+          Neologism.disjointWithTreePanel.render(Neologism.objectToRender);
         }
-      ]
-    },
-     
-    // listeners for Neologism.superclassesTree TreePanel object           
+      }
+    }),
+    
+    root: new Ext.tree.AsyncTreeNode({
+      text	: Drupal.t('Thing / Superclass'),
+      id		: 'root',                  // this IS the id of the startnode
+      iconCls: 'class-samevoc',
+      disabled: true,
+      expanded: false,
+    }),
+    
     listeners: {
-            
       // behaviour for on checkchange in Neologism.superclassesTree TreePanel object 
       checkchange: function(node, checked) {
         if ( checked && node.parentNode !== null ) {
@@ -210,10 +109,6 @@ Neologism.createClassSelecctionWidget = function( field_name ) {
                 }
       				});
             }
-            //else {
-              //Ext.Msg.alert('Synchronization error!', 'There is not synchronization between disjointWith TreePanel and superclasses TreePanel');
-            //}
-            
           }
     		} else {
           for ( var i = 0, len = baseParams.arrayOfValues.length; i < len; i++ ) {
@@ -262,7 +157,6 @@ Neologism.createClassSelecctionWidget = function( field_name ) {
           }    
         }
 
-        //node.getOwnerTree().expandPath(node.getPath());
         node.cascade( function(){
           this.expand();
           //alert(this.id + " == " + editingValue + " result = " + (this.id == editingValue) );
@@ -278,158 +172,110 @@ Neologism.createClassSelecctionWidget = function( field_name ) {
           }
         });
         
-      } // checkchange
-    }
-  });
-  
-  //Neologism.superclassesTreePanel.on('dblclick', null);
-  
-  Neologism.superclassesTreePanel.update = function() {
+      } // checkchange  
+    },
     
-    //alert(this.getRootNode());
-    node = this.getRootNode();
-    
-    node.eachChild(function(currentNode){
-      node.getOwnerTree().expandPath(currentNode.getPath());
-      currentNode.cascade( function() {
-        /*
-          if ( editingValue && this.id == editingValue ) {
-            alert(this.id);
+    updatselection: function(){
+      this.root.eachChild(function(currentNode){
+        currentNode.cascade(function(){
+          // expand the node to iterate over it
+          this.getOwnerTree().expandPath(this.getPath());
+          
+          if (this.id == editingValue) {
             this.getUI().addClass('locked-for-edition');
-            this.getUI().checkbox.disabled = false;
+            this.getUI().checkbox.disabled = true;
             this.getUI().checkbox.checked = false;
           }
-          */
-        for (var j = 0, lenValues = baseParams.arrayOfValues.length; j < lenValues; j++) {
-          if ( this.id == baseParams.arrayOfValues[j] ) {
-            this.getUI().toggleCheck(true);
-            //this.getUI().checkbox.checked = true;
+          
+          for (var j = 0, lenValues = baseParams.arrayOfValues.length; j < lenValues; j++) {
+            if (this.id == baseParams.arrayOfValues[j]) {
+              this.getUI().toggleCheck(true);
+            }
           }
-        }
-      }, null);
-    });
+        }, null);
+      });
+    }
     
-  }
-  
-}
+  });
 
+}
 
 /**
  * widget behaviour for field_disjointwith2 field
  * 
  * @param {Object} field_name
  */
-Neologism.createDisjointWithSelecctionWidget = function( field_name ) {
-  
+Neologism.createDisjointWithSelecctionWidget = function(field_name){
   var objectToRender = Drupal.settings.neologism.field_id[field_name];
   var editingValue = Drupal.settings.neologism.editing_value[field_name];
-  Neologism.objectToRender = objectToRender; 
+  Neologism.objectToRender = objectToRender;
   
   var dataUrl = Drupal.settings.neologism.json_url[field_name];
-   
+  
   // we need to past the baseParams as and object, that is why we creat the baseParams object
   // and add the arrayOfValues array 
   var baseParams = {};
   //Drupal.settings.neologism.field_values[field_name] = Drupal.parseJson(Drupal.settings.neologism.field_values[field_name]);
   Drupal.settings.neologism.field_values[field_name] = Ext.util.JSON.decode(Drupal.settings.neologism.field_values[field_name]);
   baseParams.arrayOfValues = Drupal.settings.neologism.field_values[field_name];
- 
-  var treeLoader = new Ext.tree.TreeLoader({
-    dataUrl: dataUrl,
-    baseParams: baseParams,//baseParams,
+  
+  Neologism.disjointWithTreePanel = new Neologism.TermsTree({
+    //renderTo: objectToRender,
+    title: Drupal.t('Disjoint with class(es)'),
+    disabled: true,
     
-    listeners: {
-      load: function(loader, node, response){
-        node.eachChild(function(currentNode){
-          currentNode.cascade( function() {
-            // expand the node to iterate over it
-            this.getOwnerTree().expandPath(this.getPath());
-            
-            if ( this.id == editingValue ) {
-              this.getUI().addClass('locked-for-edition');
-              this.getUI().checkbox.disabled = true;
-              this.getUI().checkbox.checked = false;
-            }
-            
-            for (var j = 0, lenValues = baseParams.arrayOfValues.length; j < lenValues; j++) {
-              if (this.id == baseParams.arrayOfValues[j]) {
-                this.getUI().toggleCheck(true);
+    loader: new Ext.tree.TreeLoader({
+      dataUrl: dataUrl,
+      baseParams: baseParams,//baseParams,
+      listeners: {
+        load: function(loader, node, response){
+          node.eachChild(function(currentNode){
+            currentNode.cascade(function(){
+              // expand the node to iterate over it
+              this.getOwnerTree().expandPath(this.getPath());
+              
+              if (this.id == editingValue) {
+                this.getUI().addClass('locked-for-edition');
+                this.getUI().checkbox.disabled = true;
+                this.getUI().checkbox.checked = false;
               }
-            }
-          }, null);
-        });
-        
-        // enable disjointwith treepanel
-        node.getOwnerTree().enable();
-        // enable superclasses treepanel
-        Neologism.superclassesTreePanel.enable();
-        
-        // I need to update this TreePanel from superclassesTreePanel
-        //Neologism.superclassesTreePanel.update();
+              
+              for (var j = 0, lenValues = baseParams.arrayOfValues.length; j < lenValues; j++) {
+                if (this.id == baseParams.arrayOfValues[j]) {
+                  this.getUI().toggleCheck(true);
+                }
+              }
+            }, null);
+          });
+          
+          // enable disjointwith treepanel
+          node.getOwnerTree().enable();
+          // refresh the superclasswaTreePanel to synchronize nodes between both treepanel
+          Neologism.superclassesTreePanel.updatselection();
+          // enable superclasses treepanel
+          Neologism.superclassesTreePanel.enable();
+        }
       }
-    }
-  });
+    }),
     
     // SET the root node.
-  var rootNode = new Ext.tree.AsyncTreeNode({
-    text	: Drupal.t('Thing / Superclass'),
-    id		: 'root',                  // this IS the id of the startnode
-    iconCls: 'class-samevoc',
-    disabled: true,
-    expanded: false, 
-  });
-  
-  Neologism.disjointWithTreePanel = new Ext.tree.TreePanel({
-    //renderTo: objectToRender,
-    title            : Drupal.t('Disjoint with class(es).'),
-    useArrows        : true,  
-    collapsible      : true,
-    animCollapse     : true,
-    border           : true,
-    autoScroll       : true,
-    animate          : true,
-    enableDD         : false,
-    containerScroll  : true,
-    height           : 400,
-    width            : '100%',
-    rootVisible      : false,
-    //autoHeight       : true,
-    disabled         : true,
-    loader           : treeLoader,
-    root             : rootNode,
-    tbar: {
-      cls:'top-toolbar',
-      items:[' ',
-        {
-          xtype: 'tbbutton',
-          iconCls: 'icon-expand-all', 
-          tooltip: Drupal.t('Expand all'),
-          handler: function(){ 
-            rootNode.expand(true); 
-          }
-        }, {
-          xtype: 'tbseparator' // equivalent to '-'
-        }, {
-          iconCls: 'icon-collapse-all',
-          tooltip: Drupal.t('Collapse all'),
-          handler: function(){ 
-            rootNode.collapse(true); 
-          }
-        }
-      ]
-    },
-               
-    // listeners for disjointWithTree TreePanel object
+    root: new Ext.tree.AsyncTreeNode({
+      text: Drupal.t('Thing / Superclass'),
+      id: 'root', // this IS the id of the startnode
+      iconCls: 'class-samevoc',
+      disabled: true,
+      expanded: false,
+    }),
+    
     listeners: {
- 
-      checkchange: function(node, checked) {
-        if ( checked && node.parentNode !== null ) {
-    			// if we're checking the box, check it all the way up
-    			if ( node.parentNode.isRoot || !node.parentNode.getUI().isChecked() ) {
-            if ( baseParams.arrayOfValues.indexOf(node.id) == -1 ) {
+      checkchange: function(node, checked){
+        if (checked && node.parentNode !== null) {
+          // if we're checking the box, check it all the way up
+          if (node.parentNode.isRoot || !node.parentNode.getUI().isChecked()) {
+            if (baseParams.arrayOfValues.indexOf(node.id) == -1) {
               baseParams.arrayOfValues.push(node.id);
             }
-                        
+            
             // disable all the classes in disjoint tree
             Neologism.superclassesTreePanel.expandPath(node.getPath());
             superclassesTreeNode = Neologism.superclassesTreePanel.getNodeById(node.id);
@@ -440,7 +286,7 @@ Neologism.createDisjointWithSelecctionWidget = function( field_name ) {
               
               superclassesTreeNode.eachChild(function(currentNode){
                 Neologism.superclassesTreePanel.expandPath(currentNode.getPath());
-                currentNode.cascade( function() {
+                currentNode.cascade(function(){
                   //alert(this);
                   this.getUI().checkbox.disabled = true;
                   this.getUI().nodeClass = 'complete';
@@ -448,17 +294,18 @@ Neologism.createDisjointWithSelecctionWidget = function( field_name ) {
                 }, null);
               });
             }
-
+            
           }
-    		} else {
-          for (i in baseParams.arrayOfValues ) {
-            if ( baseParams.arrayOfValues[i] == node.attributes.id ) {
+        }
+        else {
+          for (i in baseParams.arrayOfValues) {
+            if (baseParams.arrayOfValues[i] == node.attributes.id) {
               baseParams.arrayOfValues.splice(i, 1);
-          
+              
               // enable all the classes in disjoint tree
               Neologism.superclassesTreePanel.expandPath(node.getPath());
-              superclassesTreeNode = Neologism.superclassesTreePanel.getNodeById(node.id); 
-              if ( !superclassesTreeNode.parentNode.getUI().isChecked() ) {
+              superclassesTreeNode = Neologism.superclassesTreePanel.getNodeById(node.id);
+              if (!superclassesTreeNode.parentNode.getUI().isChecked()) {
                 superclassesTreeNode.getUI().checkbox.disabled = false;
               }
               superclassesTreeNode.getUI().nodeClass = '';
@@ -466,38 +313,29 @@ Neologism.createDisjointWithSelecctionWidget = function( field_name ) {
               
               superclassesTreeNode.eachChild(function(currentNode){
                 Neologism.superclassesTreePanel.expandPath(currentNode.getPath());
-                currentNode.cascade( function() {
+                currentNode.cascade(function(){
                   //alert(this);
                   this.getUI().checkbox.disabled = false;
                   this.getUI().nodeClass = '';
                   this.getUI().removeClass('complete');
                 }, null);
               });
-
+              
             }
-          }    
+          }
         }
         
-        /*
-        node.getOwnerTree().expandPath(node.getPath());
-        node.eachChild( function(currentNode){
-          currentNode.getUI().toggleCheck(checked);
-          currentNode.getUI().checkbox.checked = false;
-          currentNode.getUI().checkbox.disabled = currentNode.parentNode.getUI().isChecked();  
-        });
-        */
-       
-       //node.getOwnerTree().expandPath(node.getPath());
-       node.cascade( function(){
+        //node.getOwnerTree().expandPath(node.getPath());
+        node.cascade(function(){
           this.expand();
           //alert(this.id);
-          if ( this.id == editingValue ) {
+          if (this.id == editingValue) {
             this.getUI().addClass('locked-for-edition');
             this.getUI().checkbox.disabled = true;
             this.getUI().checkbox.checked = false;
           }
           else {
-            if ( this.id != node.id ) {
+            if (this.id != node.id) {
               this.getUI().checkbox.disabled = node.getUI().checkbox.checked;
             }
           }
@@ -506,8 +344,7 @@ Neologism.createDisjointWithSelecctionWidget = function( field_name ) {
         
       }
     } // listeners
-  });
-  
+   });
 }
 
 /**
@@ -527,88 +364,53 @@ Neologism.createSuperpropertySelecctionWidget = function(field_name){
   Drupal.settings.neologism.field_values[field_name] = Ext.util.JSON.decode(Drupal.settings.neologism.field_values[field_name]);
   baseParams.arrayOfValues = Drupal.settings.neologism.field_values[field_name];
   
-  var treeLoader = new Ext.tree.TreeLoader({
-    dataUrl: dataUrl,
-    baseParams: baseParams,
-    
-    listeners: {
-      // load : ( Object This, Object node, Object response )
-      // Fires when the node has been successfuly loaded.
-      // added event to refresh the checkbox from its parent 
-      load: function(loader, node, response){
-      
-        node.eachChild(function(currentNode){
-          //alert(currentNode.id);
-          //node.getOwnerTree().expandPath(currentNode.getPath());
-          currentNode.expand();
-          currentNode.cascade(function(){
-            if ( this.id == editingValue ) {
-              this.getUI().addClass('locked-for-edition');
-              this.getUI().checkbox.disabled = true;
-              this.getUI().checkbox.checked = false;
-            }
-            
-            for (var j = 0, lenValues = baseParams.arrayOfValues.length; j < lenValues; j++) {
-              if (this.id == baseParams.arrayOfValues[j]) {
-                this.getUI().toggleCheck(true);
-              }
-            }
-          }, null);
-        });
-        
-        node.getOwnerTree().enable();
-      }
-    }
-  });
-  
-  // SET the root node.
-  var rootNode = new Ext.tree.AsyncTreeNode({
-    text: Drupal.t('Thing / Superclass'),
-    id: 'root', // this IS the id of the startnode
-    iconCls: 'class-samevoc',
-    disabled: true,
-    expanded: false,
-  });
-  
-  var treePanel = new Ext.tree.TreePanel({
+  var termsTree = new Neologism.TermsTree({
     renderTo: objectToRender,
     title: Drupal.t('Subproperty of'),
-    useArrows: true,
-    collapsible: true,
-    animCollapse: true,
-    border: true,
-    autoScroll: true,
-    animate: true,
-    enableDD: false,
-    containerScroll: true,
-    height: 400,
-    width: '100%',
     disabled: true,
-    loader: treeLoader,
-    rootVisible: false,
-    root: rootNode,
     
-    tbar: {
-      cls: 'top-toolbar',
-      items: [' ', {
-        xtype: 'tbbutton',
-        iconCls: 'icon-expand-all',
-        tooltip: Drupal.t('Expand all'),
-        handler: function(){
-          rootNode.expand(true);
+    loader: new Ext.tree.TreeLoader({
+      dataUrl: dataUrl,
+      baseParams: baseParams,
+      
+      listeners: {
+        // load : ( Object This, Object node, Object response )
+        // Fires when the node has been successfuly loaded.
+        // added event to refresh the checkbox from its parent 
+        load: function(loader, node, response){
+        
+          node.eachChild(function(currentNode){
+            //alert(currentNode.id);
+            //node.getOwnerTree().expandPath(currentNode.getPath());
+            currentNode.expand();
+            currentNode.cascade(function(){
+              if (this.id == editingValue) {
+                this.getUI().addClass('locked-for-edition');
+                this.getUI().checkbox.disabled = true;
+                this.getUI().checkbox.checked = false;
+              }
+              
+              for (var j = 0, lenValues = baseParams.arrayOfValues.length; j < lenValues; j++) {
+                if (this.id == baseParams.arrayOfValues[j]) {
+                  this.getUI().toggleCheck(true);
+                }
+              }
+            }, null);
+          });
+          
+          node.getOwnerTree().enable();
         }
-      }, {
-        xtype: 'tbseparator' // equivalent to '-'
-      }, {
-        iconCls: 'icon-collapse-all',
-        tooltip: Drupal.t('Collapse all'),
-        handler: function(){
-          rootNode.collapse(true);
-        }
-      }]
-    },
+      }
+    }),
     
-    // listeners for Neologism.superclassesTree TreePanel object           
+    root: new Ext.tree.AsyncTreeNode({
+      text: Drupal.t('Thing / Superclass'),
+      id: 'root', // this IS the id of the startnode
+      iconCls: 'class-samevoc',
+      disabled: true,
+      expanded: false,
+    }),
+    
     listeners: {
       // behaviour for on checkchange in Neologism.superclassesTree TreePanel object 
       checkchange: function(node, checked){
@@ -633,13 +435,13 @@ Neologism.createSuperpropertySelecctionWidget = function(field_name){
         node.cascade(function(){
           this.expand();
           
-          if ( this.id == editingValue ) {
+          if (this.id == editingValue) {
             this.getUI().addClass('locked-for-edition');
             this.getUI().checkbox.disabled = true;
             this.getUI().checkbox.checked = false;
           }
           else {
-            if ( this.id != node.id ) {
+            if (this.id != node.id) {
               this.getUI().checkbox.disabled = node.getUI().checkbox.checked;
             }
           }
@@ -648,4 +450,5 @@ Neologism.createSuperpropertySelecctionWidget = function(field_name){
     }
   });
 }
-  
+    
+    
