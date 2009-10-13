@@ -6,3 +6,4 @@ dependencies[] = sparql
 package = RDF
 core = 6.x
 php = 5.2
+version = "6.x-2.00-dev"

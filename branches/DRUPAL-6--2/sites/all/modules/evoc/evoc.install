@@ -9,9 +9,9 @@
 function evoc_schema() {
   $schema['evoc_rdf_classes'] = array(
     'fields' => array(
-      'prefix' => array('type' => 'varchar', 'length' => '32', 'not null' => TRUE),
-      'id' => array('type' => 'varchar', 'length' => '32', 'not null' => TRUE),
-      'label' => array('type' => 'varchar', 'length' => '32', 'not null' => TRUE),
+      'prefix' => array('type' => 'varchar', 'length' => '132', 'not null' => TRUE),
+      'id' => array('type' => 'varchar', 'length' => '132', 'not null' => TRUE),
+      'label' => array('type' => 'varchar', 'length' => '255', 'not null' => TRUE),
       'comment' => array('type' => 'text', 'not null' => TRUE),
       'superclasses' => array('type' => 'int', 'size' => 'tiny', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0)
     ),
@@ -23,9 +23,9 @@ function evoc_schema() {
  
   $schema['evoc_rdf_properties'] = array(
     'fields' => array(
-      'prefix' => array('type' => 'varchar', 'length' => '32', 'not null' => TRUE),
-      'id' => array('type' => 'varchar', 'length' => '32', 'not null' => TRUE),
-      'label' => array('type' => 'varchar', 'length' => '32', 'not null' => TRUE),
+      'prefix' => array('type' => 'varchar', 'length' => '132', 'not null' => TRUE),
+      'id' => array('type' => 'varchar', 'length' => '132', 'not null' => TRUE),
+      'label' => array('type' => 'varchar', 'length' => '255', 'not null' => TRUE),
       'comment' => array('type' => 'text', 'not null' => TRUE),
       'superproperties' => array('type' => 'int', 'size' => 'tiny', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0),
       'domains' => array('type' => 'int', 'size' => 'tiny', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0),
@@ -40,9 +40,9 @@ function evoc_schema() {
   $schema['evoc_rdf_superclasses'] = array(
     'fields' => array(
       'id' => array('type' => 'serial', 'unsigned' => 'TRUE','size' => 'normal', 'not null' => TRUE),
-      'prefix' => array('type' => 'varchar', 'length' => '32', 'not null' => TRUE, 'description' => 'this is the CURIE reference or Id'),
-      'reference' => array('type' => 'varchar', 'length' => '32', 'not null' => TRUE, 'description' => 'this is the CURIE reference or Id'),
-      'superclass' => array('type' => 'varchar', 'length' => '65', 'not null' => TRUE),
+      'prefix' => array('type' => 'varchar', 'length' => '132', 'not null' => TRUE, 'description' => 'this is the CURIE reference or Id'),
+      'reference' => array('type' => 'varchar', 'length' => '132', 'not null' => TRUE, 'description' => 'this is the CURIE reference or Id'),
+      'superclass' => array('type' => 'varchar', 'length' => '265', 'not null' => TRUE),
     ),
     'primary key' => array('id'),
   );
@@ -50,9 +50,9 @@ function evoc_schema() {
   $schema['evoc_rdf_superproperties'] = array(
     'fields' => array(
       'id' => array('type' => 'serial', 'unsigned' => 'TRUE','size' => 'normal', 'not null' => TRUE),
-      'prefix' => array('type' => 'varchar', 'length' => '32', 'not null' => TRUE, 'description' => 'this is the CURIE reference or Id'),
-      'reference' => array('type' => 'varchar', 'length' => '32', 'not null' => TRUE, 'description' => 'this is the CURIE reference or Id'),
-      'superproperty' => array('type' => 'varchar', 'length' => '65', 'not null' => TRUE),
+      'prefix' => array('type' => 'varchar', 'length' => '132', 'not null' => TRUE, 'description' => 'this is the CURIE reference or Id'),
+      'reference' => array('type' => 'varchar', 'length' => '132', 'not null' => TRUE, 'description' => 'this is the CURIE reference or Id'),
+      'superproperty' => array('type' => 'varchar', 'length' => '265', 'not null' => TRUE),
     ),
     'primary key' => array('id'),
   );
@@ -60,9 +60,9 @@ function evoc_schema() {
   $schema['evoc_rdf_propertiesdomains'] = array(
     'fields' => array(
       'id' => array('type' => 'serial', 'unsigned' => 'TRUE','size' => 'normal', 'not null' => TRUE),
-      'prefix' => array('type' => 'varchar', 'length' => '32', 'not null' => TRUE, 'description' => 'this is the CURIE reference or Id'),
-      'reference' => array('type' => 'varchar', 'length' => '32', 'not null' => TRUE, 'description' => 'this is the CURIE reference or Id'),
-      'rdf_domain' => array('type' => 'varchar', 'length' => '65', 'not null' => TRUE),
+      'prefix' => array('type' => 'varchar', 'length' => '132', 'not null' => TRUE, 'description' => 'this is the CURIE reference or Id'),
+      'reference' => array('type' => 'varchar', 'length' => '132', 'not null' => TRUE, 'description' => 'this is the CURIE reference or Id'),
+      'rdf_domain' => array('type' => 'varchar', 'length' => '265', 'not null' => TRUE),
     ),
     'primary key' => array('id'),
   );
@@ -70,9 +70,9 @@ function evoc_schema() {
   $schema['evoc_rdf_propertiesranges'] = array(
     'fields' => array(
       'id' => array('type' => 'serial', 'unsigned' => 'TRUE','size' => 'normal', 'not null' => TRUE),
-      'prefix' => array('type' => 'varchar', 'length' => '32', 'not null' => TRUE, 'description' => 'this is the CURIE reference or Id'),
-      'reference' => array('type' => 'varchar', 'length' => '32', 'not null' => TRUE, 'description' => 'this is the CURIE reference or Id'),
-      'rdf_range' => array('type' => 'varchar', 'length' => '65', 'not null' => TRUE),
+      'prefix' => array('type' => 'varchar', 'length' => '132', 'not null' => TRUE, 'description' => 'this is the CURIE reference or Id'),
+      'reference' => array('type' => 'varchar', 'length' => '132', 'not null' => TRUE, 'description' => 'this is the CURIE reference or Id'),
+      'rdf_range' => array('type' => 'varchar', 'length' => '265', 'not null' => TRUE),
     ),
     'primary key' => array('id'),
   );
@@ -85,6 +85,7 @@ function evoc_schema() {
  */
 function evoc_install() {
   drupal_install_schema('evoc');
+  drupal_set_message(t('Evoc 2.0 successfully installed.'));
 }
 
 /**
@@ -101,6 +102,8 @@ function evoc_enable() {
   // Import a few popular vocabularies.
   drupal_load('module', 'rdf');
   drupal_load('module', 'sparql');
+  //drupal_load('module', 'evocreference');
+  //drupal_load('module', 'mxcheckboxselect');
   drupal_load('module', 'evoc');
   
   // Force schema rebuild, see http://drupal.org/node/200931
@@ -112,6 +115,7 @@ function evoc_enable() {
   evoc_import_vocabulary('http://xmlns.com/foaf/0.1/','foaf');
   evoc_import_vocabulary('http://www.w3.org/2002/07/owl#','owl');
 
+  drupal_set_message(t('Evoc 2.0 is now enabled.'));
 }
 
 /**
@@ -140,6 +144,13 @@ function evoc_update_6200() {
   $ret = array('#finished' => 0);
   
   $schema = evoc_schema();
+  
+  db_change_field($ret, 'evoc_rdf_classes', 'prefix', 'prefix', $schema['evoc_rdf_classes']['fields']['prefix']);
+  db_change_field($ret, 'evoc_rdf_classes', 'id', 'id', $schema['evoc_rdf_classes']['fields']['id']);
+  db_change_field($ret, 'evoc_rdf_classes', 'label', 'label', $schema['evoc_rdf_classes']['fields']['label']);
+  db_change_field($ret, 'evoc_rdf_properties', 'prefix', 'prefix', $schema['evoc_rdf_classes']['fields']['prefix']);
+  db_change_field($ret, 'evoc_rdf_properties', 'id', 'id', $schema['evoc_rdf_classes']['fields']['id']);
+  db_change_field($ret, 'evoc_rdf_properties', 'label', 'label', $schema['evoc_rdf_classes']['fields']['label']);
   
   db_add_field($ret, 'evoc_rdf_classes', 'superclasses', $schema['evoc_rdf_classes']['fields']['superclasses']);
   db_add_field($ret, 'evoc_rdf_properties', 'superproperties', $schema['evoc_rdf_properties']['fields']['superproperties']);
