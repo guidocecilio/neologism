@@ -635,6 +635,7 @@ tr.taxonomy-term-divider-bottom {
 .messages {
   background-color: #fff;
   border: 1px solid #b8d3e5;
+
 }
 
 .preview {
@@ -643,14 +644,28 @@ tr.taxonomy-term-divider-bottom {
   padding: 5px;
 }
 
+div.warning {
+  background-color: #ffd;
+  border-color: #eeb;
+  
+  padding: 5px;
+  margin-bottom: 10px;
+}
+
 div.status {
   color: #33a333;
   border-color: #c7f2c8;
+  
+  padding: 5px;
+  margin-bottom: 10px;
 }
 
 div.error, tr.error {
   color: #a30000;
   background-color: #FFCCCC;
+  
+  padding: 5px;
+  margin-bottom: 10px;
 }
 
 .form-item input.error, .form-item textarea.error {
