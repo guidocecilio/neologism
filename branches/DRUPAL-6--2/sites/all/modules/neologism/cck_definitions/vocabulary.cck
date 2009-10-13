@@ -1,6 +1,6 @@
-$content[type]  = array (
+$content['type']  = array (
   'name' => 'Vocabulary',
-  'type' => NEOLOGISM_CT_VOCABULARY,
+  'type' => 'neo_vocabulary',
   'description' => '',
   'title_label' => 'Id',
   'body_label' => 'Description',
@@ -13,15 +13,16 @@ $content[type]  = array (
     'sticky' => false,
     'revision' => false,
   ),
+  'language_content_type' => 0,
   'old_type' => 'neo_vocabulary',
   'orig_type' => '',
   'module' => 'node',
   'custom' => '1',
   'modified' => '1',
   'locked' => '0',
-  'comment' => '0',
+  'rdf_schema_class' => '',
 );
-$content[fields]  = array (
+$content['fields']  = array (
   0 => 
   array (
     'label' => 'Title',
@@ -60,8 +61,10 @@ $content[fields]  = array (
         'size' => 'big',
         'not null' => false,
         'sortable' => true,
+        'views' => true,
       ),
     ),
+    'rdf_property' => '',
     'display_settings' => 
     array (
       'label' => 
@@ -86,6 +89,8 @@ $content[fields]  = array (
     'widget_type' => 'userreference_select',
     'change' => 'Change basic information',
     'weight' => '-3',
+    'autocomplete_match' => 'contains',
+    'size' => 60,
     'reverse_link' => 0,
     'description' => '',
     'default_value' => 
@@ -137,8 +142,10 @@ $content[fields]  = array (
         'type' => 'int',
         'unsigned' => true,
         'not null' => false,
+        'index' => true,
       ),
     ),
+    'rdf_property' => '',
     'display_settings' => 
     array (
       'label' => 
@@ -199,8 +206,10 @@ $content[fields]  = array (
         'size' => 'big',
         'not null' => false,
         'sortable' => true,
+        'views' => true,
       ),
     ),
+    'rdf_property' => '',
     'display_settings' => 
     array (
       'label' => 
@@ -261,8 +270,10 @@ $content[fields]  = array (
         'size' => 'big',
         'not null' => false,
         'sortable' => true,
+        'views' => true,
       ),
     ),
+    'rdf_property' => '',
     'display_settings' => 
     array (
       'label' => 

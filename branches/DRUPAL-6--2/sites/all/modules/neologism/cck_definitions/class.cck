@@ -1,6 +1,6 @@
-$content[type]  = array (
+$content['type']  = array (
   'name' => 'Class',
-  'type' => NEOLOGISM_CT_CLASS,
+  'type' => 'neo_class',
   'description' => '',
   'title_label' => 'Id',
   'body_label' => 'Description of the class (only used in the documentation)',
@@ -13,52 +13,84 @@ $content[type]  = array (
     'sticky' => false,
     'revision' => false,
   ),
+  'language_content_type' => '0',
   'old_type' => 'neo_class',
   'orig_type' => '',
   'module' => 'node',
   'custom' => '1',
   'modified' => '1',
   'locked' => '0',
-  'comment' => '0',
+  'rdf_schema_class' => '',
 );
-$content[groups]  = array (
+$content['fields']  = array (
   0 => 
   array (
     'label' => 'Vocabulary',
-    'settings' => 
+    'field_name' => 'field_vocabulary',
+    'type' => 'nodereference',
+    'widget_type' => 'nodereference_select',
+    'change' => 'Change basic information',
+    'weight' => '-10',
+    'autocomplete_match' => 'contains',
+    'size' => 60,
+    'description' => 'Specify the vocabulary this class belongs to.',
+    'default_value' => 
     array (
-      'form' => 
+      0 => 
       array (
-        'style' => 'fieldset_collapsible',
-        'description' => 'You can change the vocabulary this class belongs to.',
-      ),
-      'display' => 
-      array (
-        'description' => '',
-        'teaser' => 
-        array (
-          'format' => 'fieldset',
-        ),
-        'full' => 
-        array (
-          'format' => 'fieldset',
-        ),
-        'label' => 'above',
+        'nid' => '',
       ),
     ),
-    'weight' => '-10',
-    'group_name' => 'group_vocabulary',
+    'default_value_php' => '',
+    'default_value_widget' => NULL,
+    'group' => false,
+    'required' => 1,
+    'multiple' => '0',
+    'referenceable_types' => 
+    array (
+      'neo_vocabulary' => 'neo_vocabulary',
+      'neo_class' => 0,
+      'neo_property' => 0,
+      'sparql' => 0,
+    ),
+    'op' => 'Save field settings',
+    'module' => 'nodereference',
+    'widget_module' => 'nodereference',
+    'columns' => 
+    array (
+      'nid' => 
+      array (
+        'type' => 'int',
+        'unsigned' => true,
+        'not null' => false,
+        'index' => true,
+      ),
+    ),
+    'rdf_property' => '',
+    'display_settings' => 
+    array (
+      'label' => 
+      array (
+        'format' => 'inline',
+      ),
+      'teaser' => 
+      array (
+        'format' => 'hidden',
+      ),
+      'full' => 
+      array (
+        'format' => 'default',
+      ),
+    ),
   ),
-);
-$content[fields]  = array (
-  0 => 
+  1 => 
   array (
     'label' => 'Label',
     'field_name' => 'field_label',
     'type' => 'text',
     'widget_type' => 'text_textfield',
     'change' => 'Change basic information',
-    'weight' => '-4',
+    'weight' => '-8',
     'rows' => '1',
     'size' => 60,
     'description' => 'This will be used for rdfs:label ',
@@ -66,7 +98,17 @@ $content[fields]  = array (
     array (
     ),
     'default_value_php' => '',
-    'default_value_widget' => NULL,
+    'default_value_widget' => 
+    array (
+      'field_label' => 
+      array (
+        0 => 
+        array (
+          'value' => '',
+          '_error_element' => 'default_value_widget][field_label][0][value',
+        ),
+      ),
+    ),
     'group' => false,
     'required' => 1,
     'multiple' => '0',
@@ -85,8 +127,10 @@ $content[fields]  = array (
         'size' => 'big',
         'not null' => false,
         'sortable' => true,
+        'views' => true,
       ),
     ),
+    'rdf_property' => '',
     'display_settings' => 
     array (
       'label' => 
@@ -103,19 +147,24 @@ $content[fields]  = array (
       ),
     ),
   ),
-  1 => 
+  2 => 
   array (
     'label' => 'Comment',
     'field_name' => 'field_comment',
     'type' => 'text',
     'widget_type' => 'text_textfield',
     'change' => 'Change basic information',
-    'weight' => '-3',
+    'weight' => '-7',
     'rows' => '1',
-    'size' => 60,
+    'size' => '130',
     'description' => 'This will be used for rdfs:comment',
     'default_value' => 
     array (
+      0 => 
+      array (
+        'value' => '',
+        '_error_element' => 'default_value_widget][field_comment][0][value',
+      ),
     ),
     'default_value_php' => '',
     'default_value_widget' => 
@@ -147,74 +196,10 @@ $content[fields]  = array (
         'size' => 'big',
         'not null' => false,
         'sortable' => true,
+        'views' => true,
       ),
     ),
-    'display_settings' => 
-    array (
-      'label' => 
-      array (
-        'format' => 'inline',
-      ),
-      'teaser' => 
-      array (
-        'format' => 'default',
-      ),
-      'full' => 
-      array (
-        'format' => 'default',
-      ),
-    ),
-  ),
-  2 => 
-  array (
-    'label' => 'Superclass',
-    'field_name' => 'field_superclass2',
-    'type' => 'evocreference',
-    'widget_type' => 'evocreference_autocomplete',
-    'change' => 'Change basic information',
-    'weight' => '-2',
-    'autocomplete_match' => 'contains',
-    'description' => 'Specify the superclass of this class. Your new class will have a statement expressing that it is a rdfs:subClassOf the specified class.',
-    'default_value' => 
-    array (
-    ),
-    'default_value_php' => '',
-    'default_value_widget' => 
-    array (
-      'field_superclass2' => 
-      array (
-        0 => 
-        array (
-          'evoc_term' => 
-          array (
-            'evoc_term' => '',
-            '_error_element' => 'default_value_widget][field_superclass2][0][evoc_term][evoc_term',
-          ),
-          '_error_element' => 'default_value_widget][field_superclass2][0][evoc_term][evoc_term',
-        ),
-      ),
-    ),
-    'group' => false,
-    'required' => 0,
-    'multiple' => '0',
-    'referenceable_term_types' => 
-    array (
-      'classes' => 'classes',
-      'properties' => 0,
-    ),
-    'op' => 'Save field settings',
-    'module' => 'evocreference',
-    'widget_module' => 'evocreference',
-    'columns' => 
-    array (
-      'evoc_term' => 
-      array (
-        'type' => 'varchar',
-        'length' => 64,
-        'not null' => false,
-        'sortable' => true,
-      ),
-    ),
+    'rdf_property' => '',
     'display_settings' => 
     array (
       'label' => 
@@ -233,50 +218,54 @@ $content[fields]  = array (
   ),
   3 => 
   array (
-    'label' => 'Vocabulary',
-    'field_name' => 'field_vocabulary',
-    'type' => 'nodereference',
-    'widget_type' => 'nodereference_select',
+    'label' => 'Superclass',
+    'field_name' => 'field_superclass2',
+    'type' => 'evocreference',
+    'widget_type' => 'mxcheckbox_select',
     'change' => 'Change basic information',
-    'weight' => '-10',
-    'description' => 'Specify the vocabulary this class belongs to.',
+    'weight' => '-5',
+    'description' => 'Specify the superclass of this class. Your new class will have a statement expressing that it is a rdfs:subClassOf the specified class.',
     'default_value' => 
     array (
+      0 => 
+      array (
+        'evoc_term' => 'rdfs:Resource',
+      ),
     ),
     'default_value_php' => '',
     'default_value_widget' => 
     array (
-      'field_vocabulary' => 
+      'field_superclass2' => 
       array (
-        'nid' => 
+        0 => 
         array (
-          'nid' => '',
+          'evoc_term' => 'rdfs:Resource',
         ),
+        'evoc_term' => '',
       ),
     ),
-    'group' => 'group_vocabulary',
+    'group' => false,
     'required' => 1,
-    'multiple' => '0',
-    'referenceable_types' => 
+    'multiple' => '1',
+    'referenceable_term_types' => 
     array (
-      NEOLOGISM_CT_VOCABULARY => NEOLOGISM_CT_VOCABULARY,
-      0 => 1,
-      NEOLOGISM_CT_CLASS => 0,
-      'page' => false,
-      NEOLOGISM_CT_PROPERTY => 0,
+      'classes' => 'classes',
+      'properties' => 0,
     ),
     'op' => 'Save field settings',
-    'module' => 'nodereference',
-    'widget_module' => 'nodereference',
+    'module' => 'evocreference',
+    'widget_module' => 'mxcheckboxselect',
     'columns' => 
     array (
-      'nid' => 
+      'evoc_term' => 
       array (
-        'type' => 'int',
-        'unsigned' => true,
+        'type' => 'varchar',
+        'length' => 64,
         'not null' => false,
+        'sortable' => true,
       ),
     ),
+    'rdf_property' => '',
     'display_settings' => 
     array (
       'label' => 
@@ -285,7 +274,7 @@ $content[fields]  = array (
       ),
       'teaser' => 
       array (
-        'format' => 'hidden',
+        'format' => 'default',
       ),
       'full' => 
       array (
@@ -298,34 +287,19 @@ $content[fields]  = array (
     'label' => 'Disjoint with',
     'field_name' => 'field_disjointwith2',
     'type' => 'evocreference',
-    'widget_type' => 'evocreference_autocomplete',
+    'widget_type' => 'mxcheckbox_select',
     'change' => 'Change basic information',
-    'weight' => '-1',
+    'weight' => '-4',
     'description' => 'Specify the classes that are disjoint with this class. Your new class will have statements expressing that it is owl:disjointWith the specified classes.',
-    'autocomplete_match' => 'contains',
-    'reverse_link' => 0,
     'default_value' => 
     array (
-      0 => 
-      array (
-        'evoc_term' => '',
-        '_error_element' => 'default_value_widget][field_disjointwith2][0][evoc_term][evoc_term',
-      ),
     ),
     'default_value_php' => '',
     'default_value_widget' => 
     array (
       'field_disjointwith2' => 
       array (
-        0 => 
-        array (
-          'evoc_term' => 
-          array (
-            'evoc_term' => '',
-            '_error_element' => 'default_value_widget][field_disjointwith2][0][evoc_term][evoc_term',
-          ),
-          '_error_element' => 'default_value_widget][field_disjointwith2][0][evoc_term][evoc_term',
-        ),
+        'evoc_term' => '',
       ),
     ),
     'group' => false,
@@ -338,7 +312,7 @@ $content[fields]  = array (
     ),
     'op' => 'Save field settings',
     'module' => 'evocreference',
-    'widget_module' => 'evocreference',
+    'widget_module' => 'mxcheckboxselect',
     'columns' => 
     array (
       'evoc_term' => 
@@ -349,6 +323,7 @@ $content[fields]  = array (
         'sortable' => true,
       ),
     ),
+    'rdf_property' => '',
     'display_settings' => 
     array (
       'label' => 
@@ -365,4 +340,11 @@ $content[fields]  = array (
       ),
     ),
   ),
+);
+$content['extra']  = array (
+  'title' => '-9',
+  'body_field' => '-2',
+  'revision_information' => '20',
+  'menu' => '-6',
+  'path' => '30',
 );

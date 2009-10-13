@@ -1,9 +1,8 @@
-$content[type]  = array (
+$content['type']  = array (
   'name' => 'Property',
-  'type' => NEOLOGISM_CT_PROPERTY,
+  'type' => 'neo_property',
   'description' => '',
   'title_label' => 'Id',
-  // The description is now a CCK field for consistency. The body of the node is not being used anymore.
   'body_label' => '',
   'min_word_count' => '0',
   'help' => '',
@@ -21,19 +20,19 @@ $content[type]  = array (
   'custom' => '1',
   'modified' => '1',
   'locked' => '0',
-  'comment' => '0',
+  'rdf_schema_class' => '',
 );
-$content[groups]  = array (
+$content['groups']  = array (
   0 => 
   array (
-    'label' => 'Vocabulary',
+    'label' => 'Range',
     'group_type' => 'standard',
     'settings' => 
     array (
       'form' => 
       array (
         'style' => 'fieldset_collapsible',
-        'description' => 'You can change the vocabulary this property belongs to.',
+        'description' => '',
       ),
       'display' => 
       array (
@@ -46,23 +45,89 @@ $content[groups]  = array (
         'full' => 
         array (
           'format' => 'fieldset',
+          'exclude' => 0,
+        ),
+        4 => 
+        array (
+          'format' => 'fieldset',
+          'exclude' => 0,
         ),
         'label' => 'above',
       ),
     ),
-    'weight' => '-10',
-    'group_name' => 'group_vocabulary',
+    'weight' => '-4',
+    'group_name' => 'group_range',
   ),
 );
-$content[fields]  = array (
+$content['fields']  = array (
   0 => 
+  array (
+    'label' => 'Vocabulary',
+    'field_name' => 'field_vocabulary',
+    'type' => 'nodereference',
+    'widget_type' => 'nodereference_select',
+    'change' => 'Change basic information',
+    'weight' => '-10',
+    'autocomplete_match' => 'contains',
+    'size' => 60,
+    'description' => 'Specify the vocabulary this class belongs to.',
+    'default_value' => 
+    array (
+      0 => 
+      array (
+        'nid' => '',
+      ),
+    ),
+    'default_value_php' => '',
+    'default_value_widget' => NULL,
+    'group' => false,
+    'required' => 1,
+    'multiple' => '0',
+    'referenceable_types' => 
+    array (
+      'neo_vocabulary' => 'neo_vocabulary',
+      'neo_class' => 0,
+      'neo_property' => 0,
+      'sparql' => 0,
+    ),
+    'op' => 'Save field settings',
+    'module' => 'nodereference',
+    'widget_module' => 'nodereference',
+    'columns' => 
+    array (
+      'nid' => 
+      array (
+        'type' => 'int',
+        'unsigned' => true,
+        'not null' => false,
+        'index' => true,
+      ),
+    ),
+    'rdf_property' => '',
+    'display_settings' => 
+    array (
+      'label' => 
+      array (
+        'format' => 'inline',
+      ),
+      'teaser' => 
+      array (
+        'format' => 'hidden',
+      ),
+      'full' => 
+      array (
+        'format' => 'default',
+      ),
+    ),
+  ),
+  1 => 
   array (
     'label' => 'Label',
     'field_name' => 'field_label',
     'type' => 'text',
     'widget_type' => 'text_textfield',
     'change' => 'Change basic information',
-    'weight' => '-4',
+    'weight' => '-7',
     'rows' => '1',
     'size' => 60,
     'description' => 'This will be used for rdfs:label ',
@@ -70,7 +135,17 @@ $content[fields]  = array (
     array (
     ),
     'default_value_php' => '',
-    'default_value_widget' => NULL,
+    'default_value_widget' => 
+    array (
+      'field_label' => 
+      array (
+        0 => 
+        array (
+          'value' => '',
+          '_error_element' => 'default_value_widget][field_label][0][value',
+        ),
+      ),
+    ),
     'group' => false,
     'required' => 1,
     'multiple' => '0',
@@ -89,8 +164,10 @@ $content[fields]  = array (
         'size' => 'big',
         'not null' => false,
         'sortable' => true,
+        'views' => true,
       ),
     ),
+    'rdf_property' => '',
     'display_settings' => 
     array (
       'label' => 
@@ -107,178 +184,24 @@ $content[fields]  = array (
       ),
     ),
   ),
-  1 => 
-  array (
-    'label' => 'Domain',
-    'field_name' => 'field_domain2',
-    'type' => 'evocreference',
-    'widget_type' => 'evocreference_autocomplete',
-    'change' => 'Change basic information',
-    'weight' => '-3',
-    'description' => 'Select the class for the rdfs:domain of this property.',
-    'autocomplete_match' => 'contains',
-    'default_value' => 
-    array (
-      0 => 
-      array (
-        'evoc_term' => '',
-        '_error_element' => 'default_value_widget][field_domain2][0][evoc_term][evoc_term',
-      ),
-    ),
-    'default_value_php' => '',
-    'default_value_widget' => 
-    array (
-      'field_domain2' => 
-      array (
-        0 => 
-        array (
-          'evoc_term' => 
-          array (
-            'evoc_term' => '',
-            '_error_element' => 'default_value_widget][field_domain2][0][evoc_term][evoc_term',
-          ),
-          '_error_element' => 'default_value_widget][field_domain2][0][evoc_term][evoc_term',
-        ),
-      ),
-    ),
-    'group' => false,
-    'required' => 0,
-    'multiple' => '0',
-    'referenceable_term_types' => 
-    array (
-      'properties' => 'properties',
-      'classes' => 0,
-    ),
-    'op' => 'Save field settings',
-    'module' => 'evocreference',
-    'widget_module' => 'evocreference',
-    'columns' => 
-    array (
-      'evoc_term' => 
-      array (
-        'type' => 'varchar',
-        'length' => 64,
-        'not null' => false,
-        'sortable' => true,
-      ),
-    ),
-    'display_settings' => 
-    array (
-      'label' => 
-      array (
-        'format' => 'above',
-        'exclude' => 0,
-      ),
-      'teaser' => 
-      array (
-        'format' => 'default',
-        'exclude' => 0,
-      ),
-      'full' => 
-      array (
-        'format' => 'default',
-        'exclude' => 0,
-      ),
-      4 => 
-      array (
-        'format' => 'default',
-        'exclude' => 0,
-      ),
-    ),
-  ),
   2 => 
-  array (
-    'label' => 'Range',
-    'field_name' => 'field_range2',
-    'type' => 'evocreference',
-    'widget_type' => 'evocreference_autocomplete',
-    'change' => 'Change basic information',
-    'autocomplete_match' => 'contains',
-    'reverse_link' => 0,
-    'weight' => '-2',
-    'description' => '',
-    'default_value' => 
-    array (
-      0 => 
-      array (
-        'evoc_term' => '',
-        '_error_element' => 'default_value_widget][field_range2][0][evoc_term][evoc_term',
-      ),
-    ),
-    'default_value_php' => '',
-    'default_value_widget' => 
-    array (
-      'field_range2' => 
-      array (
-        0 => 
-        array (
-          'evoc_term' => 
-          array (
-            'evoc_term' => '',
-            '_error_element' => 'default_value_widget][field_range2][0][evoc_term][evoc_term',
-          ),
-          '_error_element' => 'default_value_widget][field_range2][0][evoc_term][evoc_term',
-        ),
-      ),
-    ),
-    'group' => false,
-    'required' => 0,
-    'multiple' => '0',
-    'referenceable_term_types' => 
-    array (
-      'properties' => 'properties',
-      'classes' => 0,
-    ),
-    'op' => 'Save field settings',
-    'module' => 'evocreference',
-    'widget_module' => 'evocreference',
-    'columns' => 
-    array (
-      'evoc_term' => 
-      array (
-        'type' => 'varchar',
-        'length' => 64,
-        'not null' => false,
-        'sortable' => true,
-      ),
-    ),
-    'display_settings' => 
-    array (
-      'label' => 
-      array (
-        'format' => 'above',
-        'exclude' => 0,
-      ),
-      'teaser' => 
-      array (
-        'format' => 'default',
-        'exclude' => 0,
-      ),
-      'full' => 
-      array (
-        'format' => 'default',
-        'exclude' => 0,
-      ),
-      4 => 
-      array (
-        'format' => 'default',
-        'exclude' => 0,
-      ),
-    ),
-  ),
-  3 => 
   array (
     'label' => 'Comment',
     'field_name' => 'field_comment',
     'type' => 'text',
     'widget_type' => 'text_textfield',
     'change' => 'Change basic information',
-    'weight' => '-1',
+    'weight' => '-6',
     'rows' => '1',
-    'size' => 60,
+    'size' => '130',
     'description' => 'This will be used for rdfs:comment',
     'default_value' => 
     array (
+      0 => 
+      array (
+        'value' => '',
+        '_error_element' => 'default_value_widget][field_comment][0][value',
+      ),
     ),
     'default_value_php' => '',
     'default_value_widget' => 
@@ -310,8 +233,10 @@ $content[fields]  = array (
         'size' => 'big',
         'not null' => false,
         'sortable' => true,
+        'views' => true,
       ),
     ),
+    'rdf_property' => '',
     'display_settings' => 
     array (
       'label' => 
@@ -328,15 +253,226 @@ $content[fields]  = array (
       ),
     ),
   ),
-  // The description is now a CCK field for consistency. The body of the node is not being used anymore.
+  3 => 
+  array (
+    'label' => 'Domain',
+    'field_name' => 'field_domain2',
+    'type' => 'evocreference',
+    'widget_type' => 'mxcheckbox_select',
+    'change' => 'Change basic information',
+    'weight' => '-5',
+    'description' => 'Select the class for the rdfs:domain of this property.',
+    'default_value' => 
+    array (
+      0 => 
+      array (
+        'evoc_term' => '',
+      ),
+    ),
+    'default_value_php' => '',
+    'default_value_widget' => 
+    array (
+      'field_domain2' => 
+      array (
+        0 => 
+        array (
+          'evoc_term' => '',
+        ),
+        'evoc_term' => '',
+      ),
+    ),
+    'group' => false,
+    'required' => 0,
+    'multiple' => '1',
+    'referenceable_term_types' => 
+    array (
+      'classes' => 'classes',
+      'properties' => 0,
+    ),
+    'op' => 'Save field settings',
+    'module' => 'evocreference',
+    'widget_module' => 'mxcheckboxselect',
+    'columns' => 
+    array (
+      'evoc_term' => 
+      array (
+        'type' => 'varchar',
+        'length' => 64,
+        'not null' => false,
+        'sortable' => true,
+      ),
+    ),
+    'rdf_property' => '',
+    'display_settings' => 
+    array (
+      'label' => 
+      array (
+        'format' => 'above',
+        'exclude' => 0,
+      ),
+      'teaser' => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      'full' => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      4 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+    ),
+  ),
   4 => 
+  array (
+    'label' => 'Literal as Range',
+    'field_name' => 'field_literal_as_range',
+    'type' => 'text',
+    'widget_type' => 'optionwidgets_onoff',
+    'change' => 'Change basic information',
+    'weight' => '3',
+    'description' => 'Check this box if do you want this property of type <b>rdfs:Literal</b>. The class rdfs:Literal represents the class of literal values such as strings and integers. 
+<br/><b>note</b> that selecting this checkbox is the same as selecting the class <b>rdfs: Literal</b> from the list of classes\' ranges.',
+    'default_value' => 
+    array (
+      0 => 
+      array (
+        'value' => '',
+      ),
+    ),
+    'default_value_php' => '',
+    'default_value_widget' => 
+    array (
+      'field_literal_as_range' => 
+      array (
+        'value' => false,
+      ),
+    ),
+    'group' => 'group_range',
+    'required' => 0,
+    'multiple' => '0',
+    'text_processing' => '0',
+    'max_length' => '',
+    'allowed_values' => '|
+1|Literals as range.',
+    'allowed_values_php' => '',
+    'op' => 'Save field settings',
+    'module' => 'text',
+    'widget_module' => 'optionwidgets',
+    'columns' => 
+    array (
+      'value' => 
+      array (
+        'type' => 'text',
+        'size' => 'big',
+        'not null' => false,
+        'sortable' => true,
+        'views' => true,
+      ),
+    ),
+    'rdf_property' => '',
+    'display_settings' => 
+    array (
+      'label' => 
+      array (
+        'format' => 'above',
+        'exclude' => 0,
+      ),
+      'teaser' => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      'full' => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      4 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+    ),
+  ),
+  5 => 
+  array (
+    'label' => 'Range',
+    'field_name' => 'field_range2',
+    'type' => 'evocreference',
+    'widget_type' => 'mxcheckbox_select',
+    'change' => 'Change basic information',
+    'weight' => '4',
+    'description' => '',
+    'default_value' => 
+    array (
+    ),
+    'default_value_php' => '',
+    'default_value_widget' => 
+    array (
+      'field_range2' => 
+      array (
+        'evoc_term' => '',
+      ),
+    ),
+    'group' => 'group_range',
+    'required' => 0,
+    'multiple' => '1',
+    'referenceable_term_types' => 
+    array (
+      'classes' => 'classes',
+      'properties' => 0,
+    ),
+    'op' => 'Save field settings',
+    'module' => 'evocreference',
+    'widget_module' => 'mxcheckboxselect',
+    'columns' => 
+    array (
+      'evoc_term' => 
+      array (
+        'type' => 'varchar',
+        'length' => 64,
+        'not null' => false,
+        'sortable' => true,
+      ),
+    ),
+    'rdf_property' => '',
+    'display_settings' => 
+    array (
+      'label' => 
+      array (
+        'format' => 'above',
+        'exclude' => 0,
+      ),
+      'teaser' => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      'full' => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      4 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+    ),
+  ),
+  6 => 
   array (
     'label' => 'Description of the property (only used in the documentation)',
     'field_name' => 'field_description2',
     'type' => 'text',
     'widget_type' => 'text_textarea',
     'change' => 'Change basic information',
-    'weight' => '0',
+    'weight' => '-3',
     'rows' => '5',
     'size' => 60,
     'description' => '',
@@ -379,14 +515,17 @@ $content[fields]  = array (
         'size' => 'big',
         'not null' => false,
         'sortable' => true,
+        'views' => true,
       ),
       'format' => 
       array (
         'type' => 'int',
         'unsigned' => true,
         'not null' => false,
+        'views' => false,
       ),
     ),
+    'rdf_property' => '',
     'display_settings' => 
     array (
       'label' => 
@@ -411,76 +550,14 @@ $content[fields]  = array (
       ),
     ),
   ),
-  5 => 
-  array (
-    'label' => 'Vocabulary',
-    'field_name' => 'field_vocabulary',
-    'type' => 'nodereference',
-    'widget_type' => 'nodereference_select',
-    'change' => 'Change basic information',
-    'weight' => '-10',
-    'description' => 'Specify the vocabulary this class belongs to.',
-    'default_value' => 
-    array (
-    ),
-    'default_value_php' => '',
-    'default_value_widget' => 
-    array (
-      'field_vocabulary' => 
-      array (
-        'nid' => 
-        array (
-          'nid' => '',
-        ),
-      ),
-    ),
-    'group' => 'group_vocabulary',
-    'required' => 1,
-    'multiple' => '0',
-    'referenceable_types' => 
-    array (
-      NEOLOGISM_CT_VOCABULARY => NEOLOGISM_CT_VOCABULARY,
-      0 => 1,
-      NEOLOGISM_CT_CLASS => 0,
-      'page' => false,
-      NEOLOGISM_CT_PROPERTY => 0,
-    ),
-    'op' => 'Save field settings',
-    'module' => 'nodereference',
-    'widget_module' => 'nodereference',
-    'columns' => 
-    array (
-      'nid' => 
-      array (
-        'type' => 'int',
-        'unsigned' => true,
-        'not null' => false,
-      ),
-    ),
-    'display_settings' => 
-    array (
-      'label' => 
-      array (
-        'format' => 'inline',
-      ),
-      'teaser' => 
-      array (
-        'format' => 'hidden',
-      ),
-      'full' => 
-      array (
-        'format' => 'default',
-      ),
-    ),
-  ),
-  6 => 
+  7 => 
   array (
     'label' => 'Inverse',
     'field_name' => 'field_inverse2',
     'type' => 'evocreference',
     'widget_type' => 'evocreference_autocomplete',
     'change' => 'Change basic information',
-    'weight' => '1',
+    'weight' => '-2',
     'autocomplete_match' => 'contains',
     'reverse_link' => 0,
     'description' => '',
@@ -529,6 +606,7 @@ $content[fields]  = array (
         'sortable' => true,
       ),
     ),
+    'rdf_property' => '',
     'display_settings' => 
     array (
       'label' => 
@@ -553,14 +631,14 @@ $content[fields]  = array (
       ),
     ),
   ),
-  7 => 
+  8 => 
   array (
     'label' => 'Functional Property',
     'field_name' => 'field_fp',
     'type' => 'text',
     'widget_type' => 'optionwidgets_onoff',
     'change' => 'Change basic information',
-    'weight' => '4',
+    'weight' => '-1',
     'description' => 'Check this box, if your property is an FP, i.e. when you use this property in a statement, then the subject of the statement uniquely determines its object.',
     'default_value' => 
     array (
@@ -592,17 +670,42 @@ $content[fields]  = array (
         'size' => 'big',
         'not null' => false,
         'sortable' => true,
+        'views' => true,
+      ),
+    ),
+    'rdf_property' => '',
+    'display_settings' => 
+    array (
+      'label' => 
+      array (
+        'format' => 'above',
+        'exclude' => 0,
+      ),
+      'teaser' => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      'full' => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      4 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
       ),
     ),
   ),
-  8 => 
+  9 => 
   array (
     'label' => 'Inverse Functional Property',
     'field_name' => 'field_ifp',
     'type' => 'text',
     'widget_type' => 'optionwidgets_onoff',
     'change' => 'Change basic information',
-    'weight' => '5',
+    'weight' => 0,
     'description' => 'Check this box, if your property is an IFP, i.e. the object of a statment that uses your property uniquely determines its subject.',
     'default_value' => 
     array (
@@ -634,47 +737,57 @@ $content[fields]  = array (
         'size' => 'big',
         'not null' => false,
         'sortable' => true,
+        'views' => true,
+      ),
+    ),
+    'rdf_property' => '',
+    'display_settings' => 
+    array (
+      'label' => 
+      array (
+        'format' => 'above',
+        'exclude' => 0,
+      ),
+      'teaser' => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      'full' => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      4 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
       ),
     ),
   ),
-  9 => 
+  10 => 
   array (
     'label' => 'Superproperty',
     'field_name' => 'field_superproperty2',
     'type' => 'evocreference',
-    'widget_type' => 'evocreference_autocomplete',
+    'widget_type' => 'mxcheckbox_select',
     'change' => 'Change basic information',
-    'weight' => '6',
-    'autocomplete_match' => 'contains',
-    'reverse_link' => 0,
+    'weight' => '1',
     'description' => '',
     'default_value' => 
     array (
-      0 => 
-      array (
-        'evoc_term' => '',
-        '_error_element' => 'default_value_widget][field_superproperty2][0][evoc_term][evoc_term',
-      ),
     ),
     'default_value_php' => '',
     'default_value_widget' => 
     array (
       'field_superproperty2' => 
       array (
-        0 => 
-        array (
-          'evoc_term' => 
-          array (
-            'evoc_term' => '',
-            '_error_element' => 'default_value_widget][field_superproperty2][0][evoc_term][evoc_term',
-          ),
-          '_error_element' => 'default_value_widget][field_superproperty2][0][evoc_term][evoc_term',
-        ),
+        'evoc_term' => '',
       ),
     ),
     'group' => false,
     'required' => 0,
-    'multiple' => '0',
+    'multiple' => '1',
     'referenceable_term_types' => 
     array (
       'properties' => 'properties',
@@ -682,7 +795,7 @@ $content[fields]  = array (
     ),
     'op' => 'Save field settings',
     'module' => 'evocreference',
-    'widget_module' => 'evocreference',
+    'widget_module' => 'mxcheckboxselect',
     'columns' => 
     array (
       'evoc_term' => 
@@ -693,6 +806,7 @@ $content[fields]  = array (
         'sortable' => true,
       ),
     ),
+    'rdf_property' => '',
     'display_settings' => 
     array (
       'label' => 
@@ -718,7 +832,9 @@ $content[fields]  = array (
     ),
   ),
 );
-$content[extra]  = array (
+$content['extra']  = array (
   'title' => '-9',
-  'menu' => '-5',
+  'revision_information' => '2',
+  'menu' => '-8',
+  'path' => '3',
 );
