@@ -331,7 +331,7 @@ define('VCARD_NS'   , 'http://www.w3.org/2001/vcard-rdf/3.0#');
 global $default_prefixes;
 $default_prefixes = array(
    RDF_NAMESPACE_PREFIX => RDF_NAMESPACE_URI,
-   RDF_SCHEMA_PREFIX => RDF_SCHEMA_URI,
+   RDF_SCHEMA_PREFIX => 'http://www.w3.org/2000/01/rdf-schema#',//RDF_SCHEMA_URI,
    'xsd'  => 'http://www.w3.org/2001/XMLSchema#',
    OWL_PREFIX => OWL_URI,
    'dc' => 'http://purl.org/dc/elements/1.1/',
