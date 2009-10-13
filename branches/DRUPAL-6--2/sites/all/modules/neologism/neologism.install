@@ -1,5 +1,86 @@
 <?php
 // $Id:  $
+/**
+ * 
+ * @return 
+ */
+function neologism_install() {
+  // remove the old content types
+  node_type_delete(NEOLOGISM_CT_PROPERTY);
+  node_type_delete(NEOLOGISM_CT_CLASS);
+  node_type_delete(NEOLOGISM_CT_VOCABULARY);
+  
+  $ct = content_types();
+
+  if (!isset($ct[NEOLOGISM_CT_VOCABULARY])) {
+    module_load_include('install', 'neologism', 'neologism');
+    _neologism_create_content('vocabulary');
+  }
+  if (!isset($ct[NEOLOGISM_CT_CLASS])) {
+    module_load_include('install', 'neologism', 'neologism');
+    _neologism_create_content('class');
+  }
+  if (!isset($ct[NEOLOGISM_CT_PROPERTY])) {
+    module_load_include('install', 'neologism', 'neologism');
+    _neologism_create_content('property');
+  }
+  
+  drupal_set_message(t('Neologism 2 successfully installed.'));
+}
+
+/**
+ * 
+ * @return 
+ */
+function neologism_uninstall() {
+  node_type_delete(NEOLOGISM_CT_PROPERTY);
+  node_type_delete(NEOLOGISM_CT_CLASS);
+  node_type_delete(NEOLOGISM_CT_VOCABULARY);
+}
+
+/**
+ * Implementation of hook_enable().
+ */
+function neologism_enable () {
+  drupal_set_message(t('Neologism 2 is now enabled.'));
+  
+  $ct = content_types();
+
+  if (!isset($ct[NEOLOGISM_CT_VOCABULARY])) {
+    module_load_include('install', 'neologism', 'neologism');
+    _neologism_create_content('vocabulary');
+  }
+  if (!isset($ct[NEOLOGISM_CT_CLASS])) {
+    module_load_include('install', 'neologism', 'neologism');
+    _neologism_create_content('class');
+  }
+  if (!isset($ct[NEOLOGISM_CT_PROPERTY])) {
+    module_load_include('install', 'neologism', 'neologism');
+    _neologism_create_content('property');
+  }
+  
+  drupal_set_message(t('Neologism 2 successfully installed.'));
+}
+
+/**
+ * Update for version 0.01
+ * @return 
+ */
+function neologism_update_6034() {
+  $ret = array();
+  return $ret;
+}
+
+function neologism_update_6200() {
+  module_load_include('install', 'neologism', 'neologism');
+  $ret = array();
+  
+  $ret[] = update_sql('delete from {node} where type = "'.NEOLOGISM_CT_PROPERTY.'"');
+  $ret[] = update_sql('delete from {node} where type = "'.NEOLOGISM_CT_CLASS.'"');
+  $ret[] = update_sql('delete from {node} where type = "'.NEOLOGISM_CT_VOCABULARY.'"');
+  
+  return $ret;
+}
 
 /**
  * Definitions of the CCK content types for Neologism which get created via hook_enable()
@@ -21,14 +102,4 @@ function _neologism_create_content($type) {
   }
   drupal_execute("content_copy_import_form", $form);
   content_clear_type_cache();
-}
-
-function neologism_update_1() {
-  $ret = array();
-  return $ret;
-}
-
-function neologism_update_6200() {
-  $ret = array();
-  return $ret;
 }

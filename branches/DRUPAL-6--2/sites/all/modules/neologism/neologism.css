@@ -173,6 +173,7 @@ img#legend {
 #classview .abstract {
   font-size: 12px;
   margin: 0px 0px 0px 0px;
+  text-align: justify;
 }
 
 #classview .abstract em {
@@ -209,6 +210,7 @@ img#legend {
 }
 
 #classview .links {
+  margin-top: 5px;
   font-size: 12px;  
 }
 
@@ -230,8 +232,12 @@ img#legend {
   margin: 10px 0px 10px 0px;
 }
 
+#field_superclass2_id {
+  /*border:1px solid #c3daf9;*/
+}
+
 #field_disjointwith2_id {
-  margin: 15px 0px 15px 0px;
+  margin: 0px 0px 15px 0px;
 }
 
 
@@ -274,3 +280,7 @@ img#legend {
   margin: 0px 0px 3px 0px;
 }
 
+#class-tree {
+  margin-top: 15px;
+  
+}
