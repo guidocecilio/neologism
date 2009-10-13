@@ -629,10 +629,17 @@ Class SparqlEngine extends Object{
                         unset($patternlist[$key]);
                         break;
                     }
-                    else if(is_int($pattern['unionWith'])){
+                    else if(is_int($pattern['unionWith'])) {
                         $patternlist[$pattern['unionWith']]['hasUnion']--;
-                        foreach($pattern['patternResult'] as $value)
-                        array_push($patternlist[$pattern['unionWith']]['patternResult'],$value);
+                        foreach( $pattern['patternResult'] as $value ) {
+                          // comment by guidocecilio, 5 October 2009 
+                          // fixed the bug when $patternlist[$pattern['unionWith']]['patternResult'] it is not initialized
+                          // we need to initialize it otherwise array_push fail showing a warning 
+                          if ( !is_array($patternlist[$pattern['unionWith']]['patternResult']) ) {
+                            $patternlist[$pattern['unionWith']]['patternResult'] = array();
+                          }
+                          array_push($patternlist[$pattern['unionWith']]['patternResult'], $value);
+                        }
                         unset($patternlist[$key]);
                         break;
                     }else{
