@@ -49,7 +49,7 @@ function evoc_schema() {
   
   $schema['evoc_rdf_superproperties'] = array(
     'fields' => array(
-      'id' => array('type' => 'serial', 'unsigned' => 'TRUE','size' => 'normal', 'not null' => TRUE),
+      'id' => array('type' => 'serial', 'unsigned' => TRUE,'size' => 'normal', 'not null' => TRUE),
       'prefix' => array('type' => 'varchar', 'length' => '132', 'not null' => TRUE, 'description' => 'this is the CURIE reference or Id'),
       'reference' => array('type' => 'varchar', 'length' => '132', 'not null' => TRUE, 'description' => 'this is the CURIE reference or Id'),
       'superproperty' => array('type' => 'varchar', 'length' => '265', 'not null' => TRUE),
@@ -59,7 +59,7 @@ function evoc_schema() {
   
   $schema['evoc_rdf_propertiesdomains'] = array(
     'fields' => array(
-      'id' => array('type' => 'serial', 'unsigned' => 'TRUE','size' => 'normal', 'not null' => TRUE),
+      'id' => array('type' => 'serial', 'unsigned' => TRUE,'size' => 'normal', 'not null' => TRUE),
       'prefix' => array('type' => 'varchar', 'length' => '132', 'not null' => TRUE, 'description' => 'this is the CURIE reference or Id'),
       'reference' => array('type' => 'varchar', 'length' => '132', 'not null' => TRUE, 'description' => 'this is the CURIE reference or Id'),
       'rdf_domain' => array('type' => 'varchar', 'length' => '265', 'not null' => TRUE),
@@ -69,10 +69,24 @@ function evoc_schema() {
   
   $schema['evoc_rdf_propertiesranges'] = array(
     'fields' => array(
-      'id' => array('type' => 'serial', 'unsigned' => 'TRUE','size' => 'normal', 'not null' => TRUE),
+      'id' => array('type' => 'serial', 'unsigned' => TRUE,'size' => 'normal', 'not null' => TRUE),
       'prefix' => array('type' => 'varchar', 'length' => '132', 'not null' => TRUE, 'description' => 'this is the CURIE reference or Id'),
       'reference' => array('type' => 'varchar', 'length' => '132', 'not null' => TRUE, 'description' => 'this is the CURIE reference or Id'),
       'rdf_range' => array('type' => 'varchar', 'length' => '265', 'not null' => TRUE),
+    ),
+    'primary key' => array('id'),
+  );
+  
+  $schema['evoc_sparql_endpoints'] = array(
+    'fields' => array(
+      'id' => array('type' => 'serial', 'unsigned' => TRUE, 'size' => 'normal', 'not null' => TRUE),
+      'name' => array('type' => 'varchar', 'length' => '255', 'not null' => TRUE, 'description' => 'Endpoint name or project name.'),
+      'enabled' => array('type' => 'int', 'unsigned' => TRUE, 'size' => 'small', 'not null' => TRUE, 'description' => 'describe when the endpoint is enabled.'),
+      'status' => array('type' => 'varchar', 'length' => '255', 'not null' => TRUE, 'description' => 'endpoint status'),
+      'endpoint' => array('type' => 'varchar', 'length' => '255', 'not null' => TRUE),
+      'webform' => array('type' => 'varchar', 'length' => '255', 'not null' => TRUE),
+      'comment' => array('type' => 'text', 'not null' => TRUE),
+      'data_exposed' => array('type' => 'text', 'not null' => TRUE),
     ),
     'primary key' => array('id'),
   );

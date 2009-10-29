@@ -22,10 +22,81 @@ function evoc_menu() {
     'page arguments' => array('evoc_remove_form'),
     'access arguments' => array('administer content types'),
   );
-
-
+ 
+  $items['admin/settings/evoc/list'] = array(
+    'title' => 'List SPARQL Endpoints',
+    'weight' => -10,
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'file' => 'evoc.admin.inc',
+  );
+  
+  $items['admin/settings/evoc'] = array(
+    'title' => 'Evoc settings',
+    'description' => 'Managment the settings for evoc module.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('evoc_admin_settings'),
+    'access arguments' => array('administer site configuration'),
+    'type' => MENU_NORMAL_ITEM,
+    'file' => 'evoc.admin.inc'
+  );
+  
+  $items['admin/settings/evoc/add'] = array(
+    'title' => 'Add SPARQL Endpoint',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('evoc_edit_sparql_endpoint', 'add'),
+    'access arguments' => array('administer site configuration'),
+    'type' => MENU_LOCAL_TASK,
+    'file' => 'evoc.admin.inc',
+  );
+  
+  $items['admin/settings/evoc/%evoc_endpoint/edit'] = array(
+    'title' => 'Edit SPARQL Endpoint item',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('evoc_edit_sparql_endpoint', 'edit', 3),
+    'access arguments' => array('administer site configuration'),
+    'type' => MENU_CALLBACK,
+    'file' => 'evoc.admin.inc',
+  );
+  
+  $items['admin/settings/evoc/%evoc_endpoint/delete'] = array(
+    'title' => 'Edit SPARQL Endpoint item',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('evoc_delete_endpoint_confirm', 3),
+    'access arguments' => array('administer site configuration'),
+    'type' => MENU_CALLBACK,
+    'file' => 'evoc.admin.inc',
+  );
+  
   return $items;
 }
+
+/**
+ * Load the data for a single endpoint.
+ */
+function evoc_endpoint_load($id) {
+  $rs = db_query("select * from {evoc_sparql_endpoints} where id = '%d'", $id);
+  if ($rs) {
+		return db_fetch_object($rs);
+	}
+ 
+  //db_fetch_array(db_query("SELECT * FROM {evoc_sparql_endpoints} WHERE id = '%d'", $id));
+  
+  return NULL; 
+}
+
+
+/**
+ * Implemenation of hook_theme().
+ */
+function evoc_theme() {
+  return array(
+    'evoc_admin_settings' => array(
+      'file' => 'evoc.admin.inc',
+      'arguments' => array('form' => NULL),
+    ),
+  );
+}
+
 
 function evoc_import_form($form_state) {
   $form['help'] = array(
@@ -264,8 +335,12 @@ http://www.w3.org/2001/vcard-rdf/3.0#
  */
 function evoc_import_vocabulary($vocabulary_uri, $vocabulary_prefix) {
   $fetched_terms = evoc_fetch_vocabulary($vocabulary_uri, $vocabulary_prefix);
-//var_dump($fetched_terms);
-  _evoc_save_rdf_terms($vocabulary_uri, $vocabulary_prefix, $fetched_terms);
+  if( $fetched_terms != NULL ) {
+    _evoc_save_rdf_terms($vocabulary_uri, $vocabulary_prefix, $fetched_terms);
+  }
+  else {
+    evoc_set_message("There is not result for the SPARQL query. May be you are using the incorrect SPARQL Endpoint", $type = 'warning', $repeat = FALSE);
+  }
 }
 
 /*
@@ -340,13 +415,19 @@ function evoc_fetch_vocabulary($vocabulary_uri, $vocabulary_prefix, $ignore_base
   $fetched_terms = array();
   foreach ($term_queries as $query) {
     $endpoint = 'http://demo.openlinksw.com/sparql/';
-    //$endpoint = 'http://www.sparql.org/sparql';
-    $endpoint = 'http://jena.hpl.hp.com:2020/sparql';
+    $endpoint = 'http://www.sparql.org/sparql';
+    //$endpoint = 'http://jena.hpl.hp.com:2020/sparql';
+    //$endpoint = 'http://dbpedia.org/sparql';
     $sparql_res = sparql_request($endpoint, $query['query']);
 
+    //FIXME: this code need a revision for detect a correct sparql endpoint
     if (!is_array($sparql_res)) {
+      //evoc_set_message("The SPARQL endpoint <a href=\"$endpoint\">$endpoint</a> returned an error. Please check it and make sure it allows to load from URIs via FROM clauses.", $type = 'warning', $repeat = FALSE);
       evoc_set_message("The SPARQL endpoint <a href=\"$endpoint\">$endpoint</a> returned an error. Please check it and make sure it allows to load from URIs via FROM clauses.", $type = 'warning', $repeat = FALSE);
+      return NULL;
     }
+    
+    
     // Parse the SPARQL results and extract the relevant terms.
     foreach ($sparql_res as $res_term) {
       if (isset($res_term['class'])) {
