@@ -339,7 +339,9 @@ function evoc_import_vocabulary($vocabulary_uri, $vocabulary_prefix) {
     _evoc_save_rdf_terms($vocabulary_uri, $vocabulary_prefix, $fetched_terms);
   }
   else {
-    evoc_set_message("There is not result for the SPARQL query. May be you are using the incorrect SPARQL Endpoint", $type = 'warning', $repeat = FALSE);
+    evoc_set_message('There is not result for the SPARQL query. 
+      May be you are using the incorrect SPARQL Endpoint.<br/>You can go to the '
+      .l('Evoc admin section', 'admin/settings/evoc'). ' and change the default endpoint.', 'error');
   }
 }
 
@@ -411,19 +413,20 @@ function evoc_fetch_vocabulary($vocabulary_uri, $vocabulary_prefix, $ignore_base
   // FIXME in sparql module.
   require_once drupal_get_path('module', 'sparql') . '/sparql.client.inc';
 
+  // this is the point where we query to the cloud using the default sparql endpoint 
+  $endpoints = _evoc_get_sparqlendpoint();
+  //$endpoint = 'http://www.sparql.org/sparql';
+  //$endpoint = 'http://jena.hpl.hp.com:2020/sparql';
   // Loop through all the various queries in order to extract as many classes and properties as possible.
   $fetched_terms = array();
   foreach ($term_queries as $query) {
-    $endpoint = 'http://demo.openlinksw.com/sparql/';
-    $endpoint = 'http://www.sparql.org/sparql';
-    //$endpoint = 'http://jena.hpl.hp.com:2020/sparql';
-    //$endpoint = 'http://dbpedia.org/sparql';
-    $sparql_res = sparql_request($endpoint, $query['query']);
+    // TODO: create a sequencial list of execution for the sparql_request, 
+    // so, this way we can select a differents endpoints each time a query fail querying using the selected endpoint
+    $sparql_res = sparql_request($endpoints[0], $query['query']);
 
     //FIXME: this code need a revision for detect a correct sparql endpoint
     if (!is_array($sparql_res)) {
-      //evoc_set_message("The SPARQL endpoint <a href=\"$endpoint\">$endpoint</a> returned an error. Please check it and make sure it allows to load from URIs via FROM clauses.", $type = 'warning', $repeat = FALSE);
-      evoc_set_message("The SPARQL endpoint <a href=\"$endpoint\">$endpoint</a> returned an error. Please check it and make sure it allows to load from URIs via FROM clauses.", $type = 'warning', $repeat = FALSE);
+      evoc_set_message("The SPARQL endpoint <a href=\"$endpoint\">$endpoint</a> returned an error. Please check it and make sure it allows to load from URIs via FROM clauses.", 'warning');
       return NULL;
     }
     
@@ -997,7 +1000,44 @@ function evoc_term_exists($term, $string_term, $class_term = TRUE) {
   return $count > 0;  
 }
 
+/**
+ * 
+ * @param object $message
+ * @param object $type [optional]
+ * @return 
+ */
 function evoc_set_message($message, $type = 'status') {
   drupal_set_message('Evoc - '.$message, $type);
 }
 
+/**
+ * Return an array containing the lists of enabled endpoints if $default_only == FALSE otherwise return the default endpoint only.
+ * In both options the returned array contain in first place the default endpoint.
+ * @param object $default_only [optional]
+ * @return array  
+ */
+function _evoc_get_sparqlendpoint($default_only = TRUE) {
+  // get the default endpoint id, if the valiable does not exists we don't have nothing to do
+  $default_endpoint_id = variable_get('evoc_sparqlendpoint', NULL);
+  $result = NULL;
+  if( $default_endpoint_id != NULL ) {
+    $result = db_fetch_object( db_query( db_rewrite_sql('select endpoint from {evoc_sparql_endpoints} where id = "%d"'), $default_endpoint_id));
+  }
+  
+  if( !$result ) {
+    return NULL;
+  }    
+  
+  $return_array = array($result->endpoint);
+  if( $default_only ) {
+    return $return_array;
+  }
+  else {
+    $query_result = db_query( db_rewrite_sql('select endpoint from {evoc_sparql_endpoints} where id != "%d" and enabled = "1"'), $default_endpoint_id);
+    while( $object = db_fetch_object($query_result) ) {
+      $return_array[] = $object->endpoint;        
+    }
+  }
+  
+  return $return_array;
+}
