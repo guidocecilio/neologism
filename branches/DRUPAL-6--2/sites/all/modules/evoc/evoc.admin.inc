@@ -9,6 +9,10 @@
  * @package evoc.module
  */
 
+/**
+ * default callback for evoc admin section
+ * @return 
+ */
 function evoc_admin_settings() {
   $query = 'select * from {evoc_sparql_endpoints}';
 	$rs = db_query($query);
@@ -72,12 +76,29 @@ function evoc_admin_settings() {
 	return $form;
 }
 
+/**
+ * Submit callback
+ * @param object $form
+ * @param object $form_state
+ * @return 
+ */
 function evoc_admin_settings_submit($form, &$form_state) {
   $endpoint = $form_state['values'];
-  variable_set('evoc_sparqlendpoint', $endpoint['default']);
+  
   foreach ( $endpoint['enabled'] as $key => $value ) {
-    db_query("update {evoc_sparql_endpoints} set enabled = '%d' where id = '%d'", $value, $key);
+    db_query("update {evoc_sparql_endpoints} set enabled = '%d' where id = '%d'", ($value != 0), $key);
   }
+  
+  if( !$endpoint['enabled'][$endpoint['default']] ) {
+    foreach ( $endpoint['enabled'] as $key => $value ) {
+      if( $value ) {
+        $endpoint['default'] = $key;
+        break;
+      }
+    }    
+  }
+  
+  variable_set('evoc_sparqlendpoint', $endpoint['default']);
   
   $form_state['redirect'] = 'admin/settings/evoc';
 }
@@ -218,6 +239,9 @@ function evoc_edit_sparql_endpoint_validate($form, &$form_state) {
 
 /**
  * Submit function for adding or editing a endpoints.
+ * @param object $form
+ * @param object $form_state
+ * @return 
  */
 function evoc_edit_sparql_endpoint_submit($form, &$form_state) {
   $endpoint = $form_state['values'];
@@ -280,12 +304,21 @@ function theme_evoc_admin_settings($form) {
 	return $output;
 }
 
+/**
+ * Submit callback for delection of a sparql endpoint
+ * @param object $form
+ * @param object $form_state
+ * @return 
+ */
 function evoc_delete_endpoint_submit($form, &$form_state) {
   $form_state['redirect'] = 'admin/settings/evoc/'. $form_state['values']['holder']['id'] .'/delete';
 }
 
 /**
- * Build a confirm form for deletion of a custom menu.
+ * Build a confirm form for deletion of a sparql endpoint.
+ * @param object $form_state
+ * @param object $endpoint
+ * @return 
  */
 function evoc_delete_endpoint_confirm(&$form_state, $endpoint) {
   $form_state['#endpoint'] = $endpoint;
@@ -296,6 +329,12 @@ function evoc_delete_endpoint_confirm(&$form_state, $endpoint) {
     $caption, t('Delete'), t('Cancel'));
 }
 
+/**
+ * Confirmation submit callback
+ * @param object $form
+ * @param object $form_state
+ * @return 
+ */
 function evoc_delete_endpoint_confirm_submit($form, &$form_state) {
 	if ($form_state['values']['confirm']) {
 		$endpoint = $form_state['#endpoint'];
