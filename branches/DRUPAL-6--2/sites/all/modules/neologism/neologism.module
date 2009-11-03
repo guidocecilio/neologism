@@ -909,222 +909,222 @@ function neologism_link($type, $node = NULL, $teaser = FALSE) {
  * Implementation of hook_nodeapi().
  */
 function neologism_nodeapi(&$node, $op, $teaser, $page) {
-  if (module_exists('path')) {
-    switch ($op) {
-      case 'prepare':
-        if( $node->type == NEOLOGISM_CT_CLASS ) {
-          variable_set('previous_class_title', $node->title);
-        }
-        elseif( $node->type == NEOLOGISM_CT_PROPERTY ) {
-          variable_set('previous_property_title', $node->title);
-        }
-   
-    	  break;
-        
-      case 'load':
-        if ($node->type == NEOLOGISM_CT_VOCABULARY and arg(0) == TRUE and arg(1) == TRUE and arg(2) == FALSE) {
-          //vocabulary root, so content negotiation, provide an appropiate representation
-          $request_uri = $_SERVER["REQUEST_URI"];
-          $accept = $_SERVER["HTTP_ACCEPT"];
-          $redirect_uri = neologism_get_preferred_uri($request_uri, $accept);
-          header("HTTP/1.1 303");
-          header("Vary: Accept");
-          header("Location: " . $redirect_uri);
-        }
-        break;
-        
-      // catching the view event
-      case 'view':
-        if( $node->type == NEOLOGISM_CT_VOCABULARY ) {
-          $node->authors = array();
-          foreach($node->field_authors as $author) {
-            $author = user_load($author);
-            if( empty($author->name) ) {
-              $node->authors[] = 'anonymous';
-            }
-            else {
-              $node->authors[] = l($author->name, 'user/'. $author->uid, array('attributes' => array('title' => $author->name)));
-            }
-          }
-        }
-        break;
-        
-      case 'update':
-        if($node->type == NEOLOGISM_CT_VOCABULARY) {
-          _neologism_update_aliases($node);
-        }
-        elseif( $node->type == NEOLOGISM_CT_CLASS ) {
-          $term = array();
-          
-          // $node->update_by_reference is used when an update comes from other references than a normal update
-          $term['previous_id'] = !isset($node->update_by_reference) ? variable_get('previous_class_title', $node->title) : $node->title;
-          $term['id'] = $node->title;
-          $term['type'] = 'class';
-          $term['label'] = $node->field_label[0]['value']; 
-          $term['comment'] = $node->field_comment[0]['value'];
-          
-          // normalize the superclasses array to used by evoc's evoc_write_class() method
-          $term['superclasses'] = array();
-          if( !empty($node->field_superclass2) && is_array($node->field_superclass2) ) {
-            foreach ( $node->field_superclass2 as $value ) {
-              if( !empty($value['evoc_term']) ) {
-                $term['superclasses'][] = $value['evoc_term'];
-              }
-            }
-          }
-          
-          // load vocabulary's node to get its title as namespace/prefix for this class 
-          $vocabulary = node_load($node->field_vocabulary[0][nid]);
-          $term['prefix'] = $vocabulary->title; 
-          
-          evoc_update_class($term);  
-        }
-        elseif( $node->type == NEOLOGISM_CT_PROPERTY ) {
-          $term = array();
-          // $node->update_by_reference is used when an update comes from other references than a normal update
-          $term['previous_id'] = !isset($node->update_by_reference) ? variable_get('previous_property_title', $node->title) : $node->title;
-          $term['id'] = $node->title;
-          $term['type'] = 'property';
-          $term['label'] = $node->field_label[0]['value']; 
-          $term['comment'] = $node->field_comment[0]['value'];
-          
-          // normaliza the evoc's fields
-          $term['rdf_domain'] = array();
-          if( !empty($node->field_domain2) && is_array($node->field_domain2) ) {
-            foreach ( $node->field_domain2 as $value ) {
-              if( !empty($value['evoc_term']) ) {
-                $term['rdf_domain'][] = $value['evoc_term'];
-              }
-            }
-          }
-          
-          $term['rdf_range'] = array();
-          if( !empty($node->field_range2) && is_array($node->field_range2) ) {
-            foreach ( $node->field_range2 as $value ) {
-              if( !empty($value['evoc_term']) ) {
-                $term['rdf_range'][] = $value['evoc_term'];
-              }
-            }
-          }
-          
-          $term['subpropertyof'] = array();
-          if( !empty($node->field_superproperty2) && is_array($node->field_superproperty2) ) {
-            foreach ( $node->field_superproperty2 as $value ) {
-              if( !empty($value['evoc_term']) ) {
-                $term['subpropertyof'][] = $value['evoc_term'];
-              }
-            }
-          }
-   
-          // load vocabulary's node to get its title as namespace/prefix for this class 
-          $vocabulary = node_load($node->field_vocabulary[0][nid]);
-          $term['prefix'] = $vocabulary->title; 
-          
-          evoc_update_property($term);  
-        }
-        
-        break;
+  
+  switch ($op) {
+    case 'prepare':
+      if( $node->type == NEOLOGISM_CT_CLASS ) {
+        variable_set('previous_class_title', $node->title);
+      }
+      elseif( $node->type == NEOLOGISM_CT_PROPERTY ) {
+        variable_set('previous_property_title', $node->title);
+      }
+ 
+  	  break;
       
-      case 'insert':
-        // Create a user friendly alias to the vocabulary node
-        if($node->type == NEOLOGISM_CT_VOCABULARY) {
-          _neologism_set_aliases($node);
-        }
-        
-        // Update evoc terms repository
-        // we don't need to worry about the existence of this term in the respository
-        // evoc module check this for us.
-        
-        // behavior to update evoc's classes list when a new class' content type is added.
-        elseif( $node->type == NEOLOGISM_CT_CLASS ) {
-          $term = array();
-          $term['id'] = $node->title;
-          $term['type'] = 'class';
-          $term['label'] = $node->field_label[0]['value']; 
-          $term['comment'] = $node->field_comment[0]['value'];
-          
-          // normalize the superclasses array to used by evoc's evoc_write_class() method
-          $term['superclasses'] = array();
-          if( !empty($node->field_superclass2) && is_array($node->field_superclass2) ) {
-            foreach ( $node->field_superclass2 as $value ) {
-              if( !empty($value['evoc_term']) ) {
-                $term['superclasses'][] = $value['evoc_term'];
-              }
-            }
-          }
-          
-          // load vocabulary's node to get its title as namespace/prefix for this class 
-          $vocabulary = node_load($node->field_vocabulary[0][nid]);
-          $term['prefix'] = $vocabulary->title; 
-          
-          evoc_write_class($term);  
-        }
-        
-        // behavior to update evoc's properties list when a new property's content type is added 
-        elseif( $node->type == NEOLOGISM_CT_PROPERTY ) {
-          $term = array();
-          $term['id'] = $node->title;
-          $term['type'] = 'property';
-          $term['label'] = $node->field_label[0]['value']; 
-          $term['comment'] = $node->field_comment[0]['value'];
-          
-          // normaliza the evoc's fields
-          $term['rdf_domain'] = array();
-          if( !empty($node->field_domain2) && is_array($node->field_domain2) ) {
-            foreach ( $node->field_domain2 as $value ) {
-              if( !empty($value['evoc_term']) ) {
-                $term['rdf_domain'][] = $value['evoc_term'];
-              }
-            }
-          }
-          
-          $term['rdf_range'] = array();
-          if( !empty($node->field_range2) && is_array($node->field_range2) ) {
-            foreach ( $node->field_range2 as $value ) {
-              if( !empty($value['evoc_term']) ) {
-                $term['rdf_range'][] = $value['evoc_term'];
-              }
-            }
-          }
-          
-          $term['subpropertyof'] = array();
-          if( !empty($node->field_superproperty2) && is_array($node->field_superproperty2) ) {
-            foreach ( $node->field_superproperty2 as $value ) {
-              if( !empty($value['evoc_term']) ) {
-                $term['subpropertyof'][] = $value['evoc_term'];
-              }
-            }
-          }
-   
-          // load vocabulary's node to get its title as namespace/prefix for this class 
-          $vocabulary = node_load($node->field_vocabulary[0][nid]);
-          $term['prefix'] = $vocabulary->title; 
-          
-          evoc_write_property($term);  
-        }
-
-        break;
+    case 'load':
+      if ($node->type == NEOLOGISM_CT_VOCABULARY and arg(0) == TRUE and arg(1) == TRUE and arg(2) == FALSE) {
+        //vocabulary root, so content negotiation, provide an appropiate representation
+        $request_uri = $_SERVER["REQUEST_URI"];
+        $accept = $_SERVER["HTTP_ACCEPT"];
+        $redirect_uri = neologism_get_preferred_uri($request_uri, $accept);
+        header("HTTP/1.1 303");
+        header("Vary: Accept");
+        header("Location: " . $redirect_uri);
+      }
+      break;
       
-     
-      
-      case 'delete':
-        // Deletion of the aliases when deleting a vocabulary
-        if($node->type == NEOLOGISM_CT_VOCABULARY) {
-          _neologism_unset_aliases($node);
-          _neologism_on_deleted_vocabulary_node($node);
-        } 
-        else if($node->type == NEOLOGISM_CT_CLASS) {
-          _neologism_on_deleted_class_node($node);
+    // catching the view event
+    case 'view':
+      if( $node->type == NEOLOGISM_CT_VOCABULARY ) {
+        $node->authors = array();
+        foreach($node->field_authors as $author) {
+          $author = user_load($author);
+          if( empty($author->name) ) {
+            $node->authors[] = 'anonymous';
+          }
+          else {
+            $node->authors[] = l($author->name, 'user/'. $author->uid, array('attributes' => array('title' => $author->name)));
+          }
         }
-        else if($node->type == NEOLOGISM_CT_PROPERTY) {
-          _neologism_on_deleted_property_node($node);
+      }
+      break;
+      
+    case 'update':
+      if($node->type == NEOLOGISM_CT_VOCABULARY) {
+        _neologism_update_aliases($node);
+      }
+      elseif( $node->type == NEOLOGISM_CT_CLASS ) {
+        $term = array();
+        
+        // $node->update_by_reference is used when an update comes from other references than a normal update
+        $term['previous_id'] = !isset($node->update_by_reference) ? variable_get('previous_class_title', $node->title) : $node->title;
+        $term['id'] = $node->title;
+        $term['type'] = 'class';
+        $term['label'] = $node->field_label[0]['value']; 
+        $term['comment'] = $node->field_comment[0]['value'];
+        
+        // normalize the superclasses array to used by evoc's evoc_write_class() method
+        $term['superclasses'] = array();
+        if( !empty($node->field_superclass2) && is_array($node->field_superclass2) ) {
+          foreach ( $node->field_superclass2 as $value ) {
+            if( !empty($value['evoc_term']) ) {
+              $term['superclasses'][] = $value['evoc_term'];
+            }
+          }
         }
         
-        break;
+        // load vocabulary's node to get its title as namespace/prefix for this class 
+        $vocabulary = node_load($node->field_vocabulary[0][nid]);
+        $term['prefix'] = $vocabulary->title; 
+        
+        evoc_update_class($term);  
+      }
+      elseif( $node->type == NEOLOGISM_CT_PROPERTY ) {
+        $term = array();
+        // $node->update_by_reference is used when an update comes from other references than a normal update
+        $term['previous_id'] = !isset($node->update_by_reference) ? variable_get('previous_property_title', $node->title) : $node->title;
+        $term['id'] = $node->title;
+        $term['type'] = 'property';
+        $term['label'] = $node->field_label[0]['value']; 
+        $term['comment'] = $node->field_comment[0]['value'];
+        
+        // normaliza the evoc's fields
+        $term['rdf_domain'] = array();
+        if( !empty($node->field_domain2) && is_array($node->field_domain2) ) {
+          foreach ( $node->field_domain2 as $value ) {
+            if( !empty($value['evoc_term']) ) {
+              $term['rdf_domain'][] = $value['evoc_term'];
+            }
+          }
+        }
+        
+        $term['rdf_range'] = array();
+        if( !empty($node->field_range2) && is_array($node->field_range2) ) {
+          foreach ( $node->field_range2 as $value ) {
+            if( !empty($value['evoc_term']) ) {
+              $term['rdf_range'][] = $value['evoc_term'];
+            }
+          }
+        }
+        
+        $term['subpropertyof'] = array();
+        if( !empty($node->field_superproperty2) && is_array($node->field_superproperty2) ) {
+          foreach ( $node->field_superproperty2 as $value ) {
+            if( !empty($value['evoc_term']) ) {
+              $term['subpropertyof'][] = $value['evoc_term'];
+            }
+          }
+        }
+ 
+        // load vocabulary's node to get its title as namespace/prefix for this class 
+        $vocabulary = node_load($node->field_vocabulary[0][nid]);
+        $term['prefix'] = $vocabulary->title; 
+        
+        evoc_update_property($term);  
+      }
+      
+      break;
     
-      default:
-    }
+    case 'insert':
+      // Create a user friendly alias to the vocabulary node
+      if($node->type == NEOLOGISM_CT_VOCABULARY) {
+        _neologism_set_aliases($node);
+      }
+      
+      // Update evoc terms repository
+      // we don't need to worry about the existence of this term in the respository
+      // evoc module check this for us.
+      
+      // behavior to update evoc's classes list when a new class' content type is added.
+      elseif( $node->type == NEOLOGISM_CT_CLASS ) {
+        $term = array();
+        $term['id'] = $node->title;
+        $term['type'] = 'class';
+        $term['label'] = $node->field_label[0]['value']; 
+        $term['comment'] = $node->field_comment[0]['value'];
+        
+        // normalize the superclasses array to used by evoc's evoc_write_class() method
+        $term['superclasses'] = array();
+        if( !empty($node->field_superclass2) && is_array($node->field_superclass2) ) {
+          foreach ( $node->field_superclass2 as $value ) {
+            if( !empty($value['evoc_term']) ) {
+              $term['superclasses'][] = $value['evoc_term'];
+            }
+          }
+        }
+        
+        // load vocabulary's node to get its title as namespace/prefix for this class 
+        $vocabulary = node_load($node->field_vocabulary[0][nid]);
+        $term['prefix'] = $vocabulary->title; 
+        
+        evoc_write_class($term);  
+      }
+      
+      // behavior to update evoc's properties list when a new property's content type is added 
+      elseif( $node->type == NEOLOGISM_CT_PROPERTY ) {
+        $term = array();
+        $term['id'] = $node->title;
+        $term['type'] = 'property';
+        $term['label'] = $node->field_label[0]['value']; 
+        $term['comment'] = $node->field_comment[0]['value'];
+        
+        // normaliza the evoc's fields
+        $term['rdf_domain'] = array();
+        if( !empty($node->field_domain2) && is_array($node->field_domain2) ) {
+          foreach ( $node->field_domain2 as $value ) {
+            if( !empty($value['evoc_term']) ) {
+              $term['rdf_domain'][] = $value['evoc_term'];
+            }
+          }
+        }
+        
+        $term['rdf_range'] = array();
+        if( !empty($node->field_range2) && is_array($node->field_range2) ) {
+          foreach ( $node->field_range2 as $value ) {
+            if( !empty($value['evoc_term']) ) {
+              $term['rdf_range'][] = $value['evoc_term'];
+            }
+          }
+        }
+        
+        $term['subpropertyof'] = array();
+        if( !empty($node->field_superproperty2) && is_array($node->field_superproperty2) ) {
+          foreach ( $node->field_superproperty2 as $value ) {
+            if( !empty($value['evoc_term']) ) {
+              $term['subpropertyof'][] = $value['evoc_term'];
+            }
+          }
+        }
+ 
+        // load vocabulary's node to get its title as namespace/prefix for this class 
+        $vocabulary = node_load($node->field_vocabulary[0][nid]);
+        $term['prefix'] = $vocabulary->title; 
+        
+        evoc_write_property($term);  
+      }
+
+      break;
+    
+   
+    
+    case 'delete':
+      // Deletion of the aliases when deleting a vocabulary
+      if($node->type == NEOLOGISM_CT_VOCABULARY) {
+        _neologism_unset_aliases($node);
+        _neologism_on_deleted_vocabulary_node($node);
+      } 
+      else if($node->type == NEOLOGISM_CT_CLASS) {
+        _neologism_on_deleted_class_node($node);
+      }
+      else if($node->type == NEOLOGISM_CT_PROPERTY) {
+        _neologism_on_deleted_property_node($node);
+      }
+      
+      break;
+  
+    default:
   }
+
 }
 
 
@@ -1194,15 +1194,20 @@ function neologism_get_preferred_uri($uri, $accept) {
 * load all the vocabularies as namespaces
 */
 function neologism_rdf_namespaces() {
-  $uri = $GLOBALS['base_url'].'/';
-
-  $vocs = db_query(db_rewrite_sql("SELECT n.title FROM {content_type_neo_vocabulary} c INNER JOIN {node} n ON c.nid = n.nid WHERE n.type = '%s'"), NEOLOGISM_CT_VOCABULARY);
-  //$namespaces = array('drupal' => RDF_SCHEMA_URI);
-  while( $voc = db_fetch_object($vocs) ) {
-  //foreach ( db_fetch_object(neologism_get_vocabularies()) as $voc) {
-    $namespaces[$voc->title] = $uri.$voc->title.'#';
+  $ct = content_types();
+  if (isset($ct[NEOLOGISM_CT_VOCABULARY])) {
+    $uri = $GLOBALS['base_url'].'/';
+  
+    $vocs = db_query(db_rewrite_sql("SELECT n.title FROM {content_type_neo_vocabulary} c INNER JOIN {node} n ON c.nid = n.nid WHERE n.type = '%s'"), NEOLOGISM_CT_VOCABULARY);
+    //$namespaces = array('drupal' => RDF_SCHEMA_URI);
+    while( $voc = db_fetch_object($vocs) ) {
+    //foreach ( db_fetch_object(neologism_get_vocabularies()) as $voc) {
+      $namespaces[$voc->title] = $uri.$voc->title.'#';
+    }
+    return $namespaces;
   }
-  return $namespaces;
+  
+  return NULL;
 }
 
 
