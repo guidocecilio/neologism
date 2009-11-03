@@ -333,10 +333,10 @@ http://www.w3.org/2001/vcard-rdf/3.0#
  * @param object $vocabulary_prefix
  * @return 
  */
-function evoc_import_vocabulary($vocabulary_uri, $vocabulary_prefix) {
+function evoc_import_vocabulary($vocabulary_uri, $vocabulary_prefix, $showdetails = TRUE) {
   $fetched_terms = evoc_fetch_vocabulary($vocabulary_uri, $vocabulary_prefix);
   if( $fetched_terms != NULL ) {
-    _evoc_save_rdf_terms($vocabulary_uri, $vocabulary_prefix, $fetched_terms);
+    _evoc_save_rdf_terms($vocabulary_uri, $vocabulary_prefix, $fetched_terms, $showdetails);
   }
   else {
     evoc_set_message('There is not result for the SPARQL query. 
@@ -418,125 +418,130 @@ function evoc_fetch_vocabulary($vocabulary_uri, $vocabulary_prefix, $ignore_base
   //$endpoint = 'http://www.sparql.org/sparql';
   //$endpoint = 'http://jena.hpl.hp.com:2020/sparql';
   // Loop through all the various queries in order to extract as many classes and properties as possible.
-  $fetched_terms = array();
-  foreach ($term_queries as $query) {
-    // TODO: create a sequencial list of execution for the sparql_request, 
-    // so, this way we can select a differents endpoints each time a query fail querying using the selected endpoint
-    $sparql_res = sparql_request($endpoints[0], $query['query']);
-
-    //FIXME: this code need a revision for detect a correct sparql endpoint
-    if (!is_array($sparql_res)) {
-      evoc_set_message("The SPARQL endpoint <a href=\"$endpoint\">$endpoint</a> returned an error. Please check it and make sure it allows to load from URIs via FROM clauses.", 'warning');
-      return NULL;
-    }
-    
-    
-    // Parse the SPARQL results and extract the relevant terms.
-    foreach ($sparql_res as $res_term) {
-      if (isset($res_term['class'])) {
-        $type = 'class';
-      }
-      elseif (isset($res_term['property'])) {
-        $type = 'property';
-      };
-
-      $term_qname = rdf_uri_to_qname($res_term[$type]->uri);
-      $term_qname_parts = explode(':', $term_qname);
-      $term_prefix = $term_qname_parts[0];
-
-      $term = array();
-      $term['id'] = $term_qname_parts[1];
-      $term['type'] = $type;
-      $term['label'] = isset($res_term['label']->value) ? $res_term['label']->value : ( isset($res_term['label']) ? $res_term['label'] : NULL );
-      $term['comment'] = isset($res_term['comment']->value) ? $res_term['comment']->value : ( isset($res_term['comment']) ? $res_term['comment'] : NULL );
-      
-      switch ($type) {
-        case 'class':
-          // change in evoc v2.0.0.0. now superclass is an array that hold multiple superclasses
-          //$term['superclasses'][] = !empty($res_term['superclass']->uri) ? rdf_uri_to_qname($res_term['superclass']->uri) : NULL;
-          $term['superclasses'] = array();
-          if ( !empty($res_term['superclass']->uri) ) {
-            $term['superclasses'][] = rdf_uri_to_qname($res_term['superclass']->uri);
-          }
-          break;
-
-        case 'property':
-          // Extract some information like domain and range.
-          // change in evoc v2.0.0.0. added subpropertyof array to hold when a property is subproperty of a property
-          //$term['subpropertyof'][] = !empty($res_term['subpropertyof']->uri) ? rdf_uri_to_qname($res_term['subpropertyof']->uri) : NULL;
-          $term['subpropertyof'] = array();
-          if( !empty($res_term['subpropertyof']->uri) ) {
-            $term['subpropertyof'][] = rdf_uri_to_qname($res_term['subpropertyof']->uri);
-          }
-          // change in evoc v2.0.0.0. now domain and range are arrays that hold multiple domains and ranges
-          //$term['rdf_domain'][] = !empty($res_term['domain']->uri) ? rdf_uri_to_qname($res_term['domain']->uri) : NULL;
-          $term['rdf_domain'] = array();
-          if( !empty($res_term['domain']->uri) ) {
-            $term['rdf_domain'][] = rdf_uri_to_qname($res_term['domain']->uri);  
-          }
-          //$term['rdf_range'][] = !empty($res_term['range']->uri) ? rdf_uri_to_qname($res_term['range']->uri) : NULL;
-          $term['rdf_range'] = array();
-          if( !empty($res_term['range']->uri) ) {
-            $term['rdf_range'][] = rdf_uri_to_qname($res_term['range']->uri); 
-          }
-          break;
-      }
-
-      // We only import the terms with the specified prefix unless $ignore_base_ns is TRUE.
-      if ($term_prefix == $vocabulary_prefix || $ignore_base_ns) {
-        
-        //var_dump($term);
-        
-        // added in evoc v2.0.0.0
-        // this' a filter to add just new term and insert the superclasses for the terms class that has
-        // more than 1 superclass.
-        $term_exist = FALSE;
-        $just_updated = FALSE;
-        foreach ($fetched_terms as &$term_value) {
-          if ( $term_value['id'] == $term['id'] && $term_value['type'] == $term['type'] ) {
-            $term_exist = TRUE;
-            
-            if ( $term['type'] == 'class') {
-              if ( isset($term['superclasses'][0]) && !in_array($term['superclasses'][0], $term_value['superclasses']) ) {
-                $term_value['superclasses'][] = $term['superclasses'][0];
-              }
-            }
-            elseif ( $term['type'] == 'property') {
-              if ( isset($term['subpropertyof'][0]) && !in_array($term['subpropertyof'][0], $term_value['subpropertyof']) ) {
-                $term_value['subpropertyof'][] = $term['subpropertyof'][0];
-              }
-              if ( isset($term['rdf_domain'][0]) && !in_array($term['rdf_domain'][0], $term_value['rdf_domain']) ) {
-                $term_value['rdf_domain'][] = $term['rdf_domain'][0];
-              }
-              if ( isset($term['rdf_range'][0]) && !in_array($term['rdf_range'][0], $term_value['rdf_range']) ) {
-                $term_value['rdf_range'][] = $term['rdf_range'][0];
-              }
-            }
-            
-            // jump if the term exists
-            break;  
-          }
-        }
-        unset($term_value);
-        
-        // if not just_updated and not exists such a term add it to the array
-        if ( !$term_exist ) {
-          $fetched_terms[] = $term;
-        }
-      }
-      
-    }
-
-  }
-  //var_dump($fetched_terms);
+  if( $endpoints ) {
+    $fetched_terms = array();
+    foreach ($term_queries as $query) {
+      // TODO: create a sequencial list of execution for the sparql_request, 
+      // so, this way we can select a differents endpoints each time a query fail querying using the selected endpoint
+      $sparql_res = sparql_request($endpoints[0], $query['query']);
   
+      //FIXME: this code need a revision for detect a correct sparql endpoint
+      if (!is_array($sparql_res)) {
+        evoc_set_message("The SPARQL endpoint <a href=\"$endpoint\">$endpoint</a> returned an error. Please check it and make sure it allows to load from URIs via FROM clauses.", 'warning');
+        return NULL;
+      }
+      
+      
+      // Parse the SPARQL results and extract the relevant terms.
+      foreach ($sparql_res as $res_term) {
+        if (isset($res_term['class'])) {
+          $type = 'class';
+        }
+        elseif (isset($res_term['property'])) {
+          $type = 'property';
+        };
+  
+        $term_qname = rdf_uri_to_qname($res_term[$type]->uri);
+        $term_qname_parts = explode(':', $term_qname);
+        $term_prefix = $term_qname_parts[0];
+  
+        $term = array();
+        $term['id'] = $term_qname_parts[1];
+        $term['type'] = $type;
+        $term['label'] = isset($res_term['label']->value) ? $res_term['label']->value : ( isset($res_term['label']) ? $res_term['label'] : NULL );
+        $term['comment'] = isset($res_term['comment']->value) ? $res_term['comment']->value : ( isset($res_term['comment']) ? $res_term['comment'] : NULL );
+        
+        switch ($type) {
+          case 'class':
+            // change in evoc v2.0.0.0. now superclass is an array that hold multiple superclasses
+            //$term['superclasses'][] = !empty($res_term['superclass']->uri) ? rdf_uri_to_qname($res_term['superclass']->uri) : NULL;
+            $term['superclasses'] = array();
+            if ( !empty($res_term['superclass']->uri) ) {
+              $term['superclasses'][] = rdf_uri_to_qname($res_term['superclass']->uri);
+            }
+            break;
+  
+          case 'property':
+            // Extract some information like domain and range.
+            // change in evoc v2.0.0.0. added subpropertyof array to hold when a property is subproperty of a property
+            //$term['subpropertyof'][] = !empty($res_term['subpropertyof']->uri) ? rdf_uri_to_qname($res_term['subpropertyof']->uri) : NULL;
+            $term['subpropertyof'] = array();
+            if( !empty($res_term['subpropertyof']->uri) ) {
+              $term['subpropertyof'][] = rdf_uri_to_qname($res_term['subpropertyof']->uri);
+            }
+            // change in evoc v2.0.0.0. now domain and range are arrays that hold multiple domains and ranges
+            //$term['rdf_domain'][] = !empty($res_term['domain']->uri) ? rdf_uri_to_qname($res_term['domain']->uri) : NULL;
+            $term['rdf_domain'] = array();
+            if( !empty($res_term['domain']->uri) ) {
+              $term['rdf_domain'][] = rdf_uri_to_qname($res_term['domain']->uri);  
+            }
+            //$term['rdf_range'][] = !empty($res_term['range']->uri) ? rdf_uri_to_qname($res_term['range']->uri) : NULL;
+            $term['rdf_range'] = array();
+            if( !empty($res_term['range']->uri) ) {
+              $term['rdf_range'][] = rdf_uri_to_qname($res_term['range']->uri); 
+            }
+            break;
+        }
+  
+        // We only import the terms with the specified prefix unless $ignore_base_ns is TRUE.
+        if ($term_prefix == $vocabulary_prefix || $ignore_base_ns) {
+          
+          //var_dump($term);
+          
+          // added in evoc v2.0.0.0
+          // this' a filter to add just new term and insert the superclasses for the terms class that has
+          // more than 1 superclass.
+          $term_exist = FALSE;
+          $just_updated = FALSE;
+          foreach ($fetched_terms as &$term_value) {
+            if ( $term_value['id'] == $term['id'] && $term_value['type'] == $term['type'] ) {
+              $term_exist = TRUE;
+              
+              if ( $term['type'] == 'class') {
+                if ( isset($term['superclasses'][0]) && !in_array($term['superclasses'][0], $term_value['superclasses']) ) {
+                  $term_value['superclasses'][] = $term['superclasses'][0];
+                }
+              }
+              elseif ( $term['type'] == 'property') {
+                if ( isset($term['subpropertyof'][0]) && !in_array($term['subpropertyof'][0], $term_value['subpropertyof']) ) {
+                  $term_value['subpropertyof'][] = $term['subpropertyof'][0];
+                }
+                if ( isset($term['rdf_domain'][0]) && !in_array($term['rdf_domain'][0], $term_value['rdf_domain']) ) {
+                  $term_value['rdf_domain'][] = $term['rdf_domain'][0];
+                }
+                if ( isset($term['rdf_range'][0]) && !in_array($term['rdf_range'][0], $term_value['rdf_range']) ) {
+                  $term_value['rdf_range'][] = $term['rdf_range'][0];
+                }
+              }
+              
+              // jump if the term exists
+              break;  
+            }
+          }
+          unset($term_value);
+          
+          // if not just_updated and not exists such a term add it to the array
+          if ( !$term_exist ) {
+            $fetched_terms[] = $term;
+          }
+        }
+        
+      }
+  
+    }
+  }
+  else {
+    evoc_set_message("Error retriving the default endpoint from the database. Report this error to then development group.", 'error');
+    return NULL;
+  }
+    
   return $fetched_terms;
 }
 
 /**
  * Handle the creation or update of a set of RDF terms of a given namespace.
  */
-function _evoc_save_rdf_terms($ns, $prefix, $terms) {
+function _evoc_save_rdf_terms($ns, $prefix, $terms, $showdetails = TRUE) {
   // Namespace management.
   // Get the existing namespaces stored in the system 
   // (including some predefined array and the namespaces added to the database in the table rdf_namespaces).
@@ -567,11 +572,11 @@ function _evoc_save_rdf_terms($ns, $prefix, $terms) {
   foreach ($terms as $term) {
     if ($term['type'] == 'class') {
       $term['prefix'] = $prefix;
-      evoc_write_class($term);
+      evoc_write_class($term, $showdetails);
     }
     elseif ($term['type'] == 'property') {
       $term['prefix'] = $prefix;
-      evoc_write_property($term);
+      evoc_write_property($term, $showdetails);
     }
   }
 }
@@ -585,7 +590,7 @@ function _evoc_save_rdf_terms($ns, $prefix, $terms) {
  *          
  * @return 
  */
-function evoc_write_class($class) {
+function evoc_write_class($class, $showdetails = TRUE) {
   // Check whether this class is already in the system.
   $exists_class = db_result(db_query(db_rewrite_sql('SELECT count(*) FROM {evoc_rdf_classes} WHERE prefix="%s" AND id = "%s"'), $class['prefix'], $class['id'])) > 0;
 
@@ -605,7 +610,9 @@ function evoc_write_class($class) {
     
     if( db_query(db_rewrite_sql('insert into {evoc_rdf_classes} (prefix, id, label, comment, superclasses) 
       values ("%s", "%s", "%s", "%s", "%d")'), $class['prefix'], $class['id'], $class['label'], $class['comment'], $count_superclasses ) ) {
-      evoc_set_message('Importing Class. Class <b>'.$class['prefix']." : ".$class['id']."</b> successfully imported.");          
+      if( $showdetails ) {
+        evoc_set_message('Importing Class. Class <b>'.$class['prefix']." : ".$class['id']."</b> successfully imported.");
+      }
     }
     else {
       evoc_set_message('Importing Class. Class <b>'.$class['prefix'].' : '.$class['id'].'</b> could not be saved.', 'warning');
@@ -782,7 +789,7 @@ function evoc_remove_class($class, $remove_references = FALSE) {
  * 
  * @return none 
  */
-function evoc_write_property($property) {
+function evoc_write_property($property, $showdetails = TRUE) {
   $exists_property = db_result(db_query(db_rewrite_sql('SELECT count(*) FROM {evoc_rdf_properties} WHERE prefix="%s" AND id = "%s"'), $property['prefix'], $property['id'])) > 0;
 
   if( $exists_property ) {
@@ -816,7 +823,9 @@ function evoc_write_property($property) {
     if( db_query(db_rewrite_sql('insert into {evoc_rdf_properties} (prefix, id, label, comment, superproperties, domains, ranges) 
       values ("%s", "%s", "%s", "%s", "%d", "%d", "%d")'), 
       $property['prefix'], $property['id'], $property['label'], $property['comment'], $count_superproperties, $count_domains, $count_ranges) ) {
-      evoc_set_message('Importing Property. Property <b>'.$property['prefix'].' : '.$property['id'].'</b> successfully imported.');          
+      if( $showdetails ) {
+        evoc_set_message('Importing Property. Property <b>'.$property['prefix'].' : '.$property['id'].'</b> successfully imported.');
+      }
     }
     else {
       evoc_set_message('Importing Property. Property <b>'.$property['prefix'].' : '.$property['id'].'</b> could not be saved.', 'warning');
