@@ -99,38 +99,69 @@ function evoc_schema() {
  */
 function evoc_install() {
   drupal_install_schema('evoc');
-  drupal_set_message(t('Evoc 2.0 successfully installed.'));
+  
+  // default sparql endpoint
+  $endpoint = array(
+    'name' => 'SPARQLer',
+    'enabled' => TRUE,
+    'status' => 'alive',
+    'endpoint' => 'http://www.sparql.org/sparql',
+    'webform' => 'http://www.sparql.org/sparql.html',
+    'comment' => 'based on ARQ and Joseki',
+    'data_exposed' => '"any" — "general purpose SPARQL service"'
+  );
+  
+  $result = db_query("insert into {evoc_sparql_endpoints} (name, enabled, status, endpoint, webform, comment, data_exposed) values ('%s', '%d', '%s', '%s', '%s', '%s', '%s')", 
+    $endpoint['name'], $endpoint['enabled'], $endpoint['status'], $endpoint['endpoint'], $endpoint['webform'], $endpoint['comment'], $endpoint['data_exposed']);
+  if( !result ) {
+    drupal_set_message( t('There is some problem installing the default sparql endpoint into table {evoc_sparql_endpoints}.'), 'error' );  
+    exit();
+  }
+  
+  // retrive the default id  
+  $result = db_fetch_object( db_query('select id from {evoc_sparql_endpoints} where name = "%s"', $endpoint['name']) ); 
+  variable_set('evoc_sparqlendpoint', $result->id);
+   
+  module_load_include('module', 'evoc', 'evoc');
+  evoc_import_vocabulary('http://www.w3.org/1999/02/22-rdf-syntax-ns#', 'rdf', FALSE);
+  evoc_import_vocabulary('http://www.w3.org/2000/01/rdf-schema#', 'rdfs', FALSE);
+  evoc_import_vocabulary('http://purl.org/dc/elements/1.1/', 'dc', FALSE);
+  evoc_import_vocabulary('http://xmlns.com/foaf/0.1/','foaf', FALSE);
+  evoc_import_vocabulary('http://www.w3.org/2002/07/owl#','owl', FALSE);
+  
+  drupal_set_message( t('Evoc successfully installed and useful vocabularies were imported successful....') );
 }
 
 /**
  * Implementation of hook_uninstall().
  */
 function evoc_uninstall() {
+  // remove the imported vocabularies
+  evoc_remove_vocabulary('rdf');
+  evoc_remove_vocabulary('rdfs');
+  evoc_remove_vocabulary('dc');
+  evoc_remove_vocabulary('foaf');
+  evoc_remove_vocabulary('owl');
+  
+  variable_del('evoc_sparqlendpoint');
   drupal_uninstall_schema('evoc');
+  drupal_set_message( t('Evoc successfully uninstalled.') );
 }
 
 /**
  * Implementation of hook_enable().
  */
 function evoc_enable() {
-  // Import a few popular vocabularies.
-  drupal_load('module', 'rdf');
-  drupal_load('module', 'sparql');
-  //drupal_load('module', 'evocreference');
-  //drupal_load('module', 'mxcheckboxselect');
-  drupal_load('module', 'evoc');
-  
-  // Force schema rebuild, see http://drupal.org/node/200931
-  drupal_get_schema(NULL, TRUE);
-  
-  evoc_import_vocabulary('http://www.w3.org/1999/02/22-rdf-syntax-ns#', 'rdf');
-  evoc_import_vocabulary('http://www.w3.org/2000/01/rdf-schema#', 'rdfs');
-  evoc_import_vocabulary('http://purl.org/dc/elements/1.1/', 'dc');
-  evoc_import_vocabulary('http://xmlns.com/foaf/0.1/','foaf');
-  evoc_import_vocabulary('http://www.w3.org/2002/07/owl#','owl');
-
-  drupal_set_message(t('Evoc 2.0 is now enabled.'));
+  drupal_set_message( t('Evoc is now enabled.') );
 }
+
+/**
+ * Implementation of hook_disable().
+ */
+function evoc_disable() {
+  drupal_set_message( t('Evoc is now disabled.'));
+}
+
 
 /**
  * Implementation of hook_update_N.
@@ -175,6 +206,7 @@ function evoc_update_6200() {
   db_create_table($ret, 'evoc_rdf_superproperties', $schema['evoc_rdf_superproperties']);
   db_create_table($ret, 'evoc_rdf_propertiesdomains', $schema['evoc_rdf_propertiesdomains']);
   db_create_table($ret, 'evoc_rdf_propertiesranges', $schema['evoc_rdf_propertiesranges']);
+  db_create_table($ret, 'evoc_sparql_endpoints', $schema['evoc_sparql_endpoints']);
 
   // create all the superclasses in the table evoc_rdf_superclasses for each class 
   // in evoc_rdf_classes that its superclass column has some value
