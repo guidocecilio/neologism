@@ -12,6 +12,12 @@
 //////////////////////////////////////////////////////////////////////////////
 // SPARQL HTTP client
 
+// this include was add by guidocecilio November 1st, 2009
+// when you are instaling drupal with a profile the function sparql_request
+// is called and fail because class SPARQL_Query is not found
+require_once("sparql.inc");
+
+
 function sparql_request($endpoint, $query, $options = array(), &$errors = NULL) {
   $options = array_merge(array('query' => $query, 'format' => 'application/sparql-results+json', 'output' => 'json'), $options);
 
