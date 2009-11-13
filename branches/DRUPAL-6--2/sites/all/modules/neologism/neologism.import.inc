@@ -1,23 +1,12 @@
 <?php
 
+define("SPARQL_QUERY_ERROR", "There is a NULL result in the SPARQL query <br/> 
+      </br>Please check you ontology file, or create a new entry for the development team at ".
+      l('Neologism at Google code','http://code.google.com/p/neologism/issues/list', array('html' => TRUE, 'attributes' => Array('title' => 'http://code.google.com/p/neologism/issues/list')))
+      ." and do not forget to attach your ontology file to it.");
+
 function neologism_import_form($form_state) {
 
-/// import test for myclass evoc reference
-        $node_type = 'myclass';
-        $node['values']['title'] = 'title test import myclass';
-        $node['values']['body'] = '';
-        $node['values']['field_superclass'][0]['evoc_term']['evoc_term'] = 'sioc:User';
-//        $node['values']['field_evoc'][0]['evoc_term'] = 'sioc:Item';
-        $node['values']['field_text'][0]['value'] = 'text value imported';
-        $node['values']['field_node'][0]['nid']['nid'] = 'test import myclass';
-        $node['values']['field_user'][0]['uid']['uid'] = 'admin';
-        //$node['values']['field_comment'][0]['value'] = 'new comment here';
-        // Nodereference field use the nid key instead of value.
-	
-///    neologism_create_node($node_type, $node);
-        
-/// end of import test        
-        
 	$form['vocabulary_uri'] = array(
     '#type' => 'textfield',
     '#title' => t('Vocabulary URI'),
@@ -25,6 +14,7 @@ function neologism_import_form($form_state) {
     '#default_value' => $form_state['values']['vocabulary_uri'],
     '#description' => "Enter the URI of the vocabulary to import in Neologism. Make sure it finishes by either / or #.",
   );
+  /*
   $form['prefix'] = array(
     '#type' => 'textfield',
     '#title' => t('Prefix'),
@@ -47,10 +37,12 @@ function neologism_import_form($form_state) {
     '#options' => array('<create>', 1),
     '#description' => 'Select the existing vocabulary to import the new vocabulary in. If you want to create a new vocabulary, select &lt;create&gt;.',
   );
+  */
   $form['submit'] = array(
     '#type' => 'submit',
     '#value' => 'Submit',
   );
+  
   return $form;
 }
 
@@ -58,91 +50,11 @@ function neologism_import_form_submit($form, &$form_state) {
   $form_state['storage']['values'] = $form_state['values'];
   $form_state['rebuild'] = true;
 
-  $fetched_terms = evoc_fetch_vocabulary($form_state['values']['vocabulary_uri'], $form_state['values']['prefix'], TRUE, $form_state['values']['ns_uri']);
-
-  // TODO auto create a new vocab and the options in the form to alter an existing voc.
-$vocabulary_id = '1';
-
-  // A vocabulary representation is built in memory.
-  $voc = array();
-
-  // Create a node for each term belonging to the vocabulary.
-  foreach ($fetched_terms as $term) {
-//var_dump($term);
-    // Cleanup the terms in a vocabulary array.
-    $tid = $term['id'];
-    // Remove the id if found in the label.
-//     if ($term['label'] == $tid) {
-//       $term['label'] = NULL;
-//     }
-    // TODO this might not be necessary since evoc does it.
-    $term['label'] = $term['label'] ? $term['label'] : $term['id'];
-    // TODO check this, looks we are losing the term if TRUE
-    if ($voc[$tid] && $term['label']) {
-      // Concatenate the label information (BIRF).
-      $voc[$tid]['label'] .= '. ' . $term['label'];
-    }
-    else {
-      $voc[$tid] = $term;
-    }
-
-  }
-//var_dump($voc);
-
-neologism_create_vocabulary($vocabulary_id, $voc);
-
+  //$fetched_terms = evoc_fetch_vocabulary(
+  //$form_state['values']['vocabulary_uri'], $form_state['values']['prefix'], TRUE, $form_state['values']['ns_uri']);
+  
+  _neologism_import_vocabulary($form_state['values']['vocabulary_uri']);
 }
-
-// TODO
-function neologism_create_vocabulary ($vocabulary_id, $voc) {
-  foreach ($voc as $term) {
-//  var_dump($term);
-    switch ($term['type']) {
-      // Store the term as a class in memory.
-      case 'class' :
-        $node_type = NEOLOGISM_CT_CLASS;
-        $node['values']['title'] = $term['id'];
-        $node['values']['body'] = '';
-        $node['values']['field_label'][0]['value'] = $term['label'];
-        $node['values']['field_superclass'][0]['value'] = $term['superclass'];
-        //$node['values']['field_comment'][0]['value'] = 'new comment here';
-        // Nodereference field use the nid key instead of value.
-        $node['values']['field_vocabulary'][0]['nid'] = $vocabulary_id;
-        break;
-
-      case 'property' :
-        $node_type = NEOLOGISM_CT_PROPERTY;
-        $node['values']['title'] = $term['id'];
-        $node['values']['body'] = '';
-        $node['values']['field_label'][0]['value'] = $term['id'];
-        $node['values']['field_domain2'][0]['value'] = $term['domain'];
-        $node['values']['field_range2'][0]['value'] = $term['range'];
-        //$node['values']['field_comment'][0]['value'] = 'new comment here';
-        // Nodereference field use the nid key instead of value.
-        $node['values']['field_vocabulary'][0]['nid'] = $vocabulary_id;
-        break;
-    }
-
-    neologism_create_node($node_type, $node);
-  }
-}
-
-function neologism_create_node($node_type, $node_values) {
-  module_load_include('inc', 'node', 'node.pages');
-  $node = array('type' => $node_type);
-// when editing a node, use
-// $node = node_load(12);
-
-  if (is_array($node_values)) {
-    $node_values['values']['op'] = t('Save');
-  }
-//print_r($node_values);
-  drupal_execute($node_type . '_node_form', $node_values, (object)$node);
-}
-
-//------------------------------------------------------------------------------------------------------------------
-// new code from guidocecilio
-// TODO remove the above or sort it
 
 /**
  * 
@@ -161,6 +73,14 @@ function neologism_import_fromfile_form($form_state) {
       The file should has .n3 or .rdf extension.  
       The maximum file size per upload is %size MB.', array('%size' => round(file_upload_max_size()/(1024*1024), 0))),
     '#weight' => -5,
+  );
+    
+  $form['prefix'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Ontology prefix'),
+    '#required' => FALSE,
+    //'#default_value' => $form_state['values']['prefix'],
+    '#description' => "Choose a ontology prefix to force Neologism to create a vocabulary with such a prefix.",
   );
     
   $form['submit'] = array(
@@ -182,7 +102,13 @@ function neologism_import_fromfile_form_validate($form, &$form_state) {
       form_set_error('upload', 'You must select a valid file to upload.');
     }
     else {
-      $form_state['values']['title'] = $file->filename;
+      if( isset($form_state['values']['prefix']) ) {
+        $form_state['values']['title'] = $form_state['values']['prefix'];
+      }
+      else {
+        //$form_state['values']['title'] = $file->filename;
+        $form_state['values']['title'] = NULL;
+      }
       $form_state['values']['uploaded_file'] = $file;
     }
   }
@@ -196,7 +122,7 @@ function neologism_import_fromfile_form_validate($form, &$form_state) {
  */
 function _neologism_is_from_vocabulary_imported( $vocabulary, $uri) {
   // TODO fix the error in that function at rdf.api.inc
-  //if( rdf_is_valid_uri($uri) ) {
+  if( rdf_is_valid_uri($uri) ) {
     $start = strrpos($uri, '/') + 1; 
     $end = strrpos($uri, '#'); 
     if( $start && $end && ($voc = substr($uri, $start, $end - $start)) ) {
@@ -204,254 +130,16 @@ function _neologism_is_from_vocabulary_imported( $vocabulary, $uri) {
         return $voc.':'.substr($uri, $end + 1);
       }
     }
-  //}
+  }
   
   return NULL;
 }
 
 function neologism_import_fromfile_form_submit($form, &$form_state) {
-  include(RDFAPI_INCLUDE_DIR . "RdfAPI.php");
-  include(RDFAPI_INCLUDE_DIR . "syntax/RdfSerializer.php");
-  
   $uploaded_file = $form_state['values']['uploaded_file'];
-  $model = ModelFactory::getMemModel();
-  $model->load($uploaded_file->filepath);
-  
-  // there is a convention. The filename is the vocabulary's name if the document fail in query for document's name
   $vocabulary_name = trim($form_state['values']['title']);
-  $vocabulary_name = substr($vocabulary_name, 0, strrpos($vocabulary_name, '.'));
   
-  $query = '
-    prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-    prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-    prefix owl: <http://www.w3.org/2002/07/owl#>
-    prefix foaf: <http://xmlns.com/foaf/0.1/>
-    select ?title ?document
-    where { ?document rdf:type foaf:Document }. 
-      OPTIONAL {?document dc:title ?title }
-    ';
-  //select ?title ?document
-  
-  $query_result = $model->sparqlQuery($query);
-    
-  if( !$query_result ) {
-    return;
-  }
-  
-  if( isset($query_result[0]['?title']->label) ) {
-    $vocabulary_title = $query_result[0]['?title']->label;
-  }
-  if( isset($query_result[0]['?document']->uri) ) {
-    $query_result[0]['?document']->uri = trim($query_result[0]['?document']->uri);
-    $vocabulary_name = substr($query_result[0]['?document']->uri, strrpos($query_result[0]['?document']->uri, '/') + 1);
-    
-    // patch for neologism 1.x
-    if( $vocabulary_name == 'rdf') {
-      $vocabulary_name = substr($query_result[0]['?document']->uri, 0, strrpos($query_result[0]['?document']->uri, '/'));  
-      $vocabulary_name = substr($vocabulary_name, strrpos($vocabulary_name, '/') + 1);
-    }  
-  }
-  
-  // SPARQL queries are stored in an array.
-  $term_queries = array();
-  // Typical SPARQL queries to retrieve properties/classes, working for all major vocabularies...
-  
-  $term_queries[] = array(
-    'type' => 'class',
-    'query' => 
-      'prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-      prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-      prefix owl: <http://www.w3.org/2002/07/owl#>
-      select *
-      where { {?class rdf:type owl:Class} union {?class rdf:type rdfs:Class}.
-        OPTIONAL {?class rdfs:label ?label}.
-        OPTIONAL {?class rdfs:subClassOf ?superclass}.
-        OPTIONAL {?class owl:disjointWith ?disjointwith}.
-        OPTIONAL {?class rdfs:comment ?comment}.
-      }
-      '
-  );
-  
-  $term_queries[] = array(
-    'type' => 'property',
-    'query' => 
-      "prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-      prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-      prefix owl: <http://www.w3.org/2002/07/owl#>
-      select *
-      where {
-        {?property rdf:type owl:DatatypeProperty} 
-      union 
-        {?property rdf:type owl:ObjectProperty.}.
-          OPTIONAL {?property rdf:type ?t . FILTER (?t = owl:FunctionalProperty || ?t = owl:InverseFunctionalProperty ) }.
-      union 
-        {?property rdf:type rdf:Property.}.
-          OPTIONAL {?property rdfs:label ?label}.
-          OPTIONAL {?property rdfs:domain ?domain}.
-          OPTIONAL {?property rdfs:range ?range}.
-          OPTIONAL {?property rdfs:subPropertyOf ?subpropertyof}
-          OPTIONAL {?property rdfs:comment ?comment}.
-      }
-      limit 1000"
-  );
-
-  // Loop through all the various queries in order to extract as many classes and properties as possible.
-  $fetched_terms = array();
-  foreach ($term_queries as $query) {
-    $query_result = $model->sparqlQuery($query['query']);
-    
-    if( !$query_result ) {
-      return;
-    }
-    
-    // Parse the SPARQL results and extract the relevant terms.
-    foreach( $query_result as $res_term ) {
-      
-      if( isset($res_term['?class']) ) {
-        $type = '?class';
-      }
-      else if( isset($res_term['?property']) ) {
-        $type = '?property';
-      };
-
-      $res_term[$type]->uri = trim($res_term[$type]->uri);
-      $term_qname = _neologism_is_from_vocabulary_imported($vocabulary_name, $res_term[$type]->uri); 
-      if( !$term_qname ) {
-        $term_qname = rdf_uri_to_qname($res_term[$type]->uri);  
-      }
-      $term_qname_parts = explode(':', $term_qname);
-      $term_prefix = $term_qname_parts[0];
-
-      $term = array();
-      $term['id'] = $term_qname_parts[1];
-      $term['type'] = $type;
-      $term['label'] = isset($res_term['?label']->label) ? $res_term['?label']->label : NULL;
-      $term['comment'] = isset($res_term['?comment']->label) ? $res_term['?comment']->label : NULL;
-      
-      switch( $type ) {
-        case '?class':
-          $term[SUPERCLASSES] = array();
-          if ( isset($res_term['?superclass']->uri) ) {
-            $res_term['?superclass']->uri = trim($res_term['?superclass']->uri);
-            $term[SUPERCLASSES][] = _neologism_is_from_vocabulary_imported($vocabulary_name, $res_term['?superclass']->uri); 
-            if( !$term[SUPERCLASSES][0] ) {
-              $term[SUPERCLASSES][0] = rdf_uri_to_qname($res_term['?superclass']->uri);  
-            }
-          }
-          
-          $term[DISJOINTS_WITH] = array();
-          if ( isset($res_term['?disjointwith']->uri) ) {
-            $res_term['?disjointwith']->uri = trim($res_term['?disjointwith']->uri);
-            $term[DISJOINTS_WITH][] = _neologism_is_from_vocabulary_imported($vocabulary_name, $res_term['?disjointwith']->uri); 
-            if( !$term[DISJOINTS_WITH][0] ) {
-              $term[DISJOINTS_WITH][0] = rdf_uri_to_qname($res_term['?disjointwith']->uri);  
-            }
-          }
-          
-          break;
-
-        case '?property':
-          $term['subpropertyof'] = array();
-          if( isset($res_term['?subpropertyof']->uri) ) {
-            $res_term['?subpropertyof']->uri = trim($res_term['?subpropertyof']->uri);
-            $term['subpropertyof'][] = _neologism_is_from_vocabulary_imported($vocabulary_name, $res_term['?subpropertyof']->uri); 
-            if( !$term['subpropertyof'][0] ) {
-              $term['subpropertyof'][0] = rdf_uri_to_qname($res_term['?subpropertyof']->uri);  
-            }
-          }
-          
-          $term['domain'] = array();
-          if( isset($res_term['?domain']->uri) ) {
-            $res_term['?domain']->uri = trim($res_term['?domain']->uri);
-            $term['domain'][] = _neologism_is_from_vocabulary_imported($vocabulary_name, $res_term['?domain']->uri); 
-            if( !$term['domain'][0] ) {
-              $term['domain'][0] = rdf_uri_to_qname($res_term['?domain']->uri);  
-            }
-          }
-          
-          $term['range'] = array();
-          if( isset($res_term['?range']->uri) ) {
-            $res_term['?range']->uri = trim($res_term['?range']->uri);
-            $term['range'][] = _neologism_is_from_vocabulary_imported($vocabulary_name, $res_term['?range']->uri); 
-            if( !$term['range'][0] ) {
-              $term['range'][0] = rdf_uri_to_qname($res_term['?range']->uri);  
-            }
-          }
-          
-          $term['owl_type'] = array();
-          if( isset($res_term['?t']->uri) ) {
-            $res_term['?t']->uri = trim($res_term['?t']->uri);
-            $term['owl_type'][] = rdf_uri_to_qname($res_term['?t']->uri); 
-          }
-          
-          break;
-      }
-
-      // filter process
-      $term_exist = FALSE;
-      $just_updated = FALSE;
-      foreach( $fetched_terms as &$term_value ) {
-        if( $term_value['id'] == $term['id'] && $term_value['type'] == $term['type'] ) {
-          $term_exist = TRUE;
-          if( $term['type'] == '?class' ) {
-            if( !isset($term_value['label']) && isset($term['label']) ) {
-              $term_value['label'] = $term['label'];
-            }
-            if( !isset($term_value['comment']) && isset($term['comment']) ) {
-              $term_value['comment'] = $term['comment'];
-            }
-            if ( isset($term[SUPERCLASSES][0]) && !in_array($term[SUPERCLASSES][0], $term_value[SUPERCLASSES]) ) {
-              $term_value[SUPERCLASSES][] = $term[SUPERCLASSES][0];
-            }
-            if ( isset($term[DISJOINTS_WITH][0]) && !in_array($term[DISJOINTS_WITH][0], $term_value[DISJOINTS_WITH]) ) {
-              $term_value[DISJOINTS_WITH][] = $term[DISJOINTS_WITH][0];
-            }
-          }
-          elseif ( $term['type'] == '?property') {
-            if( !isset($term_value['label']) && isset($term['label']) ) {
-              $term_value['label'] = $term['label'];
-            }
-            if( !isset($term_value['comment']) && isset($term['comment']) ) {
-              $term_value['comment'] = $term['comment'];
-            }
-            if ( isset($term['subpropertyof'][0]) && !in_array($term['subpropertyof'][0], $term_value['subpropertyof']) ) {
-              $term_value['subpropertyof'][] = $term['subpropertyof'][0];
-            }
-            if ( isset($term['domain'][0]) && !in_array($term['domain'][0], $term_value['domain']) ) {
-              $term_value['domain'][] = $term['domain'][0];
-            }
-            if ( isset($term['range'][0]) && !in_array($term['range'][0], $term_value['range']) ) {
-              $term_value['range'][] = $term['range'][0];
-            }
-            if ( isset($term['owl_type'][0]) && !in_array($term['owl_type'][0], $term_value['owl_type']) ) {
-              $term_value['owl_type'][] = $term['owl_type'][0];
-            }
-          }
-          
-          // jump if the term exists
-          break;  
-        }
-      }
-      unset($term_value);
-        
-      // if not just_updated and not exists such a term add it to the array
-      if ( !$term_exist ) {
-        $fetched_terms[] = $term;
-      }
-    }
-  } // foreach
-  
-  $voc_nid = neologism_new_node_vocabulary( array('id' => $vocabulary_name, 'title' => $vocabulary_title) );
-  if( $voc_nid ) {
-    foreach ($fetched_terms as $term) {
-      if ($term['type'] == '?class') {
-        neologism_new_node_class($voc_nid, $term);
-      }
-      elseif ($term['type'] == '?property') {
-        neologism_new_node_property($voc_nid, $term);
-      }
-    }   
-  }
+  _neologism_import_vocabulary($uploaded_file->filepath, $vocabulary_name);
 }
 
 /**
@@ -470,6 +158,8 @@ function neologism_new_node_vocabulary( array $voc_term ) {
   $node->title = $voc_term['id'];
   $node->field_title[0]['value'] = isset($voc_term['title']) ? $voc_term['title'] : $node->title;
   $node->field_authors[0]['uid'] = $node->uid;
+  $node->teaser = check_plain($voc_term['description']);
+  $node->body = $node->teaser;
   
   // all our validations has been added for form processing so we need to check our values here
   // in a different way
@@ -643,4 +333,340 @@ function neologism_new_node_property($vocabulary_nid, $term) {
   }
 
   return NULL;
+}
+
+function _neologism_import_vocabulary($resource, $title = NULL) {
+  include(RDFAPI_INCLUDE_DIR . "RdfAPI.php");
+  include(RDFAPI_INCLUDE_DIR . "syntax/RdfSerializer.php");
+    
+  $model = ModelFactory::getMemModel();
+  $model->load($resource);
+  
+  // there is a convention. The filename is the vocabulary's name if the document fail in query for document's name
+  $vocabulary_name = trim($title);
+  //if( $vocabulary_name != NULL ) {
+  //  $vocabulary_name = substr($vocabulary_name, 0, strrpos($vocabulary_name, '.'));
+  //}
+  $vocabulary_title = "";
+  
+  $prefixes = '
+    prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+    prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+    prefix owl: <http://www.w3.org/2002/07/owl#>
+    prefix foaf: <http://xmlns.com/foaf/0.1/>';
+  
+  /*
+  $query = $prefixes . '
+    prefix dc: <http://purl.org/dc/terms/>
+    
+    select ?s ?p ?o
+    where { ?s ?p ?o } 
+  ';
+  $query_result2 = $model->sparqlQuery($query);
+  */
+ 
+  $prefixes = '
+    prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+    prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+    prefix owl: <http://www.w3.org/2002/07/owl#>
+    prefix foaf: <http://xmlns.com/foaf/0.1/>';
+  
+  $query = $prefixes . '
+    prefix dc: <http://purl.org/dc/terms/>
+    
+    select ?title ?document
+    where { ?document rdf:type foaf:Document; rdfs:label ?title } 
+  ';
+  
+  $query_result = $model->sparqlQuery($query);
+  // patch to the old DC URI, could be an old Neologism exported ontology
+  if( $query_result == NULL ) {
+    $query = $query = $prefixes . '
+      prefix dc: <http://purl.org/dc/elements/1.1/>
+      
+      select ?title ?document
+      where { ?document rdf:type foaf:Document; rdfs:label ?title } 
+    ';  
+    
+    $query_result = $model->sparqlQuery($query);
+  }
+  
+  if( $query_result == NULL || !isset($query_result[0]['?title'])  ) {
+    $query = $prefixes . '
+      prefix dc: <http://purl.org/dc/terms/>
+      
+      select * 
+      where { 
+        {?document rdf:type owl:Ontology; dc:title ?title}.
+          OPTIONAL {?document dc:description ?description }.
+          OPTIONAL {?document dc:title ?title}
+      }
+    ';
+    
+    $query_result = $model->sparqlQuery($query);
+    // if $query_result == NULL query using the old DC URI
+    if( $query_result == NULL ) {
+      $query = $prefixes . '
+        prefix dc: <http://purl.org/dc/elements/1.1/>
+        
+        select * 
+        where { 
+          {?document rdf:type owl:Ontology; dc:title ?title}.
+            OPTIONAL {?document dc:description ?description }.
+            OPTIONAL {?document dc:title ?title} 
+        }
+      ';
+      $query_result = $model->sparqlQuery($query);
+    }
+    
+  }
+  
+  if( is_array($query_result) ) {
+    foreach ($query_result as $result) {
+      if (isset($result['?title']->label) ) {
+        $vocabulary_title = $result['?title']->label;
+        break;
+      }
+    }
+    
+    foreach ($query_result as $result) {
+      if (isset($result['?description']->label) ) {
+        $vocabulary_description = $result['?description']->label;
+        break;
+      }
+    }
+  }
+  
+  
+  //TODO: write a message for the user when the ontology title is not provided
+  if( $vocabulary_title == "" ) {
+    drupal_set_message('You document does not appear to contain a title. Your document does not appear to contain a title. Neologism has selected as title the imported filename.', 'warning');
+    $vocabulary_title = $vocabulary_name;
+  }
+  
+  if( $vocabulary_name == NULL && isset($query_result[0]['?document']->uri) ) {
+    $query_result[0]['?document']->uri = trim($query_result[0]['?document']->uri);
+    $vocabulary_name = substr($query_result[0]['?document']->uri, strrpos($query_result[0]['?document']->uri, '/') + 1);
+    if ( ($pos = strpos($vocabulary_name, '#')) ) {
+      $vocabulary_name =  substr($vocabulary_name, 0, $pos);
+    }
+    
+    // patch for neologism 1.x
+    if( $vocabulary_name == 'rdf') {
+      $vocabulary_name = substr($query_result[0]['?document']->uri, 0, strrpos($query_result[0]['?document']->uri, '/'));  
+      $vocabulary_name = substr($vocabulary_name, strrpos($vocabulary_name, '/') + 1);
+    }  
+  }
+  
+  // SPARQL queries are stored in an array.
+  $term_queries = array();
+  // Typical SPARQL queries to retrieve properties/classes, working for all major vocabularies...
+  
+  $term_queries[] = array(
+    'type' => 'class',
+    'query' => '
+      prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+      prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+      prefix owl: <http://www.w3.org/2002/07/owl#>
+      select *
+      where { {?class rdf:type owl:Class} union {?class rdf:type rdfs:Class}.
+        OPTIONAL {?class rdfs:label ?label}.
+        OPTIONAL {?class rdfs:subClassOf ?superclass}.
+        OPTIONAL {?class owl:disjointWith ?disjointwith}.
+        OPTIONAL {?class rdfs:comment ?comment}.
+      }
+      '
+  );
+  
+  $term_queries[] = array(
+    'type' => 'property',
+    'query' => ' 
+      prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+      prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+      prefix owl: <http://www.w3.org/2002/07/owl#>
+      select *
+      where {
+        {?property rdf:type owl:DatatypeProperty} 
+      union 
+        {?property rdf:type owl:ObjectProperty}.
+          OPTIONAL {?property rdf:type ?t . FILTER (?t = owl:FunctionalProperty || ?t = owl:InverseFunctionalProperty ) }.
+      union 
+        {?property rdf:type rdf:Property}.
+          OPTIONAL {?property rdfs:label ?label}.
+          OPTIONAL {?property rdfs:domain ?domain}.
+          OPTIONAL {?property rdfs:range ?range}.
+          OPTIONAL {?property rdfs:subPropertyOf ?subpropertyof}.
+          OPTIONAL {?property rdfs:comment ?comment}.
+          OPTIONAL {?property rdf:type ?t2 }.
+      }
+      limit 1000'
+  );
+
+  // Loop through all the various queries in order to extract as many classes and properties as possible.
+  $fetched_terms = array();
+  foreach ($term_queries as $query) {
+    $query_result = $model->sparqlQuery($query['query']);
+    
+    if( !$query_result ) {
+      drupal_set_message(SPARQL_QUERY_ERROR, 'error');
+      return;
+    }
+    
+    // Parse the SPARQL results and extract the relevant terms.
+    foreach( $query_result as $res_term ) {
+      
+      if( isset($res_term['?class']) ) {
+        $type = '?class';
+      }
+      else if( isset($res_term['?property']) ) {
+        $type = '?property';
+      };
+
+      $res_term[$type]->uri = trim($res_term[$type]->uri);
+      $term_qname = _neologism_is_from_vocabulary_imported($vocabulary_name, $res_term[$type]->uri); 
+      if( !$term_qname ) {
+        $term_qname = neologism_rdf_uri_to_qname($res_term[$type]->uri); //rdf_uri_to_qname($res_term[$type]->uri);  
+      }
+      $term_qname_parts = explode(':', $term_qname);
+      $term_prefix = $term_qname_parts[0];
+
+      $term = array();
+      $term['id'] = $term_qname_parts[1];
+      $term['type'] = $type;
+      $term['label'] = isset($res_term['?label']->label) ? $res_term['?label']->label : NULL;
+      $term['comment'] = isset($res_term['?comment']->label) ? trim($res_term['?comment']->label) : NULL;
+      
+      switch( $type ) {
+        case '?class':
+          $term[SUPERCLASSES] = array();
+          if ( isset($res_term['?superclass']->uri) ) {
+            $res_term['?superclass']->uri = trim($res_term['?superclass']->uri);
+            $term[SUPERCLASSES][] = _neologism_is_from_vocabulary_imported($vocabulary_name, $res_term['?superclass']->uri); 
+            if( !$term[SUPERCLASSES][0] ) {
+              $term[SUPERCLASSES][0] = neologism_rdf_uri_to_qname($res_term['?superclass']->uri);//rdf_uri_to_qname($res_term['?superclass']->uri);  
+            }
+          }
+          
+          $term[DISJOINTS_WITH] = array();
+          if ( isset($res_term['?disjointwith']->uri) ) {
+            $res_term['?disjointwith']->uri = trim($res_term['?disjointwith']->uri);
+            $term[DISJOINTS_WITH][] = _neologism_is_from_vocabulary_imported($vocabulary_name, $res_term['?disjointwith']->uri); 
+            if( !$term[DISJOINTS_WITH][0] ) {
+              $term[DISJOINTS_WITH][0] = neologism_rdf_uri_to_qname($res_term['?disjointwith']->uri);  
+            }
+          }
+          
+          break;
+
+        case '?property':
+          $term['subpropertyof'] = array();
+          if( isset($res_term['?subpropertyof']->uri) ) {
+            $res_term['?subpropertyof']->uri = trim($res_term['?subpropertyof']->uri);
+            $term['subpropertyof'][] = _neologism_is_from_vocabulary_imported($vocabulary_name, $res_term['?subpropertyof']->uri); 
+            if( !$term['subpropertyof'][0] ) {
+              $term['subpropertyof'][0] = neologism_rdf_uri_to_qname($res_term['?subpropertyof']->uri);  
+            }
+          }
+          
+          $term['domain'] = array();
+          if( isset($res_term['?domain']->uri) ) {
+            $res_term['?domain']->uri = trim($res_term['?domain']->uri);
+            $term['domain'][] = _neologism_is_from_vocabulary_imported($vocabulary_name, $res_term['?domain']->uri); 
+            if( !$term['domain'][0] ) {
+              $term['domain'][0] = neologism_rdf_uri_to_qname($res_term['?domain']->uri);  
+            }
+          }
+          
+          $term['range'] = array();
+          if( isset($res_term['?range']->uri) ) {
+            $res_term['?range']->uri = trim($res_term['?range']->uri);
+            $term['range'][] = _neologism_is_from_vocabulary_imported($vocabulary_name, $res_term['?range']->uri); 
+            if( !$term['range'][0] ) {
+              $term['range'][0] = neologism_rdf_uri_to_qname($res_term['?range']->uri);  
+            }
+          }
+          
+          $term['owl_type'] = array();
+          if( isset($res_term['?t']->uri) ) {
+            $res_term['?t']->uri = trim($res_term['?t']->uri);
+            $term['owl_type'][] = neologism_rdf_uri_to_qname($res_term['?t']->uri); 
+          }
+          // FIXME
+          // temporal patch we need to figure out how to get in a better way the properties type
+          else if( isset($res_term['?t2']->uri) ) {
+            $res_term['?t2']->uri = trim($res_term['?t2']->uri);
+            $owl_type = neologism_rdf_uri_to_qname($res_term['?t2']->uri);
+            if( $owl_type == 'owl:InverseFunctionalProperty' || $owl_type == 'owl:FunctionalProperty') {
+              $term['owl_type'][] = $owl_type;
+            }
+          }
+          
+          break;
+      }
+
+      // filter process
+      $term_exist = FALSE;
+      $just_updated = FALSE;
+      foreach( $fetched_terms as &$term_value ) {
+        if( $term_value['id'] == $term['id'] && $term_value['type'] == $term['type'] ) {
+          $term_exist = TRUE;
+          if( $term['type'] == '?class' ) {
+            if( !isset($term_value['label']) && isset($term['label']) ) {
+              $term_value['label'] = $term['label'];
+            }
+            if( !isset($term_value['comment']) && isset($term['comment']) ) {
+              $term_value['comment'] = $term['comment'];
+            }
+            if ( isset($term[SUPERCLASSES][0]) && !in_array($term[SUPERCLASSES][0], $term_value[SUPERCLASSES]) ) {
+              $term_value[SUPERCLASSES][] = $term[SUPERCLASSES][0];
+            }
+            if ( isset($term[DISJOINTS_WITH][0]) && !in_array($term[DISJOINTS_WITH][0], $term_value[DISJOINTS_WITH]) ) {
+              $term_value[DISJOINTS_WITH][] = $term[DISJOINTS_WITH][0];
+            }
+          }
+          elseif ( $term['type'] == '?property') {
+            if( !isset($term_value['label']) && isset($term['label']) ) {
+              $term_value['label'] = $term['label'];
+            }
+            if( !isset($term_value['comment']) && isset($term['comment']) ) {
+              $term_value['comment'] = $term['comment'];
+            }
+            if ( isset($term['subpropertyof'][0]) && !in_array($term['subpropertyof'][0], $term_value['subpropertyof']) ) {
+              $term_value['subpropertyof'][] = $term['subpropertyof'][0];
+            }
+            if ( isset($term['domain'][0]) && !in_array($term['domain'][0], $term_value['domain']) ) {
+              $term_value['domain'][] = $term['domain'][0];
+            }
+            if ( isset($term['range'][0]) && !in_array($term['range'][0], $term_value['range']) ) {
+              $term_value['range'][] = $term['range'][0];
+            }
+            if ( isset($term['owl_type'][0]) && !in_array($term['owl_type'][0], $term_value['owl_type']) ) {
+              $term_value['owl_type'][] = $term['owl_type'][0];
+            }
+          }
+          
+          // jump if the term exists
+          break;  
+        }
+      }
+      unset($term_value);
+        
+      // if not just_updated and not exists such a term add it to the array
+      if ( !$term_exist ) {
+        $fetched_terms[] = $term;
+      }
+    }
+  } // foreach
+  
+  $voc_nid = neologism_new_node_vocabulary( array('id' => $vocabulary_name, 'title' => $vocabulary_title, 'description' => $vocabulary_description) );
+  if( $voc_nid ) {
+    foreach ($fetched_terms as $term) {
+      if ($term['type'] == '?class') {
+        neologism_new_node_class($voc_nid, $term);
+      }
+      elseif ($term['type'] == '?property') {
+        neologism_new_node_property($voc_nid, $term);
+      }
+    }   
+  }  
 }
