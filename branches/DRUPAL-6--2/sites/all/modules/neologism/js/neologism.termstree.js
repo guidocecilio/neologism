@@ -64,6 +64,8 @@ Neologism.TermsTree = Ext.extend(Ext.tree.TreePanel, {
   width            : '100%',
   disabled         : false,
   rootVisible      : false,
+  header           : false,
+  headerAsText     : false, // hidden the header title
 
   initComponent: function(){
     // Called during component initialization
