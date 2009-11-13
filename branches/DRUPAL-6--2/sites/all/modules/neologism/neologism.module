@@ -572,6 +572,7 @@ function neologism_get_rdf_model($node, $uri, $document) {
   $model->add(new Statement($doc, new Resource($rdf_namespaces["rdf"], "type"), new Resource($rdf_namespaces["foaf"], "Document")));
   $model->add(new Statement($doc, new Resource($rdf_namespaces["rdf"], "type"), new Resource($rdf_namespaces["owl"], "Ontology")));
   $model->add(new Statement($doc, new Resource($rdf_namespaces["dc"], "title"), new Literal($node->field_title[0]['value']." ontology's document")));
+  //$model->add(new Statement($doc, new Resource($rdf_namespaces["dc"], "description"), new Literal($node->body)));
   
   foreach ( $classes as $class) {
     $classresource = new Resource($uri, $class["id"]);
@@ -708,7 +709,17 @@ function neologism_export_xml($node) {
     $classnode = $classes_node->addChild('Class');
     $classnode->addAttribute('id', $class['id']);
     $classnode->addChild('label', $class['label']);
-    $classnode->addChild('comment', $class['comment']);
+    
+    if( isset($class['comment']) )
+    {
+      // we are using check_plain() for comment to avoid the 
+      // warning: SimpleXMLElement::addChild() [simplexmlelement.addchild]: 
+      // unterminated entity reference bytes. Being abstract, physical parts of computer 
+      // memory that encode a file are excluded from the concept. 
+      // in ...\sites\all\modules\neologism\neologism.module on line 714.
+      $classnode->addChild('comment', check_plain($class['comment']));  
+    }
+    
     if( isset($class[SUPERCLASSES]) ) {
       foreach( $class[SUPERCLASSES] as $value ) {
         $subclassof_node = $classnode->addChild('subClassOf');
@@ -2072,5 +2083,32 @@ function _neologism_on_deleted_property_node($node, $vocabulary_title = NULL) {
 }
 
 function _neologism_is_valid_id($string) {
-  return (ereg("^[a-zA-Z_]+[a-zA-Z0-9._-]*", $string, $reg) == strlen($string)); 
+  return ( ereg("^[a-zA-Z_]+[a-zA-Z0-9._-]*", $string, $reg) == strlen($string)); 
+  //return (preg_match("/^[a-zA-Z_]+[a-zA-Z0-9._-]*/", $string) == strlen($string));
 }
+
+/**
+ * This function is a wrapper function to fix the bug in rdfapi when localpart contain the pewfix #
+ * @param object $uri
+ * @return 
+ */
+function neologism_rdf_uri_to_qname($uri) {
+  $qname = rdf_uri_to_qname($uri);
+  $qname_parts = explode(':', $qname);
+  if ( $pos = strpos($qname_parts[1], '#') !== false ) {
+    $qname_parts[1] = substr($qname_parts[1], $pos);  
+  } 
+  return implode(':', $qname_parts);
+}
+
+
+
+
+
+
+
+
+
+
+
+
