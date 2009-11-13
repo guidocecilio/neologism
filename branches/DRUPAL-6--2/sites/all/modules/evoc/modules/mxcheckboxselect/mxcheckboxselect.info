@@ -1,7 +1,7 @@
 ; $Id: mxcheckboxselect.info,v 1.0.0.0 2009/08/28 16:26:17 guidocecilio Exp $
 name = MXCheckboxSelect
 description = Defines a CCK multiple selection field widget for evoc terms, to allow easier multi-selection for users using checkboxes in a tree.
-dependencies[] = optionwidgets
+dependencies[] = evocreference
 dependencies[] = ext
 package = CCK
 core = 6.x
