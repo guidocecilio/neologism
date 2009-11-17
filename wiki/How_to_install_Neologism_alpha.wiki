@@ -1,0 +1,8 @@
+#summary How to install Neologism alpha release.
+
+= Introduction =
+It is really easy to install a new instance of Neologism. Just download the compressed file, uncompress it into any folder you like, e.g: Neologism/neo_folders_and_files. Make sure you have that folder published in some web server with PHP 5+, but not PHP 5.3.0 because Drupal will not work for that version until Drupal 8. Also make sure that you have some instance of MySQL running on your server or local machine to store the database used by Neologism.
+
+Once these prerequisites are met, you can open your browser and type the url of your site, e.g: http://127.0.0.1/neologism. This a fictitious example for a neologism site installed in my local computer. After you type the url and press intro the following page should be shown.
+
+[http://code.google.com/p/neologism/source/browse/wiki/installation.step1.jpg]
