@@ -110,7 +110,7 @@ function evoc_admin_settings_submit($form, &$form_state) {
  * @param object $endpoint
  * @return 
  */
-function evoc_edit_sparql_endpoint(&$form_state, $type, stdClass $endpoint) {
+function evoc_edit_sparql_endpoint(&$form_state, $type, stdClass $endpoint = NULL) {
   if( $type == 'edit' ) {
     $form['#insert'] = FALSE;
     
@@ -127,7 +127,14 @@ function evoc_edit_sparql_endpoint(&$form_state, $type, stdClass $endpoint) {
     );
   }
   else {
-    $endpoint = array('name' => '', 'enabled' => FALSE, 'status' => '', 'endpoint' => '', 'webform' => '', 'comment' => '', 'data_exposed' => '');
+    $endpoint = new stdClass();
+    $endpoint->name = '';
+    $endpoint->enabled = FALSE;
+    $endpoint->status = '';
+    $endpoint->endpoint = '';
+    $endpoint->webform = '';
+    $endpoint->comment = '';
+    $endpoint->data_exposed = ''; 
     $form['#insert'] = TRUE;
   }
   $form['name'] = array(
@@ -135,7 +142,7 @@ function evoc_edit_sparql_endpoint(&$form_state, $type, stdClass $endpoint) {
       '#title' => t('Name/Project'),
       '#default_value' => $endpoint->name,
       '#maxsize' => 255,
-      '#description' => t('The endpint name or project.'),
+      '#description' => t('The endpoint name or project.'),
       '#required' => TRUE,
     );
     
@@ -144,7 +151,7 @@ function evoc_edit_sparql_endpoint(&$form_state, $type, stdClass $endpoint) {
     '#title' => t('Status'),
     '#default_value' => $endpoint->status,
     '#maxsize' => 255,
-    '#description' => t('Status defined by the endpoint\'s status. Just write alive is textfield to use it as a valid endpoint.'),
+    '#description' => t('Status defined by the endpoint\'s status. Just write alive in the textfield to use it as a valid endpoint.'),
     '#required' => TRUE,
   );
   
@@ -209,11 +216,11 @@ function evoc_edit_sparql_endpoint_validate($form, &$form_state) {
   //TODO this function need some tune
   $item = $form_state['values'];
   
-  if (preg_match('/[^a-zA-Z0-9-]/', $item['name'])) {
+  if (preg_match('/[^a-zA-Z0-9_\- ]/', $item['name'])) {
     form_set_error('name', t('The name may only consist of letters, numbers, and hyphens.'));
   }
   
-  if (preg_match('/[^a-zA-Z0-9-]/', $item['name'])) {
+  if (preg_match('/[^a-zA-Z0-9_\- ]/', $item['name'])) {
     form_set_error('name', t('The name may only consist of letters, numbers, and hyphens.'));
   }
   
