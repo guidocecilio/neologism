@@ -6,3 +6,9 @@ It is really easy to install a new instance of Neologism. Just download the comp
 Once these prerequisites are met, you can open your browser and type the url of your site, e.g: http://127.0.0.1/neologism. This a fictitious example for a neologism site installed in my local computer. After you type the url and press intro the following page should be shown.
 
 [http://neologism.googlecode.com/svn/wiki/installation.step1.jpg]
+
+Just select the installation profile related to Neologism and click the “Save and continue” button.
+
+After that, you can continue the process described in the following url http://drupal.org/getting-started/6/install/run-script where the installation process for Drupal sites is described in details.
+
+Make sure that all those steps are well executed and you can make use of Neologism to create, import and export your own and any ontology that you want. 
