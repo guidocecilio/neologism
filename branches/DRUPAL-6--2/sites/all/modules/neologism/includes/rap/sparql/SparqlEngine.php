@@ -423,7 +423,7 @@ Class SparqlEngine extends Object{
         $k = key($res);
 
         foreach ($res[$k] as $varname => $node) {
-            if (array_key_exists($varname, $finalRes[0])){
+            if ( is_array($finalRes[0]) && array_key_exists($varname, $finalRes[0]) ){
                 $jointVars[] = $varname;
             }else{
                 $newVars[] = $varname;
@@ -457,8 +457,10 @@ Class SparqlEngine extends Object{
         foreach($res as $k =>$val){
             if(!in_array($k,$joined)){
                 $result[$count] = $finalRes[0];
-                foreach($result[$count] as $varname => $varVal){
-                    $result[$count][$varname]='';
+                if( is_array($result[$count]) ) {
+                  foreach($result[$count] as $varname => $varVal){
+                      $result[$count][$varname]='';
+                  }
                 }
 
                 foreach($val as $varname2 => $varVal2){
