@@ -5,7 +5,7 @@ It is really easy to install a new instance of Neologism. Just download the comp
 
 Once these prerequisites are met, you can open your browser and type the url of your site, e.g: http://127.0.0.1/neologism. This a fictitious example for a neologism site installed in my local computer. After you type the url and press intro the following page should be shown.
 
-[http://neologism.googlecode.com/svn/wiki/installation.step1.jpg]
+[http://neologism.googlecode.com/svn/wiki/installation.profile.jpg]
 
 Just select the installation profile related to Neologism and click the “Save and continue” button.
 
