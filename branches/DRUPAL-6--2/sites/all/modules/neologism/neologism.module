@@ -33,8 +33,8 @@ define("RANGES", "ranges");
 define("SUBPROPERTYOF", "subpropertyof");
 
 // persmission definitions
-define("EDIT_VOCABULARIES", "edit vocabularies");
-define("IMPORT_VOCABULARIES", "import vocabularies");
+define("PERMISSION_EDIT_VOCABULARIES", "edit vocabularies");
+define("PERMISSION_IMPORT_VOCABULARIES", "import vocabularies");
 
 
 /**
@@ -59,7 +59,7 @@ function neologism_init() {
  * Implementation of hook_perm().
  */
 function neologism_perm() {
-    return array(EDIT_VOCABULARIES, IMPORT_VOCABULARIES);
+    return array(PERMISSION_EDIT_VOCABULARIES, PERMISSION_IMPORT_VOCABULARIES);
 }
 
 /**
@@ -173,7 +173,7 @@ function neologism_menu() {
     'description' => 'Import an RDF vocabulary and use Neologism to author it.',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('neologism_import_form'),
-    'access arguments' => array(IMPORT_VOCABULARIES),
+    'access arguments' => array(PERMISSION_IMPORT_VOCABULARIES),
     'file' => 'neologism.import.inc',
   );
   $items['neologism/importfromfile'] = array(
@@ -181,7 +181,7 @@ function neologism_menu() {
     'description' => 'Import vocabulary in Neologism from a RDF file.',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('neologism_import_fromfile_form'),
-    'access arguments' => array(IMPORT_VOCABULARIES),
+    'access arguments' => array(PERMISSION_IMPORT_VOCABULARIES),
     'file' => 'neologism.import.inc',
   );
   // ajax/json gateway for preview classes and properties
@@ -439,7 +439,7 @@ function neologism_export_html($node) {
   }
   
   // add the links for add classes or properties if there is right 
-  if (user_access('edit neologism')) {
+  if (user_access(PERMISSION_EDIT_VOCABULARIES)) {
     $output .= '<p id="add_terms_link" class="neologism">'. l('Add class', 'node/add/'.$class_url_str, array('query' => "v=$node->nid")) .'| '. l('Add property', 'node/add/'.$property_url_str, array('query' => "v=$node->nid")) . '</p>';
   }
   
@@ -477,7 +477,7 @@ function neologism_export_html($node) {
   $base = base_path();
   $swf = $base . drupal_get_path('module','neologism').'/includes/Neologism.swf';
   $img_legend = $base . drupal_get_path('module','neologism').'/includes/legend.png';
-  $edit_mode = user_access('edit neologism');
+  $edit_mode = user_access(PERMISSION_EDIT_VOCABULARIES);
   $prefix = $base . $node->path . '/';
   $token = drupal_get_token();
   
@@ -889,7 +889,7 @@ function neologism_link($type, $node = NULL, $teaser = FALSE) {
     $class_url_str = str_replace('_', '-', NEOLOGISM_CT_CLASS);
     $property_url_str = str_replace('_', '-', NEOLOGISM_CT_PROPERTY);
 
-    if (user_access('edit neologism') && $node->type == NEOLOGISM_CT_CLASS) {
+    if (user_access(PERMISSION_EDIT_VOCABULARIES) && $node->type == NEOLOGISM_CT_CLASS) {
       $links['neologism_edit_class'] = array(
         'title' => t('Edit'),
         'href' => "node/$node->nid/edit",
@@ -905,7 +905,7 @@ function neologism_link($type, $node = NULL, $teaser = FALSE) {
       );
     }
 
-    if (user_access('edit neologism') && $node->type == NEOLOGISM_CT_PROPERTY) {
+    if (user_access(PERMISSION_EDIT_VOCABULARIES) && $node->type == NEOLOGISM_CT_PROPERTY) {
       $links['neologism_edit_property'] = array(
         'title' => t('Edit'),
         'href' => "node/$node->nid/edit",
