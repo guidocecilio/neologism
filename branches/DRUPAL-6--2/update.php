@@ -247,7 +247,6 @@ function update_script_selection_form() {
   $form['has_js'] = array(
     '#type' => 'hidden',
     '#default_value' => FALSE,
-    '#attributes' => array('id' => 'edit-has_js'),
   );
   $form['submit'] = array(
     '#type' => 'submit',
