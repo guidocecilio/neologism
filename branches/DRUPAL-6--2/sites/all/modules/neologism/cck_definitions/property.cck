@@ -1,9 +1,10 @@
 $content['type']  = array (
   'name' => 'Property',
   'type' => 'neo_property',
-  'description' => '',
+  'description' => 'Use mixedCase: Start with a lowercase letter and use only letters, numbers and hyphen.',
   'title_label' => 'Id',
-  'body_label' => '',
+  'body_label' => 'A full description of the class. Include as much detail as you like. Limited HTML is allowed.',
+  'size' => 25,
   'min_word_count' => '0',
   'help' => '',
   'node_options' => 
@@ -130,7 +131,7 @@ $content['fields']  = array (
     'weight' => '-7',
     'rows' => '1',
     'size' => 60,
-    'description' => 'This will be used for rdfs:label ',
+    'description' => 'Capitalise this label using title case, as though it was being used as a heading in a table.',
     'default_value' => 
     array (
     ),
@@ -192,9 +193,9 @@ $content['fields']  = array (
     'widget_type' => 'text_textfield',
     'change' => 'Change basic information',
     'weight' => '-6',
-    'rows' => '1',
+    'rows' => '2',
     'size' => '130',
-    'description' => 'This will be used for rdfs:comment',
+    'description' => 'A plain text description of the property.',
     'default_value' => 
     array (
       0 => 
@@ -261,7 +262,7 @@ $content['fields']  = array (
     'widget_type' => 'mxcheckbox_select',
     'change' => 'Change basic information',
     'weight' => '-5',
-    'description' => 'Select the class for the rdfs:domain of this property.',
+    'description' => 'If having this property makes something belong to a certain class, then the class should be selected here.',
     'default_value' => 
     array (
       0 => 
@@ -335,8 +336,7 @@ $content['fields']  = array (
     'widget_type' => 'optionwidgets_onoff',
     'change' => 'Change basic information',
     'weight' => '3',
-    'description' => 'Check this box if do you want this property of type <b>rdfs:Literal</b>. The class rdfs:Literal represents the class of literal values such as strings and integers. 
-<br/><b>note</b> that selecting this checkbox is the same as selecting the class <b>rdfs: Literal</b> from the list of classes\' ranges.',
+    'description' => 'Check this box to allow only literals (strings, numbers, dates etc.) as values of this property.',
     'default_value' => 
     array (
       0 => 
@@ -407,7 +407,7 @@ $content['fields']  = array (
     'widget_type' => 'mxcheckbox_select',
     'change' => 'Change basic information',
     'weight' => '4',
-    'description' => '',
+    'description' => 'If all possible values of this property are members of a certain class, then the class should be selected here.',
     'default_value' => 
     array (
     ),
