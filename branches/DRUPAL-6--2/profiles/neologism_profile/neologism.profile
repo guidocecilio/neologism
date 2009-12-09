@@ -45,7 +45,7 @@ function neologism_profile_modules() {
 function neologism_profile_details() {
   return array(
     'name' => 'Neologism',
-    'description' => 'Tool to easily create and publish RDF vocabularies online.'
+    'description' => 'Neologism is a tool to easily create and publish RDF vocabularies.'
   );
 }
 
