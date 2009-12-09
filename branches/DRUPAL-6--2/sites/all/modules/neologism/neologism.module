@@ -32,6 +32,11 @@ define("DOMAINS", "domains");
 define("RANGES", "ranges");
 define("SUBPROPERTYOF", "subpropertyof");
 
+// persmission definitions
+define("EDIT_VOCABULARIES", "edit vocabularies");
+define("IMPORT_VOCABULARIES", "import vocabularies");
+
+
 /**
  * Implementation of hook_init().
  */
@@ -54,7 +59,7 @@ function neologism_init() {
  * Implementation of hook_perm().
  */
 function neologism_perm() {
-    return array('edit neologism');
+    return array(EDIT_VOCABULARIES, IMPORT_VOCABULARIES);
 }
 
 /**
@@ -168,7 +173,7 @@ function neologism_menu() {
     'description' => 'Import an RDF vocabulary and use Neologism to author it.',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('neologism_import_form'),
-    'access arguments' => array('administer nodes'),
+    'access arguments' => array(IMPORT_VOCABULARIES),
     'file' => 'neologism.import.inc',
   );
   $items['neologism/importfromfile'] = array(
@@ -176,7 +181,7 @@ function neologism_menu() {
     'description' => 'Import vocabulary in Neologism from a RDF file.',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('neologism_import_fromfile_form'),
-    'access arguments' => array('administer nodes'),
+    'access arguments' => array(IMPORT_VOCABULARIES),
     'file' => 'neologism.import.inc',
   );
   // ajax/json gateway for preview classes and properties
@@ -385,7 +390,7 @@ function neologism_export_html($node) {
   $output .= '<div id="namespace"><h3>Namespace URI:</h3> <div id="namespace-value">'.$namespace_url.'#</div></div>';
 
   // Abstract
-  $output .= '<div id="abstract" class="neologism field"><div class="block title"><h3>Abstract&nbsp;</h3></div> ' . check_plain($node->field_abstract[0]['value']) . ' </div>';
+  $output .= '<div id="abstract" class="neologism field"><div class="block title"><h3>Abstract&nbsp;</h3></div> ' . $node->field_abstract[0]['value'] . ' </div>';
 
   // Content type in urls are with - instead of _
   $vocabulary_url_str = str_replace('_', '-', NEOLOGISM_CT_VOCABULARY);
@@ -505,7 +510,7 @@ function neologism_export_html($node) {
   </div>';
   
   // insert the vocabulary's dscription
-  $output .= '<div id="description">'.nl2br(check_markup($node->body)).'</div>';
+  $output .= '<div id="description">'.$node->body.'</div>';
 
   //Display complete reference
   if ($classes) {
@@ -2102,7 +2107,40 @@ function neologism_rdf_uri_to_qname($uri) {
 }
 
 
-
+// this is for a test
+function neologism_import_form_test($form_state) {
+  $form['help'] = array(
+    '#value' => 'This form allows you to import external RDF vocabularies into your site.
+    These can later be used by other modules such as <a href="http://drupal.org/project/rdfcck">RDF CCK</a> or <a href="http://drupal.org/project/neologism">Neologism</a>. Popular vocabularies include:<br />
+    dc : http://purl.org/dc/elements/1.1/<br />
+    dcterms : http://purl.org/dc/terms/<br />
+    dcmitype : http://purl.org/dc/dcmitype/<br />
+    foaf : http://xmlns.com/foaf/0.1/<br />
+    sioc : http://rdfs.org/sioc/ns#<br />
+    skos : http://www.w3.org/2008/05/skos#<br />
+    doap : http://usefulinc.com/ns/doap#<br />
+    ',
+  );
+  $form['ns_uri'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Vocabulary URI'),
+    '#required' => TRUE,
+    '#default_value' => isset($form_state['values']['ns_uri']) ? $form_state['values']['ns_uri'] : NULL,
+    '#description' => "Enter the URI of the vocabulary to import. Make sure it finishes by either / or #.",
+  );
+  $form['prefix'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Prefix'),
+    '#required' => TRUE,
+    '#default_value' => isset($form_state['values']['prefix']) ? $form_state['values']['prefix'] : NULL,
+    '#description' => "Choose a prefix for this vocabulary. Example: dc, foaf, sioc etc. This prefix will later be used in the system to refer to this vocabulary.",
+  );
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => 'Submit',
+  );
+  return $form;
+}
 
 
 
