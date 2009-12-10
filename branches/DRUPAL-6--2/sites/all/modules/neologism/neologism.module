@@ -541,7 +541,7 @@ function neologism_export_html($node) {
  * using RAP (RDF API for PHP)
  * seeAlso http://www4.wiwiss.fu-berlin.de/bizer/rdfapi/
  */
-function neologism_get_rdf_model($node, $uri, $document) {
+function neologism_get_rdf_model($node, $namespace, $document) {
   include_once(RDFAPI_INCLUDE_DIR . "RdfAPI.php");
 
   global $rdf_namespaces;
@@ -564,6 +564,7 @@ function neologism_get_rdf_model($node, $uri, $document) {
   $model->addNamespace('dc', $rdf_namespaces['dc']);
   $model->addNamespace('owl', $rdf_namespaces['owl']);
   $model->addNamespace('foaf', $rdf_namespaces['foaf']);
+  $model->addNamespace('vann', $rdf_namespaces['vann']);
   
   // add namespaces detected in current vocabulary
   foreach ( $detected_namespaces as $prefix ) {
@@ -571,16 +572,17 @@ function neologism_get_rdf_model($node, $uri, $document) {
   }
     
   //export the ontology
-  $ontology = new Resource($uri);
   $doc = new Resource($document);
   
   $model->add(new Statement($doc, new Resource($rdf_namespaces["rdf"], "type"), new Resource($rdf_namespaces["foaf"], "Document")));
   $model->add(new Statement($doc, new Resource($rdf_namespaces["rdf"], "type"), new Resource($rdf_namespaces["owl"], "Ontology")));
   $model->add(new Statement($doc, new Resource($rdf_namespaces["dc"], "title"), new Literal($node->field_title[0]['value'])));
-  //$model->add(new Statement($doc, new Resource($rdf_namespaces["dc"], "description"), new Literal($node->body)));
+  $model->add(new Statement($doc, new Resource($rdf_namespaces["dc"], "description"), new Literal($node->field_abstract[0]['value'])));
+  $model->add(new Statement($doc, new Resource($rdf_namespaces["vann"], "preferredNamespaceUri"), new Literal($namespace)));
+  $model->add(new Statement($doc, new Resource($rdf_namespaces["vann"], "preferredNamespacePrefix"), new Literal($node->title)));
   
   foreach ( $classes as $class) {
-    $classresource = new Resource($uri, $class["id"]);
+    $classresource = new Resource($namespace, $class["id"]);
     $model->add(new Statement($classresource, new Resource($rdf_namespaces["rdf"], "type"), new Resource($rdf_namespaces["rdfs"], "Class")));
     $model->add(new Statement($classresource, new Resource($rdf_namespaces["rdfs"], "isDefinedBy"), $doc));
     $model->add(new Statement($classresource, new Resource($rdf_namespaces["rdfs"], "label"), new Literal($class["label"])));
@@ -603,7 +605,7 @@ function neologism_get_rdf_model($node, $uri, $document) {
  
   //export all properties
   foreach ( $properties as $property ) {
-    $property_source = new Resource($uri, $property["id"]);
+    $property_source = new Resource($namespace, $property["id"]);
     $model->add(new Statement($property_source, new Resource($rdf_namespaces["rdf"], "type"), new Resource($rdf_namespaces["rdf"], "Property")));
     $model->add(new Statement($property_source, new Resource($rdf_namespaces["rdfs"], "isDefinedBy"), $doc));
     $model->add(new Statement($property_source, new Resource($rdf_namespaces["rdfs"], "label"), new Literal($property["label"])));
@@ -645,7 +647,7 @@ function neologism_get_rdf_model($node, $uri, $document) {
    
     /*
     if ($property["inverse"] != NULL)
-      $model->add(new Statement($propresource, new Resource($ns["owl"], "inverseOf"), new Resource($uri.$property["inverse"])));
+      $model->add(new Statement($propresource, new Resource($ns["owl"], "inverseOf"), new Resource($namespace.$property["inverse"])));
       */            
   }
 
@@ -661,8 +663,8 @@ function neologism_export_rdfxml($node) {
     
     $request_uri = "http://" . $_SERVER["HTTP_HOST"] . $_SERVER["REQUEST_URI"];
     $request_uri = substr($request_uri, 0,  strrpos($request_uri, '/'));
-    $ontology = $request_uri.'#'; 
-    $model = neologism_get_rdf_model($node, $ontology, $request_uri);
+    $namespace = $request_uri.'#'; 
+    $model = neologism_get_rdf_model($node, $namespace, $request_uri);
     
     $ser = new RDFSerializer();
     $rdf = &$ser->serialize($model);
@@ -685,8 +687,8 @@ function neologism_export_n3($node) {
     $request_uri = "http://".$_SERVER["HTTP_HOST"].$_SERVER["REQUEST_URI"];
     //$ontology = substr($request_uri, 0, strlen($request_uri)-3) . "#";
     $request_uri = substr($request_uri, 0,  strrpos($request_uri, '/'));
-    $ontology = $request_uri.'#';
-    $model = neologism_get_rdf_model($node, $ontology, $request_uri);
+    $namespace = $request_uri.'#';
+    $model = neologism_get_rdf_model($node, $namespace, $request_uri);
     $ser = new N3Serializer();
     $n3 = &$ser->serialize($model);
     $model->close();
@@ -1211,19 +1213,20 @@ function neologism_get_preferred_uri($uri, $accept) {
 */
 function neologism_rdf_namespaces() {
   $ct = content_types();
-  if (isset($ct[NEOLOGISM_CT_VOCABULARY])) {
-    $uri = $GLOBALS['base_url'].'/';
-  
-    $vocs = db_query(db_rewrite_sql("SELECT n.title FROM {content_type_neo_vocabulary} c INNER JOIN {node} n ON c.nid = n.nid WHERE n.type = '%s'"), NEOLOGISM_CT_VOCABULARY);
-    //$namespaces = array('drupal' => RDF_SCHEMA_URI);
-    while( $voc = db_fetch_object($vocs) ) {
-    //foreach ( db_fetch_object(neologism_get_vocabularies()) as $voc) {
-      $namespaces[$voc->title] = $uri.$voc->title.'#';
-    }
-    return $namespaces;
+  if (!isset($ct[NEOLOGISM_CT_VOCABULARY])) {
+    return NULL; // Just a sanity check
   }
+
+  $uri = $GLOBALS['base_url'].'/';
   
-  return NULL;
+  $vocs = db_query(db_rewrite_sql("SELECT n.title FROM {content_type_neo_vocabulary} c INNER JOIN {node} n ON c.nid = n.nid WHERE n.type = '%s'"), NEOLOGISM_CT_VOCABULARY);
+  $namespaces = array(
+    'vann' => 'http://purl.org/vocab/vann/',
+  );
+  while( $voc = db_fetch_object($vocs) ) {
+    $namespaces[$voc->title] = $uri.$voc->title.'#';
+  }
+  return $namespaces;
 }
 
 
