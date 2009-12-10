@@ -576,7 +576,7 @@ function neologism_get_rdf_model($node, $uri, $document) {
   
   $model->add(new Statement($doc, new Resource($rdf_namespaces["rdf"], "type"), new Resource($rdf_namespaces["foaf"], "Document")));
   $model->add(new Statement($doc, new Resource($rdf_namespaces["rdf"], "type"), new Resource($rdf_namespaces["owl"], "Ontology")));
-  $model->add(new Statement($doc, new Resource($rdf_namespaces["dc"], "title"), new Literal($node->field_title[0]['value']." ontology's document")));
+  $model->add(new Statement($doc, new Resource($rdf_namespaces["dc"], "title"), new Literal($node->field_title[0]['value'])));
   //$model->add(new Statement($doc, new Resource($rdf_namespaces["dc"], "description"), new Literal($node->body)));
   
   foreach ( $classes as $class) {
