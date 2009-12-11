@@ -72,6 +72,48 @@ function neologism_profile_task_list() {
 function neologism_profile_tasks(&$task, $url) {
   module_rebuild_cache();
   
+  // Insert default user-defined node types into the database. For a complete
+  // list of available node type attributes, refer to the node type API
+  // documentation at: http://api.drupal.org/api/HEAD/function/hook_node_info.
+  $types = array(
+    array(
+      'type' => 'page',
+      'name' => st('Page'),
+      'module' => 'node',
+      'description' => st("A <em>page</em>, similar in form to a <em>story</em>, is a simple method for creating and displaying information that rarely changes, such as an \"About us\" section of a website. By default, a <em>page</em> entry does not allow visitor comments and is not featured on the site's initial home page."),
+      'custom' => TRUE,
+      'modified' => TRUE,
+      'locked' => FALSE,
+      'help' => '',
+      'min_word_count' => '',
+    ),
+    array(
+      'type' => 'story',
+      'name' => st('Story'),
+      'module' => 'node',
+      'description' => st("A <em>story</em>, similar in form to a <em>page</em>, is ideal for creating and displaying content that informs or engages website visitors. Press releases, site announcements, and informal blog-like entries may all be created with a <em>story</em> entry. By default, a <em>story</em> entry is automatically featured on the site's initial home page, and provides the ability to post comments."),
+      'custom' => TRUE,
+      'modified' => TRUE,
+      'locked' => FALSE,
+      'help' => '',
+      'min_word_count' => '',
+    ),
+  );
+
+  foreach ($types as $type) {
+    $type = (object) _node_type_set_defaults($type);
+    node_type_save($type);
+  }
+
+  // Default page to not be promoted and have comments disabled.
+  variable_set('node_options_page', array('status'));
+  variable_set('comment_page', COMMENT_NODE_DISABLED);
+
+  // Don't display date and author information for page nodes by default.
+  $theme_settings = variable_get('theme_settings', array());
+  $theme_settings['toggle_node_info_page'] = FALSE;
+  variable_set('theme_settings', $theme_settings);
+
   $modules_list = array(
     'sparql',
     'evoc', 
@@ -84,46 +126,6 @@ function neologism_profile_tasks(&$task, $url) {
   
   variable_set('ext_path', drupal_get_path('module', 'neologism') .'/ext/ext-3.0.0');
   
-  /*
-  module_enable(array(
-    'sparql',
-    'evoc', 
-    'evocreference', 'ext', 'mxcheckboxselect',
-    'neologism'
-  ));
-  
-  // Evoc installation
-  drupal_install_schema('evoc');
-  // default sparql endpoint
-  $endpoint = array(
-    'name' => 'SPARQLer',
-    'enabled' => TRUE,
-    'status' => 'alive',
-    'endpoint' => 'http://www.sparql.org/sparql',
-    'webform' => 'http://www.sparql.org/sparql.html',
-    'comment' => 'based on ARQ and Joseki',
-    'data_exposed' => '"any" — "general purpose SPARQL service"'
-  );
-  
-  $result = db_query("insert into {evoc_sparql_endpoints} (name, enabled, status, endpoint, webform, comment, data_exposed) values ('%s', '%d', '%s', '%s', '%s', '%s', '%s')", 
-    $endpoint['name'], $endpoint['enabled'], $endpoint['status'], $endpoint['endpoint'], $endpoint['webform'], $endpoint['comment'], $endpoint['data_exposed']);
-      
-  variable_set('evoc_sparqlendpoint', 1);
-  
-  // Neologism installation
-  // create Neologism content types
-  $ct = content_types();
-  if (!isset($ct[NEOLOGISM_CT_VOCABULARY])) {
-    module_load_include('install', 'neologism', 'neologism');
-    _neologism_create_content('vocabulary');
-  }
-  if (!isset($ct[NEOLOGISM_CT_CLASS])) {
-    module_load_include('install', 'neologism', 'neologism');
-    _neologism_create_content('class');
-  }
-  if (!isset($ct[NEOLOGISM_CT_PROPERTY])) {
-    module_load_include('install', 'neologism', 'neologism');
-    _neologism_create_content('property');
-  }
-*/
+  // Update the menu router information.
+  menu_rebuild();
 }
