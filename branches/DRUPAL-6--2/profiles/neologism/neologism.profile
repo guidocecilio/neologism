@@ -82,7 +82,7 @@ function neologism_profile_tasks(&$task, $url) {
   drupal_install_modules($modules_list);
   drupal_install_modules(array('neologism'));
   
-  variable_set('ext_path', drupal_get_path('module', 'ext') .'/ext-3.0.0');
+  variable_set('ext_path', drupal_get_path('module', 'neologism') .'/ext/ext-3.0.0');
   
   /*
   module_enable(array(
