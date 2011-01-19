@@ -39,6 +39,11 @@ $section_links = array(
         'Issue tracker' => 'issues',
         'Source code' => 'source',
     ),
+    'showcase' => array(
+        'Screenshots' => 'showcase#screenshots',
+        'Vocabularies hosted on Neologism' => 'showcase#vocabularies_hosted_on_Neologism',
+        'Installations' => 'showcase#installations'
+    ),
 );
 
 $pages = array(
