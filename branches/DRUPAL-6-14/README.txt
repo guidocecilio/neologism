@@ -1,1 +1,0 @@
-The current version of Neologism comes with the default Drupal installer. All you need to do is to visit the demo/ page and follow this instructions to get Neologism installed on your server.

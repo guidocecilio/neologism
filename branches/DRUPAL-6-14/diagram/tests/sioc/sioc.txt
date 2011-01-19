@@ -1,3 +1,0 @@
-http://neologism.deri.ie/demo/neologism/sioc/
-
-working ok

@@ -1,3 +1,0 @@
-http://neologism.deri.ie/demo/neologism/bowling/
-
-currently broken, but was working before

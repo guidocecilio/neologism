@@ -1,3 +1,0 @@
-http://rdfs.org/ns/aardv/
-
-working
