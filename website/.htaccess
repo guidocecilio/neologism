@@ -1,4 +1,3 @@
 RewriteEngine On
-RewriteBase /neowebsite/
 RewriteCond %{REQUEST_URI} !/(robots\.txt|favicon\.ico|style\.css|.*\.js|images/.*)$
 RewriteRule .* index.php [L] 
