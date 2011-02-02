@@ -1,0 +1,31 @@
+#summary How to set up a development environment for Neologism's Flex-based vocabulary overview diagram applet
+
+= Introduction =
+
+This page explains how to start working on the Flex visualization applet included in Neologism.
+
+*_Note: This is somewhat outdated!_*
+
+= Requirements = 
+
+[http://www.adobe.com/products/flex/ Adobe Flex Builder 3]
+
+The following ActionScript 3 libraries are used:
+  * [http://www.rogue-development.com/objectHandles.html Object Handles]
+  * [http://code.google.com/p/tweener/ Tweener]
+  * [http://weblogs.macromedia.com/auhlmann/archives/effects/index.html Distortion effects]
+ 
+
+= For developers =
+
+To contribute to the NeosVis vocabulary visualization applet, the following steps are required:
+
+  * Check out the current version from svn; NeosVis is located in the */flex-src* folder
+  * Create a new project in FlexBuilder 3.
+  * Copy the contents of the checked out */flex-src* folder to the newly created */src* folder in your local FlexBuilder 3 project.
+  * In FlexBuider 3 go to _Project_ -> _Properties_, in the _Flex Applications_ tab, add the *Neologism.mxml* application and set it as default.
+ 
+By now everything should be running ok.
+
+In case you get the following Flex error: *SecurityError: Error #2148*, go to _Project_ -> _Properties_, in the _Flex Compiler_ tab add the following *-use-network=false* in the _Additional compiler arguments_ field.
+Please note that by adding the mentioned compiler argument, you disable networking in flex, when deploying the applet (_Neologism.swf_) remove the flag before compiling.
