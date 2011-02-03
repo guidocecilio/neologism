@@ -1,11 +1,10 @@
 #summary For Neologism developers: How to make a new release of Neologism
 
 = Introduction =
-
 This page describes the process for releasing a new version of Neologism, including building the new release zip file, tagging the version in SVN, and updating the website.
 
 = Building the release =
-
+The current version for release is the one at https://neologism.googlecode.com/svn/branches/DRUPAL-6--14
   * Check out the DRUPAL-6--14 branch from Google Code SVN
 
 {{{
