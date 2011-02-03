@@ -10,9 +10,9 @@ The current version for release is the one at https://neologism.googlecode.com/s
 mkdir neologism-d6
 cd neologism-d6
 }}}
-  * Download the `make-archive.sh` from its URL at the DRUPAL-6--14 branch from the source path
+  * Download the `make-archive.sh` at the DRUPAL-6--14 branch from from Google SVN
 {{{
-wget http://code.google.com/p/neologism/source/browse/branches/DRUPAL-6--14/make-archive.sh
+wget http://neologism.googlecode.com/svn/branches/DRUPAL-6--14/make-archive.sh
 }}}
 
   * Run the `make-archive.sh` script
