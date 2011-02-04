@@ -157,12 +157,14 @@ function content($file) { readfile("content/$file.html"); }
 
 // ============= BEGIN TEMPLATE ==============================================
 
-echo '<?xml version="1.0" encoding="UTF-8"?>';
+echo '<?xml version="1.0" encoding="UTF-8"?>
+';
 ?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML+RDFa 1.0//EN"
     "http://www.w3.org/MarkUp/DTD/xhtml-rdfa-1.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
   <head>
+    <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
     <title><?php e(@$head_title ? $head_title : ($title . ' | Neologism')); ?></title>
     <base href="<?php e($absolute_base); ?>" />
     <link rel="stylesheet" type="text/css" href="style.css" />
