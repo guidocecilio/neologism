@@ -4,19 +4,20 @@
 This page describes the process for releasing a new version of Neologism, including building the new release zip file, tagging the version in SVN, and updating the website.
 
 = Building the release =
-The current version for release is the one at https://neologism.googlecode.com/svn/branches/DRUPAL-6--14
+The current version for release is the one at https://neologism.googlecode.com/svn/branches/drupal-6
 
   * Create an empty directory for example `neologism-d6` and change to it
 {{{
 mkdir neologism-d6
 cd neologism-d6
 }}}
-  * Download the `build-release.sh` at the DRUPAL-6--14 branch from Google SVN
+  * Download the `build-release.sh` from Google SVN
 {{{
-wget http://neologism.googlecode.com/svn/branches/DRUPAL-6--14/build-release.sh
+curl -O http://neologism.googlecode.com/svn/branches/drupal-6/build-release.sh
 }}}
 
   * (As an alternative to the steps above, if you already have a working copy checked out from SVN, then you can use that; it will have the script in the root directory.)
+  * Check the `drush dl drupal-6.xxx` line in the script matches the latest version of Drupal 6 available at http://drupal.org/project/drupal and increase the version number if necessary
   * Run the `build-release.sh` script
   * Rename `neologism.zip` to `neologism-0.x.y.zip`
   * Upload the zip file to Google Code, with the label "Neologism 0.x.y"
@@ -25,7 +26,7 @@ wget http://neologism.googlecode.com/svn/branches/DRUPAL-6--14/build-release.sh
 = Tagging the release in the SVN repository =
 
 {{{
-svn copy https://neologism.googlecode.com/svn/trunk/demo https://neologism.googlecode.com/svn/tags/DRUPAL-6--1-0.33 -m 'tagging the 0.33 release'
+svn copy https://neologism.googlecode.com/svn/branches/drupal-6 https://neologism.googlecode.com/svn/tags/neologism-0.x.y -m 'tagging the 0.x.y release'
 }}}
 
 = Updating and deploying the website =
