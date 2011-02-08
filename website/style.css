@@ -1,6 +1,6 @@
 body {
     color: #201810;
-    font-family: "Lucida Grande",Arial,Verdana,"Bitstream Vera Sans",sans-serif;
+    font-family: "Lucida Grande",Verdana,"Bitstream Vera Sans",Arial,sans-serif;
     font-size: 10.5pt;
     line-height: 18pt;
     margin: 0;
@@ -301,9 +301,4 @@ a.button.whitebg, a.button.whitebg span {
     list-style: square;
     margin: 0 0 0.5em 0;
     padding: 0 0 0 1.4em;
-}
-#main img {
-	display:block;
-	margin: 0;
-	padding: 0;
 }
