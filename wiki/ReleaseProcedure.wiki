@@ -5,17 +5,19 @@ This page describes the process for releasing a new version of Neologism, includ
 
 = Building the release =
 The current version for release is the one at https://neologism.googlecode.com/svn/branches/DRUPAL-6--14
+
   * Create an empty directory for example `neologism-d6` and change to it
 {{{
 mkdir neologism-d6
 cd neologism-d6
 }}}
-  * Download the `make-archive.sh` at the DRUPAL-6--14 branch from Google SVN
+  * Download the `build-release.sh` at the DRUPAL-6--14 branch from Google SVN
 {{{
-wget http://neologism.googlecode.com/svn/branches/DRUPAL-6--14/make-archive.sh
+wget http://neologism.googlecode.com/svn/branches/DRUPAL-6--14/build-release.sh
 }}}
 
-  * Run the `make-archive.sh` script
+  * (As an alternative to the steps above, if you already have a working copy checked out from SVN, then you can use that; it will have the script in the root directory.)
+  * Run the `build-release.sh` script
   * Rename `neologism.zip` to `neologism-0.x.y.zip`
   * Upload the zip file to Google Code, with the label "Neologism 0.x.y"
   * Make sure that only this latest release is featured on the Google Code project home page
