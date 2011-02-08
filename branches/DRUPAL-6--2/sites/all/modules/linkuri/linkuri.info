@@ -1,7 +1,0 @@
-; $Id$
-name = Link URI
-description = Defines simple text field types.
-dependencies[] = content
-package = CCK
-core = 6.x
-
