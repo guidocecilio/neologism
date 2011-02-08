@@ -20,8 +20,10 @@ curl -O http://neologism.googlecode.com/svn/branches/drupal-6/build-release.sh
   * Check the `drush dl drupal-6.xxx` line in the script matches the latest version of Drupal 6 available at http://drupal.org/project/drupal and increase the version number if necessary
   * Run the `build-release.sh` script
   * Rename `neologism.zip` to `neologism-0.x.y.zip`
-  * Upload the zip file to Google Code, with the label "Neologism 0.x.y"
-  * Make sure that only this latest release is featured on the Google Code project home page
+  * Upload the zip file to Google Code
+    * Summary: "Neologism 0.x.y"
+    * Labels: “Featured”
+  * Edit the previous release and remove the “Featured” label. Result should be that *only* the latest release is featured on the Google Code project homepage
 
 = Tagging the release in the SVN repository =
 
@@ -43,9 +45,14 @@ svn checkout https://neologism.googlecode.com/svn/trunk/website neologism-websit
 
 = Announcing the release =
 
-  * Send an email to neologism-dev with an announcement and a list of the most important changes
+  * Send an email to neologism-dev@googlegroups.com with an announcement
+    * List of the most important changes
+    * Upgrade instructions
+  * Guido to announce on Twitter and Facebook
+  * Richard to announce on Twitter
+  * Remind Michael to re-tweet from the LiDRC Twitter account
+  * For major releases (0.x), consider announcing on semantic-web and public-lod mailing lists, deri.ie-research, DERI blog, LiDRC blog
 
 = Open questions/issues =
 
   * Changelog?
-  * Announce somewhere besides neologism-dev? Twitter etc?
