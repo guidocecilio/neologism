@@ -1,0 +1,21 @@
+; $Id:
+name = Neologism
+description = Allows users to easily publish their own RDFS vocabulary online.
+dependencies[] = path
+dependencies[] = content
+dependencies[] = content_copy
+dependencies[] = fieldgroup
+dependencies[] = nodereference
+dependencies[] = userreference
+dependencies[] = text
+dependencies[] = optionwidgets
+dependencies[] = profile
+dependencies[] = rdf
+dependencies[] = evoc
+dependencies[] = evocreference
+dependencies[] = ext
+dependencies[] = evocwidget_dynamic
+dependencies[] = rules
+package = RDF
+core = 6.x
+php = 5.2
