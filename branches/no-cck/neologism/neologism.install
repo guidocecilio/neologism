@@ -1,54 +1,6 @@
 <?php
 // $Id:  $
 
-function neologism_install() {
-  drupal_install_schema('neologism');
-
-  _neologism_install_node_type('neo_class');
-  _neologism_install_node_type('neo_property');
-  content_clear_type_cache();
-  
-  module_load_include('module', 'profile');
-  module_load_include('inc', 'profile', 'profile.admin');
-  _neologism_install_profile_field('Full name', 'fullname', 'textfield', 0,
-      'Your full name. Will be shown instead of the user name in vocabularies you are authoring.');
-  _neologism_install_profile_field('Personal home page', 'homepage', 'textfield', 1,
-      'Your personal home page. Must be a full URI (i.e., starting with <i>http://</i>).');
-  _neologism_install_profile_field('Show email address', 'show_email', 'checkbox', 2,
-      'Check this if you want your email address to be shown in vocabularies you are authoring.');
-  _neologism_install_profile_field('Organisation name', 'affiliation', 'textfield', 3,
-      'The organisation you\'re affiliated with. Will be shown next to your name on vocabularies that you are authoring.');
-  _neologism_install_profile_field('Organisation homepage', 'affiliation_homepage', 'textfield', 4,
-      'Your organisation\'s homepage. Must be a full URI (i.e., starting with <i>http://</i>).');
-
-  drupal_set_message(t('Neologism successfully installed.'));
-}
-
-function neologism_uninstall() {
-  $q = db_query("SELECT nid FROM {node} WHERE type='neo_vocabulary'");
-  while ($row = db_fetch_object($q)) {
-    $node = node_load($row->nid);
-    node_delete($row->nid);
-    // Clean up. This should be done automatically by node_delete, but it does not
-    // happen here because the module is already disabled, so we call the hook manually
-    module_invoke('neologism', 'nodeapi', $node, 'delete', null, null);
-  }
-
-  _neologism_uninstall_node_type('neo_property');
-  _neologism_uninstall_node_type('neo_class');
-  content_clear_type_cache();
-  
-  module_load_include('module', 'profile');
-  module_load_include('inc', 'profile', 'profile.admin');
-  _neologism_uninstall_profile_field('fullname');
-  _neologism_uninstall_profile_field('homepage');
-  _neologism_uninstall_profile_field('show_email');
-  _neologism_uninstall_profile_field('affiliation');
-  _neologism_uninstall_profile_field('affiliation_homepage');
-
-  drupal_set_message( t('Neologism successfully uninstalled.') );
-}
-
 function neologism_schema() {
   return array(
     'neologism_vocabulary' => array(
@@ -73,12 +25,90 @@ function neologism_schema() {
       ),
       'primary key' => array('nid', 'uid'),
     ),
+    'neologism_term' => array(
+      'description' => 'Additional node fields that reference the corresponding evoc term.',
+      'fields' => array(
+        'nid' => array('type' => 'int', 'not null' => TRUE),
+        'prefix' => array('type' => 'varchar', 'length' => '132', 'not null' => TRUE),
+        'id' => array('type' => 'varchar', 'length' => '132', 'not null' => TRUE),
+      ),
+      'indexes' => array('neologism_term_prefix' => array('prefix')),
+      'primary key' => array('nid'),
+    ),
   );
 }
 
+function neologism_install() {
+  drupal_install_schema('neologism');
+
+  module_load_include('module', 'profile');
+  module_load_include('inc', 'profile', 'profile.admin');
+  _neologism_install_profile_field('Full name', 'fullname', 'textfield', 0,
+      'Your full name. Will be shown instead of the user name in vocabularies you are authoring.');
+  _neologism_install_profile_field('Personal home page', 'homepage', 'textfield', 1,
+      'Your personal home page. Must be a full URI (i.e., starting with <i>http://</i>).');
+  _neologism_install_profile_field('Show email address', 'show_email', 'checkbox', 2,
+      'Check this if you want your email address to be shown in vocabularies you are authoring.');
+  _neologism_install_profile_field('Organisation name', 'affiliation', 'textfield', 3,
+      'The organisation you\'re affiliated with. Will be shown next to your name on vocabularies that you are authoring.');
+  _neologism_install_profile_field('Organisation homepage', 'affiliation_homepage', 'textfield', 4,
+      'Your organisation\'s homepage. Must be a full URI (i.e., starting with <i>http://</i>).');
+
+  drupal_set_message(t('Neologism successfully installed.'));
+}
+
+function neologism_uninstall() {
+  // @todo: Does this leave orphaned data in evoc that we have to delete explicitly with SQL?
+  $q = db_query("SELECT nid FROM {node} WHERE type='neo_vocabulary' OR type='neo_class' OR type='neo_property'");
+  while ($row = db_fetch_object($q)) {
+    $node = node_load($row->nid);
+    node_delete($row->nid);
+  }
+  drupal_uninstall_schema('neologism');
+  
+  module_load_include('module', 'profile');
+  module_load_include('inc', 'profile', 'profile.admin');
+  _neologism_uninstall_profile_field('fullname');
+  _neologism_uninstall_profile_field('homepage');
+  _neologism_uninstall_profile_field('show_email');
+  _neologism_uninstall_profile_field('affiliation');
+  _neologism_uninstall_profile_field('affiliation_homepage');
+
+  drupal_set_message( t('Neologism successfully uninstalled.') );
+}
+
+function _neologism_install_profile_field($title, $name, $type, $weight, $explanation) {
+  $form = array();
+  $form['values']['title'] = $title;
+  $form['values']['name'] = 'profile_neologism_' . $name;
+  $form['values']['explanation'] = $explanation;
+  $form['values']['category'] = 'Vocabulary author information';
+  $form['values']['weight'] = $weight;
+  $form['values']['register'] = 1;
+  $form['values']['visibility'] = 2;
+  $form['values']['page'] = '';
+  drupal_execute('profile_field_form', $form, $type);
+}
+
+function _neologism_uninstall_profile_field($name) {
+  $field = 'profile_neologism_' . $name;
+  $fid = db_result(db_query("SELECT fid FROM {profile_fields} WHERE name='%s'", $field));
+  if (!$fid) {
+    drupal_set_message(t('Failed to delete profile field %field.', array('%field' => $field)), 'warning');
+    return;
+  }
+  $form = array();
+  $form['values']['confirm'] = 1;
+  drupal_execute('profile_field_delete', $form, $fid);
+}
+
+function _neologism_uninstall_node_type($type) {
+  node_type_delete($type);
+  drupal_set_message(t('Node type %type deleted.', array('%type' => $type)));
+}
+
 /**
- * Update for Neologism 0.5.0
- * @return 
+ * Update for Neologism 0.5.0, part 1
  */
 function neologism_update_6201() {
   // Ext JS used to be delivered in modules/ext/ext-3.0.0 but now is
@@ -137,59 +167,15 @@ function neologism_update_6201() {
 }
 
 /**
- * Definitions of the CCK content types for Neologism which get created via hook_install()
- * when the module is enabled.
+ * Update for 0.5.0, part 2
  */
-function _neologism_install_node_type($type) {
-  if(!module_exists("content_copy")){
-    drupal_set_message('Programmatically creating CCK fields requires the Content Copy module. Exiting.', 'error');
-    return;
-  }
-
-  // remove content type if it already exists
-  $ct = content_types();
-  if (isset($ct[$type])) {
-    node_type_delete($type);      
-  }
-
-  $cck_definition_file = drupal_get_path('module', 'neologism')."/cck_definitions/$type.cck";
-  if(!file_exists($cck_definition_file)) {
-    drupal_set_message("Unable to read input file <em>$cck_definition_file</em> for import.", 'error');
-    return;
-  }
-
-  $form = array();
-  $form['values']['type_name'] = '<create>';
-  $form['values']['macro'] = file_get_contents($cck_definition_file);
-  drupal_execute("content_copy_import_form", $form);
-}
-
-function _neologism_uninstall_node_type($type) {
-  node_type_delete($type);
-  drupal_set_message(t('Node type %type deleted.', array('%type' => $type)));
-}
-
-function _neologism_install_profile_field($title, $name, $type, $weight, $explanation) {
-  $form = array();
-  $form['values']['title'] = $title;
-  $form['values']['name'] = 'profile_neologism_' . $name;
-  $form['values']['explanation'] = $explanation;
-  $form['values']['category'] = 'Vocabulary author information';
-  $form['values']['weight'] = $weight;
-  $form['values']['register'] = 1;
-  $form['values']['visibility'] = 2;
-  $form['values']['page'] = '';
-  drupal_execute('profile_field_form', $form, $type);
-}
-
-function _neologism_uninstall_profile_field($name) {
-  $field = 'profile_neologism_' . $name;
-  $fid = db_result(db_query("SELECT fid FROM {profile_fields} WHERE name='%s'", $field));
-  if (!$fid) {
-    drupal_set_message(t('Failed to delete profile field %field.', array('%field' => $field)), 'warning');
-    return;
-  }
-  $form = array();
-  $form['values']['confirm'] = 1;
-  drupal_execute('profile_field_delete', $form, $fid);
+function neologism_update_6202() {
+  $result = array();
+  $schema = neologism_schema();
+  db_create_table($result, 'neologism_term', $schema['neologism_term']);
+  $result[] = update_sql("INSERT INTO TABLE {neologism_term} (nid, prefix, id) SELECT fv.nid, v.prefix, n.title AS id FROM {neologism_vocabulary} v JOIN {content_field_vocabulary} fv ON v.nid = fv.content_field_vocabulary_value JOIN {node} n ON fv.nid = n.nid");
+  _neologism_uninstall_node_type('neo_class');
+  _neologism_uninstall_node_type('neo_property');
+  content_clear_type_cache();
+  return $result;
 }

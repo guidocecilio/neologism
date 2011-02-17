@@ -89,6 +89,8 @@ function theme_neologism_qname($qname) {
 
 /**
  * Output the HTML version of the vocabulary specified as input.
+ *
+ * @todo: This should probably happen in a node_view() callback?
  */
 function neologism_export_html($node) {
 

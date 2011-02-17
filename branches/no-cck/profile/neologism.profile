@@ -23,9 +23,6 @@ function neologism_profile_modules() {
     // Core - required
     'block', 'filter', 'node', 'system', 'user', 'trigger',
 
-    // CCK core
-    'content', 'nodereference', 'optionwidgets', 'text', 'userreference', 'content_copy', 'fieldgroup',
-    
   	// rules module
     'rules',
   
@@ -140,8 +137,6 @@ function neologism_profile_tasks(&$task, $url) {
 	
 	  $modules_list = array(
 	    'evoc', 
-	    'evocreference', 'evocwidget_dynamic',
-	    //'neologism'
 	  );
 	  
 	  drupal_install_modules($modules_list);
@@ -218,9 +213,8 @@ function neologism_profile_tasks(&$task, $url) {
   	$res = db_fetch_object(db_query('select rid from {role} where name = "authenticated user"'));
     $permissions = join(', ', array_merge(
       array('access content'),
+// @todo: Needs updating since we don't use CCK any more
       array('create neo_vocabulary content', 'delete any neo_vocabulary content', 'delete own neo_vocabulary content', 'edit any neo_vocabulary content', 'edit own neo_vocabulary content'),
-      array('create neo_class content', 'delete any neo_class content', 'delete own neo_class content', 'edit any neo_class content', 'edit own neo_class content'),
-      array('create neo_property content', 'delete any neo_property content', 'delete own neo_property content', 'edit any neo_property content', 'edit own neo_property content'),
       array('create vocabulary_documentation content', 'delete any vocabulary_documentation content', 'delete own vocabulary_documentation content', 'edit any vocabulary_documentation content', 'edit own vocabulary_documentation content'),
       module_invoke('neologism','perm'),
       module_invoke('evoc', 'perm')));

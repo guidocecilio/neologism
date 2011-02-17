@@ -2,7 +2,7 @@
 
 <?php print $picture ?>
 
-<?php if ($page == 0): ?>
+<?php if (!$page): ?>
   <h2><?php print l($node->title, $node->path); ?></h2>
 <?php endif; ?>
 

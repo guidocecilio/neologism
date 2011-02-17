@@ -1,5 +1,6 @@
 <?php
 // $Id$
+error_reporting(E_ALL);
 
 /**
  * Neologism Module
@@ -18,7 +19,8 @@ define("SUPERCLASSES", "superclasses");
 define("DOMAINS", "domains");
 define("RANGES", "ranges");
 define("SUBPROPERTYOF", "subpropertyof");
-define("INVERSE", "inverse");
+define("INVERSE", "inverse");   // should no longer be needed
+define("INVERSES", "inverses");
 
 /**
  * Implementation of hook_init().
@@ -38,9 +40,14 @@ function neologism_init() {
   // not explicitly loaded here
   module_load_include('inc', 'neologism', 'neologism.theme');
 
+  // Defines the class and property node type
+  module_load_include('inc', 'neologism', 'neologism.rdfs');
+
   drupal_add_css(drupal_get_path('module', 'neologism') .'/neologism.css');
   $scripts = array(
     '/js/neologism.js',
+// @todo: enable others on demand
+/*
     '/js/neologism.termstree.js',
     '/js/evocfields/superclass.widgetbehaviour.js',
     '/js/evocfields/disjointwith.widgetbehaviour.js',
@@ -48,6 +55,7 @@ function neologism_init() {
     '/js/evocfields/range.widgetbehaviour.js',
     '/js/evocfields/superproperty.widgetbehaviour.js',
     '/js/evocfields/inverse.widgetbehaviour.js',
+*/
   );
   foreach ($scripts as $script) {
     drupal_add_js(drupal_get_path('module', 'neologism') . $script);
@@ -63,6 +71,16 @@ function neologism_node_info() {
       'name' => t('RDF vocabulary'),
       'module' => 'neologism',
       'description' => 'An <em>RDF vocabulary</em> defines <em>classes</em> and <em>properties</em>, also known as <em>terms</em>, and their relationships. Once defined, an RDF vocabulary can be used to exchange data between sites and applications.',
+    ),
+    'neo_class' => array(
+      'name' => t('RDF class'),
+      'module' => 'neologism_rdfs',
+      'description' => 'An RDF class. Can only exist as part of an RDF vocabulary.',
+    ),
+    'neo_property' => array(
+      'name' => t('RDF property'),
+      'module' => 'neologism_rdfs',
+      'description' => 'An RDF property. Can only exist as part of an RDF vocabulary.',
     ),
   );
 } 
@@ -248,6 +266,15 @@ function neologism_load($node) {
   $result->original_prefix = $result->prefix;
 
   return $result;
+}
+
+/**
+ * Implementation of hook_view().
+ */
+function neologism_view($node, $teaser = FALSE, $page = FALSE) {
+  // Vocabulary nodes never get here, they are intercepted
+  // in the menu callback.
+  // @todo: Would be more elegant to handle it here
 }
 
 /**
@@ -449,10 +476,12 @@ function neologism_form_alter(&$form, &$form_state, $form_id) {
     );
   }
   else if ($form_id == 'neo_property_node_form') {
+@@@
     module_load_include('inc', 'neologism', 'neologism.nodeforms');
     _neologism_form_alter_term($form, $form_state, 'property');
   }
   else if ($form_id == 'neo_class_node_form') {
+@@@
     module_load_include('inc', 'neologism', 'neologism.nodeforms');
     _neologism_form_alter_term($form, $form_state, 'class');
   }
@@ -579,6 +608,22 @@ function neologism_delete(&$node) {
 }
 
 /**
+ * Implementation of hook_nodeapi().
+ */
+function neologism_nodeapi(&$node, $op, $teaser, $page) {
+
+  // Set $node->namespace_uri. We can't do this in node_load
+  // because the path module has not yet been invoked at that
+  // point and $node->path would not be available.
+  if ($node->type == NEOLOGISM_CT_VOCABULARY && $op == 'load') {
+    $node->namespace_uri = _neologism_namespace_uri($node->path, $node->custom_namespace);
+  }
+
+  if ($node->type != NEOLOGISM_CT_CLASS && $node->type != NEOLOGISM_CT_PROPERTY) {
+    return;
+  }
+}
+/**
  * Implementation of hook_rdf_namespaces().
  */
 function neologism_rdf_namespaces() {
@@ -668,109 +713,6 @@ function neologism_link($type, $node = NULL, $teaser = FALSE) {
     }
 
     return $links;
-}
-
-/**
- * Implementation of hook_nodeapi().
- */
-function neologism_nodeapi(&$node, $op, $teaser, $page) {
-
-  // Set $node->namespace_uri. We can't do this in node_load
-  // because the path module has not yet been invoked at that
-  // point and $node->path would not be available.
-  if ($node->type == NEOLOGISM_CT_VOCABULARY && $op == 'load') {
-    $node->namespace_uri = _neologism_namespace_uri($node->path, $node->custom_namespace);
-  }
-
-  if ($node->type != NEOLOGISM_CT_CLASS && $node->type != NEOLOGISM_CT_PROPERTY) {
-    return;
-  }
-
-  switch ($op) {
-    case 'load':
-      // Load the vocabulary of the class/property.
-      $node->vocabulary = node_load($node->field_vocabulary[0]['nid']);
-      if (!$node->vocabulary) {
-        // HACK ALERT
-        // The vocabulary will be NULL if we are just in the
-        // process of deleting the vocabulary. In that case,
-        // we get it from a global variable prepared in
-        // neologism_delete().
-        global $_neologism_vocabulary;
-        $node->vocabulary = $_neologism_vocabulary;
-      }
-      $node->qname = $node->vocabulary->prefix . ':' . $node->title;
-
-      // Terms are stored by prefix:id in evoc, and in case we
-      // change the prefix or id during editing, we need the
-      // original values so we can update them in evoc.
-      $node->original_id = $node->title;
-
-      // Keep a copy of the body around because the original isn't accessible in themeing
-      // @todo: Is this really necessary?
-      $node->original_body = $node->body;
-      break;
-
-    case 'view':
-      if ($page) {
-        drupal_set_title($node->qname);
-        drupal_set_breadcrumb(_neologism_build_breadcrumb($node->vocabulary->path, $node->vocabulary->title));
-      }
-      break;
-
-    case 'update':
-      // Update the term in the evoc repository
-      $term = _neologism_make_evoc_term_array($node);
-      if ($node->type == NEOLOGISM_CT_CLASS) {
-        evoc_update_class($term);  
-      }
-      else if ($node->type == NEOLOGISM_CT_PROPERTY) {
-        evoc_update_property($term);
-      }
-
-      // update revision date of the vocabulary
-      _neologism_vocabulary_save($node->vocabulary);
-      break;
-    
-    case 'insert':
-      // load vocabulary node
-      $node->vocabulary = node_load($node->field_vocabulary[0][nid]);
-
-      // Insert the term into the evoc repository
-      $term = _neologism_make_evoc_term_array($node);
-      if ($node->type == NEOLOGISM_CT_CLASS) {
-        evoc_write_class($term);  
-      }
-      else if ($node->type == NEOLOGISM_CT_PROPERTY) {
-        evoc_write_property($term);
-      }
-
-      // update revision date of the vocabulary
-      _neologism_vocabulary_save($node->vocabulary);
-      break;
-   
-    case 'delete':
-      if ($node->type == NEOLOGISM_CT_CLASS) {
-        // Check for other classes or properties that reference
-        // this class as a superclass, disjoint class, domain or range.
-        _neologism_delete_evoc_references('field_superclass2', $node->qname, true);
-        _neologism_delete_evoc_references('field_disjointwith2', $node->qname, true);
-        _neologism_delete_evoc_references('field_domain2', $node->qname, true);
-        _neologism_delete_evoc_references('field_range2', $node->qname, true);
-        evoc_remove_class(array('prefix' => $node->vocabulary->prefix, 'id' => $node->title));
-      }
-      else if ($node->type == NEOLOGISM_CT_PROPERTY) {
-        // Check for other properties that reference
-        // this property as a superproperty or inverse.
-        _neologism_delete_evoc_references('field_superproperty2', $node->qname, true);
-        _neologism_delete_evoc_references('field_inverse2', $node->qname, true);
-        evoc_remove_property(array('prefix' => $node->vocabulary->prefix, 'id' => $node->title));
-      }
-
-      // update revision date of the vocabulary
-      _neologism_vocabulary_save($node->vocabulary);
-      break;
-  }
 }
 
 /**
@@ -1158,154 +1100,88 @@ function neologism_write_layout($node, $layout) {
 
 /**
  * Get all properties in a vocabulary
+ *
+ * @todo Is this still necessary? It pretty much just returns a copy of all nodes.
  */
 function _neologism_get_all_properties($node, $retrive_inverses = FALSE, array &$detect_namespaces = NULL) {
-  $properties_resource = db_query(db_rewrite_sql("select n.nid from {content_field_vocabulary} c inner join {node} n on c.nid = n.nid where c.field_vocabulary_nid = %d and n.type = '%s'"), $node->nid, NEOLOGISM_CT_PROPERTY);
-  $properties = array(); 
-  $inverse_properties_array = array();
-  
-  $i = 0;
-  while ( $item = db_fetch_object($properties_resource) ) {
-    $fullnode = node_load($item->nid);
-    
-    //_neologism_find_implicit_inverses()
-    if ($retrive_inverses) {
-      _neologism_retrieve_implicit_values($fullnode->field_inverse2, $fullnode->qname, $inverse_properties_array);
-    }
-    
-    $properties[$i]['nid'] = $item->nid;
-    $properties[$i]['id'] = $fullnode->title;
-    $properties[$i]['label'] = $fullnode->field_label[0]['value'];
-    if( !empty($fullnode->field_comment[0]['value']) ) {
-      $properties[$i]['comment'] = $fullnode->field_comment[0]['value'];
-    }
-    
-    if ( isset($fullnode->field_domain2[0]['evoc_term']) && $fullnode->field_domain2[0]['evoc_term'] ) {
-      $properties[$i][DOMAINS] = array();
-      foreach ( $fullnode->field_domain2 as $term => $value ) {
-        $properties[$i][DOMAINS][] = $value['evoc_term'];
-        
-        if ( isset($detect_namespaces) ) {
-          $qname_splitted = explode(':', $value['evoc_term']);
-          if( !in_array($qname_splitted[0], $detect_namespaces) ) {
-            $detect_namespaces[] = $qname_splitted[0];
-          }  
-        }
-      }  
-    }
-    
-    if ( isset($fullnode->field_range2[0]['evoc_term']) && $fullnode->field_range2[0]['evoc_term'] ) {
-      $properties[$i][RANGES] = array();
-      foreach ( $fullnode->field_range2 as $term => $value ) {
-        $properties[$i][RANGES][] = $value['evoc_term'];
-        
-        if ( isset($detect_namespaces) ) {
-          $qname_splitted = explode(':', $value['evoc_term']);
-          if( !in_array($qname_splitted[0], $detect_namespaces) ) {
-            $detect_namespaces[] = $qname_splitted[0];
-          }  
-        }
-      }  
-    }
-    
-    if ( isset($fullnode->field_superproperty2[0]['evoc_term']) && $fullnode->field_superproperty2[0]['evoc_term'] ) {
-      $properties[$i][SUBPROPERTYOF] = array();
-      foreach ( $fullnode->field_superproperty2 as $term => $value ) {
-        $properties[$i][SUBPROPERTYOF][] = $value['evoc_term'];
-        
-        if ( isset($detect_namespaces) ) {
-          $qname_splitted = explode(':', $value['evoc_term']);
-          if( !in_array($qname_splitted[0], $detect_namespaces) ) {
-            $detect_namespaces[] = $qname_splitted[0];
-          }  
-        }
-      }  
-    }
-    
-    if( isset($fullnode->field_ifp[0]['value']) && $fullnode->field_ifp[0]['value'] == '1' ) {
-      $properties[$i]['isInverseFunctional'] = TRUE;
-    }
-    
-    if( isset($fullnode->field_fp[0]['value']) && $fullnode->field_fp[0]['value'] == '1' ) {
-      $properties[$i]['isFunctional'] = TRUE;
-    }
-    
-    if( !empty($fullnode->body) ) {
-      $properties[$i]['description'] = $fullnode->body;
-    }
-      
-    $i++;
-  }
-  
-  return array($properties, $inverse_properties_array);
+  return _neologism_get_all_terms($node, 'evoc_rdf_properties', $detect_namespaces);
 }
 
 /**
  * Get all classes in a vocabulary
+ *
+ * @todo: Is this still necessary? It pretty much just returns a copy of all nodes.
  */
-function _neologism_get_all_classes($node, $retrive_disjointness = FALSE, $retrive_superclasses = FALSE, array &$detect_namespaces = NULL) {
-  $classes_resource = db_query(db_rewrite_sql("SELECT n.nid FROM {content_field_vocabulary} c INNER JOIN {node} n ON c.nid = n.nid WHERE c.field_vocabulary_nid = %d AND n.type = '%s'"), $node->nid, NEOLOGISM_CT_CLASS);
-  $classes = array();
+function _neologism_get_all_classes($node, array &$detect_namespaces = NULL) {
+  return _neologism_get_all_terms($node, 'evoc_rdf_classes', $detect_namespaces);
+}
+
+function _neologism_get_all_terms($node, $table, array &$detect_namespaces = NULL) {
+  $q = db_query(db_rewrite_sql("SELECT t.nid FROM {neologism_term} t JOIN {" . $table . "} cp ON t.prefix = cp.prefix AND t.id = cp.id WHERE t.prefix = '%s'"), $node->prefix);
+  $terms = array(); 
+  $inverse_properties_array = array();
   $disjointwith_classes_array = array();
   $superclasses_array = array();
-  
-  $i = 0;
-  while ( $item = db_fetch_object($classes_resource) ) {
-    $fullnode = node_load($item->nid);
     
-    $classes[$i]['nid'] = $item->nid;
-    $classes[$i]['id'] = $fullnode->title;
-    $classes[$i]['label'] = $fullnode->field_label[0]['value'];
-    if( !empty($fullnode->field_comment[0]['value']) ) {
-      $classes[$i]['comment'] = $fullnode->field_comment[0]['value'];
+  while ($row = db_fetch_object($q) ) {
+    $node = node_load($row->nid);
+    $term = array();
+    if ($retrive_inverses) {
+      _neologism_retrieve_implicit_values($fullnode->field_inverse2, $fullnode->qname, $inverse_properties_array);
     }
-    
-    // retrieve implicit disjointness
     if ($retrive_disjointness) {
       _neologism_retrieve_implicit_values($fullnode->field_disjointwith2, $fullnode->qname, $disjointwith_classes_array);
     }
-    
-    // retrieve superclasses
     if ($retrive_superclasses) {
       _neologism_retrieve_implicit_values($fullnode->field_superclass2, $fullnode->qname, $superclasses_array);
     }
-    
-    if ( isset($fullnode->field_superclass2[0]['evoc_term']) && $fullnode->field_superclass2[0]['evoc_term'] ) {
-      $classes[$i][SUPERCLASSES] = array();
-      foreach ( $fullnode->field_superclass2 as $term => $value ) {
-        $classes[$i][SUPERCLASSES][] = $value['evoc_term'];
-        
-        if ( isset($detect_namespaces) ) {
-          $qname_splitted = explode(':', $value['evoc_term']);
-          if( !in_array($qname_splitted[0], $detect_namespaces) ) {
-            $detect_namespaces[] = $qname_splitted[0];
-          }  
-        }
+    $term['nid'] = $node->nid;
+    $term['id'] = $node->id;
+    $term['label'] = $node->title;
+    if (!empty($node->comment)) {
+      $term['comment'] = $node->comment;
+    }
+    if (!empty($node->body)) {
+      $term['description'] = $node->body;
+    }
+    if (isset($node->superclasses)) {
+      $term[SUPERCLASSES] = $node->superclasses;
+    }
+    if (isset($node->disjoints)) {
+      $term[DISJOINTS_WITH] = $node->disjoints;
+    }
+    if (isset($node->domains)) {
+      $term[DOMAINS] = $node->domains;
+    }
+    if (isset($node->ranges)) {
+      $term[RANGES] = $node->ranges;
+    }
+    if (isset($node->superproperties)) {
+      $term[SUBPROPERTYOF] = $node->superproperties;
+    }
+    if (isset($node->inverses)) {
+      $term[INVERSES] = $node->inverses;
+    }
+    if (isset($node->ifp)) {
+      $term['isInverseFunctional'] = $node->ifp;
+    }
+    if (isset($node->fp)) {
+      $term['isFunctional'] = $node->fp;
+    }
+    $terms[] = $term;
+    if (isset($detect_namespaces)) {
+      foreach (array_merge($node->superclasses, $node->disjoints) as $value) {
+        $qname_splitted = explode(':', $value);
+        if (!in_array($qname_splitted[0], $detect_namespaces)) {
+          $detect_namespaces[] = $qname_splitted[0];
+        }  
       }  
     }
-    
-    if ( isset($fullnode->field_disjointwith2[0]['evoc_term']) && $fullnode->field_disjointwith2[0]['evoc_term'] ) {
-      $classes[$i][DISJOINTS_WITH] = array();
-      foreach ( $fullnode->field_disjointwith2 as $term => $value ) {
-        $classes[$i][DISJOINTS_WITH][] = $value['evoc_term'];
-        
-        if ( isset($detect_namespaces) ) {
-          $qname_splitted = explode(':', $value['evoc_term']);
-          if( !in_array($qname_splitted[0], $detect_namespaces) ) {
-            $detect_namespaces[] = $qname_splitted[0];
-          }  
-        }
-      }  
-    }
-    
-    if( !empty($fullnode->body) ) {
-      $classes[$i]['description'] = $fullnode->body;
-    }
-      
-    $i++;
   }
-  
+@@@ uh oh, how to merge this now???
+  return array($properties, $inverse_properties_array);
   return array($classes, $superclasses_array, $disjointwith_classes_array);
+  return $terms;
 }
 
 /**
