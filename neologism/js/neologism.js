@@ -7,7 +7,9 @@ if( Drupal.jsEnabled ) {
 	
 	$(document).ready( function() {
 		// need for the Ext module
-		Ext.QuickTips.init();
+		if (typeof Ext === 'object') {
+            Ext.QuickTips.init();
+        }
 		
 		// we need to check for the form and later ask for the rest
 		if( Neologism.superclassesTreePanel !== undefined ) {
