@@ -9,5 +9,32 @@
   <li>Microsoft IIS<br/>Drupal core will work using IIS 5, IIS 6, or IIS 7 if PHP is configured correctly. To achieve clean URLs you may need to use a third party product. For IIS7 you can use the Microsoft URL Rewrite Module or a third party solution.</li>
 </ul>
 
+<h2>Database server</h2>
+<h3>Recommended: <a href="http://www.mysql.com/" title="MySQL official site">MySQL</a></h3>
+<ul>
+	<li>Neologism supports MySQL 4.1 or higher.</li>
+</ul>
+<p>
+<b>NOTE:</b> As a Drupal module Neologism makes use of some features not available on some inexpensive hosting plans so please check that your host allows database accounts with the following rights:
+SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, INDEX, ALTER.
+<br/>These rights are sufficient to run Neologism.
+</p>
+
+<p>
+<b>Note:</b> If your system/host is running MySQL 4.1 or newer and you receive the error "Client does not support authentication protocol requested by server", address the problem by following the instructions provided by MySQL AB. There is a minor OS issue with some MySQL 5+ installations primarily on Windows but affecting some versions of Unix/Linux as well.
+</p>
+<b>Note:</b> Neologism supports MyISAM and InnoDB table types. NDB tables (MySQL Cluster) are not supported.
+</p>
+
+<p>
+Note that if your web hosting account is set up with a graphic control panel such as Plesk or CPanel, it is very likely that you do not need to worry about installing a driver for MySQL -- it is probably already installed on your server. You might wish to simply create your database and proceed with installing Neologism, and then refer back to Drupal documentation for specific troubleshooting help if you run into problems.
+</p>
+
+<h3><a href="http://www.postgresql.org/" title="PostgreSQL official site">PostgreSQL</a></h3>
+<ul>
+	<li>Neologism supports PostgreSQL 7.1 or higher.</li>
+	<li>PHP 5.2.6 for Windows has a bug in its pgsql extension. You will need to replace it with the php_pgsql.dll from version 5.2.5.</li>
+</ul>
+
 <h2>PHP</h2>
 <p>PHP 5.2 or higher (PHP 5.2 recommended).</p>
