@@ -110,7 +110,7 @@ $pages = array(
     ),
     'gpl' => array('redirect' => 'http://www.gnu.org/licenses/gpl-3.0-standalone.html'),
     'download' => array('redirect' => 'http://code.google.com/p/neologism/downloads/list'),
-    'download-latest' => array('redirect' => 'http://neologism.googlecode.com/files/neologism-0.4.10.zip'),
+    'download-latest' => array('redirect' => 'http://neologism.googlecode.com/files/neologism-0.5.zip'),
     'mailing-list' => array('redirect' => 'http://groups.google.com/group/neologism-dev'),
     'issues' => array('redirect' => 'http://code.google.com/p/neologism/issues/list'),
     'source' => array('redirect' => 'http://code.google.com/p/neologism/source/checkout'),
