@@ -26,6 +26,7 @@ class Registration {
   
   public function invoke() {
     global $db_config;
+    header('Content-Type: application/json');
     
 		$db = @mysql_connect($db_config['server'], $db_config['user'], $db_config['pass']);
 		if (!$db) {
@@ -52,13 +53,13 @@ class Registration {
 		mysql_close($db);
 		unset($rs, $sql);
 	
-		header('Content-Type: application/json');
 	  echo json_encode(array('result' => 'success'));	 
   }
   
   public function testWebservice() {
     global $db_config;
-			
+		header('Content-Type: application/json');	
+    
 		$db = @mysql_connect($db_config['server'], $db_config['user'], $db_config['pass']);
 		if (!$db) {
 		  echo json_encode(array('testing' => true, 'result' => 'error', 'error_msg' => 'Error connecting to the MySQL server.')); 
@@ -79,13 +80,15 @@ class Registration {
 		  return; 
 		}
 		
-		$data = $rs->email;
+		$data = mysql_fetch_object($rs);
+		if (!$data) {
+		  echo json_encode(array('testing' => true, 'result' => 'error', 'error_msg' => 'Error fetching the resulting object.')); 
+		}
 		
 		mysql_free_result($rs);
 		mysql_close($db);
 		unset($rs, $sql);
 	
-		header('Content-Type: application/json');
 	  echo json_encode(array('testing' => true, 'result' => 'success', 'data' => $data));	  
   }
 }
