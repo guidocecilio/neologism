@@ -4,7 +4,7 @@ require_once('includes/admin.config.php');
 
 /**
  * This class is to handle the customer's registration webservice. The incoming request 
- * should contain the following parameters:
+ * should contain the following parameters using the POST method:
  * - customer_name 
  * 		Customer identification.
  * - organization	
@@ -16,16 +16,17 @@ require_once('includes/admin.config.php');
  * - plan
  * 		Purpose of the installation.
  * 
- * usage: http://domain/registration.php?customer_name=guido&organization=DERI
+ * To test the webservices use:
+ * 	http://domain/registration.php?test=true	
  * 
  */
 class Registration {
   function __construct() {
   }
   
-  public function index() {
+  public function invoke() {
     global $db_config;
-			
+    
 		$db = @mysql_connect($db_config['server'], $db_config['user'], $db_config['pass']);
 		if (!$db) {
 		  echo json_encode(array('result' => 'error', 'error_msg' => 'Error connecting to the MySQL server.')); 
@@ -54,7 +55,43 @@ class Registration {
 		header('Content-Type: application/json');
 	  echo json_encode(array('result' => 'success'));	 
   }
+  
+  public function testWebservice() {
+    global $db_config;
+			
+		$db = @mysql_connect($db_config['server'], $db_config['user'], $db_config['pass']);
+		if (!$db) {
+		  echo json_encode(array('testing' => true, 'result' => 'error', 'error_msg' => 'Error connecting to the MySQL server.')); 
+		  return; 
+		}
+		
+		$opendb = @mysql_select_db($db_config['name'], $db);
+		if (!$opendb) {
+		  echo json_encode(array('testing' => true, 'result' => 'error', 'error_msg' => 'Error selecting the database.'));  
+		  return;
+		}
+		
+		$sql = "SELECT email FROM users where id=1";
+		$rs = @mysql_query($sql, $db);
+		
+		if (!$rs) {
+		  echo json_encode(array('testing' => true, 'result' => 'error', 'error_msg' => 'Error executing query: "'.$sql.'"')); 
+		  return; 
+		}
+		
+		mysql_free_result($rs);
+		mysql_close($db);
+		unset($rs, $sql);
+	
+		header('Content-Type: application/json');
+	  echo json_encode(array('testing' => true, 'result' => 'success', 'data' => $rs->email));	  
+  }
 }
 
 $registrationController = new Registration();
-$registrationController->index();
+if (isset($_GET['test'])) {
+  $registrationController->testWebservice();
+}
+else {
+  $registrationController->invoke();  
+}
