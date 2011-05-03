@@ -79,12 +79,14 @@ class Registration {
 		  return; 
 		}
 		
+		$data = $rs->email;
+		
 		mysql_free_result($rs);
 		mysql_close($db);
 		unset($rs, $sql);
 	
 		header('Content-Type: application/json');
-	  echo json_encode(array('testing' => true, 'result' => 'success', 'data' => $rs->email));	  
+	  echo json_encode(array('testing' => true, 'result' => 'success', 'data' => $data));	  
   }
 }
 
