@@ -1,16 +1,8 @@
 <?php
-/*
-**	@desc:		PHP ajax login form using jQuery
-**	@author:	programmer@chazzuka.com
-**	@url:		http://www.chazzuka.com/blog
-**	@date:		15 August 2008
-**	@license:	Free!, but i'll be glad if i my name listed in the credits'
-*/
+// validate inclusion
+if (!defined('NEOLOGISM_EXEC')) exit('direct access is not allowed.');
 
-//@ validate inclusion
-if(!defined('VALID_ACL_')) exit('direct access is not allowed.');
-
-$ACL_LANG = array (
+$NEOLOGISM_LANG = array (
 		'USERNAME'			=>	'Username',
 		'EMAIL'				=>	'E-mail',
 		'PASSWORD'			=>	'Password',
