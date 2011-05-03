@@ -1,0 +1,67 @@
+<img src="http://www.chazzuka.com/blog/wp-content/uploads/2007/10/ajax-xmlhttprequest.gif" alt="ajax stuffs" title="ajax Stuffs" width="450" height="80" class="postimg" />
+
+Because a lot of responses to the previous post <a href="http://www.chazzuka.com/blog/?p=174">php ajax tutorial create ajax based login form using jquery</a>, and asking about some bug fixxing incl IE bugs, i decide to create a new PHP ajax login functionality using Jquery, and here it is...
+
+<h3>Whats new?</h3>
+<ul>
+	<li>Completely recoded</li>
+	<li>Tested in IE6, FF3, Opera9 and i think should be worked in other modern browsers as well</li>
+	<li>Easliy switch the data source between database and PHP array</li>
+	<li>Login authentication can be using username or email, or even both of 'em by changing the config</li>
+	<li>Automattic redirection could be done within the javascript config</li>
+	<li>Redirect target (on success) can be changed in config file</li>
+	<li>Message and Text controled by array variable which could be changed in 1 file</li>
+</ul>
+<!--more-->
+<h3>dependency:</h3>
+<ul>
+	<li><a href="http://jquery.com" rel="external,nofollow">Jquery 1.2.3</a>, never tested with the prior version</li>
+	<li><a href="http://php.net" rel="external,nofollow">PHP5</a>, If you running prior version then you need to make some changes, probably but not limited at class constructor to make it compatible with your PHP version.</li>
+</ul>
+
+<h3>How to?</h3>
+<ul>
+	<li><strong>Switch the data source</strong> : Turn the value of USEDB constant in login.config.php into true, and modify the db_config array values as needed, to use array vars turn it false and modify the user_config array values</li>
+	<li><strong>change the authentication method</strong> : change the LOGIN_METHOD constant value, possible values:
+		<ul>
+			<li>user : match the username and password</li>
+			<li>email : match the user email and password</li>
+			<li>both : match the username or user email and password</li>
+		</ul>
+	</li>
+	<li><strong>switch automattic redirection</strong> : turn the value of autoRedir var in login.js to true</li>
+	<li><strong>change the redirect target</strong> : change the value of SUCCESS_URL constant in login.config.php, for example you need to automatically redirect to user profile, so change it into "index.php?profile=".$_SESSION['exp_user']['username']</li>
+	<li><strong>change error message and text</strong> : change the array values accordingly at login.lang.php</li>
+</ul>
+
+<h3>Notes:</h3>
+<ul>
+	<li>Thanks to John resig and the jquery developer team, thanks guys you made my life easier</li>
+	<li>Please do not link to the download file directly, link to this page instead</li>
+	<li>This script is absolutely free, credits nor link is not required but will be great if this site got 'em</li>
+</ul>
+
+<h3>Demo & Download</h3>
+<ul>
+	<li>The <a href="http://www.chazzuka.com/experiments/php-ajax-login/">demo available here</a> use admin|admin@localhost|123456 as the test account</li>
+	<li><a href="http://www.chazzuka.com/experiments/php-ajax-login/src.rar">Download the source</a> again please do not link to the file directly, link to this page instead.</li>
+</ul>
+
+<h3>SQL</h3>
+[sql]
+CREATE TABLE `tbl_user` 
+(
+	`userid` integer (11) NOT NULL AUTO_INCREMENT , 
+	`username` varchar (50) NOT NULL, 
+	`useremail` varchar (100) NOT NULL, 
+	`userpassword` varchar (50) NOT NULL,
+	PRIMARY KEY (`userid`)
+) TYPE=MyISAM CHARACTER SET utf8 COLLATE utf8_general_ci;
+
+BEGIN;
+INSERT INTO `tbl_user` (`userid`, `username`, `useremail`, `userpassword`) VALUES(1, 'admin', 'admin@chazzuka.com', 'e10adc3949ba59abbe56e057f20f883e');
+INSERT INTO `tbl_user` (`userid`, `username`, `useremail`, `userpassword`) VALUES(2, 'user', 'user@chazzuka.com', 'e10adc3949ba59abbe56e057f20f883e');
+COMMIT;
+[/sql]
+
+The Jquery file can be downloded at <a href="http://jquery.com" rel="external,nofollow">jquery.com<a/> If you found something doesnt work as expected just let me know.

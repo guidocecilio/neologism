@@ -1,0 +1,86 @@
+/*
+**	@desc:	PHP ajax login form using jQuery
+**	@author:	programmer@chazzuka.com
+**	@url:		http://www.chazzuka.com/blog
+**	@date:	15 August 2008
+**	@license:	Free!, but i'll be glad if i my name listed in the credits'
+*/
+@charset "utf-8";
+/* CSS Document */
+	html,
+	body
+		{
+			background:#ccc;
+			padding:50px;
+			margin:0;
+			font:normal 11px/normal arial;
+			color:#000;
+			text-align:center;
+		}
+	#wrapper
+		{
+			background:#666;
+			border:solid 1px #fff;
+			margin:0 auto;
+			width:250px;
+			text-align:left;
+			padding:25px;
+		}
+	a
+		{
+			text-decoration:none;
+			color:#000;
+			border-bottom:dotted 1px #000;
+		}
+	a:hover
+		{
+			color:#000;
+			border-bottom:solid 1px #000;
+		}
+	form
+		{
+			padding:15px; margin:0;
+		}
+	#msg
+		{
+		text-align:center; color:red; padding:0px 0 10px 0;
+		}
+	label
+		{
+		font-weight:bold;
+		display:block;
+		}
+	.textfield
+		{
+			background:#333;
+			border:solid 1px #222;
+			padding:3px;
+			margin:4px 0px 4px 0px;
+			width:90%;
+		}
+	.textfield:hover,
+	.textfield:focus
+		{
+		background:#000;
+		border:solid 1px #fff;
+		color:#fff;
+		}
+	
+	.buttonfield
+		{
+			background:#333;
+			border:solid 1px #ddd;
+			color:#000;
+			font:bold 11px/normal Tahoma, Verdana;
+			margin-top:10px;
+			padding:4px;
+		}
+	.buttonfield:hover,
+	.buttonfield:focus
+		{
+			background:#000;
+			border:solid 1px #fff;
+			color:#fff;
+		}
+	#wait{ position:absolute; top:0px; left:0px; background:#FF0000; color:#fff; padding:10px; }
+	#footer { padding:10px 0px; width:100%; text-align:center; font:normal 10px/normal arial; color:#666; }
