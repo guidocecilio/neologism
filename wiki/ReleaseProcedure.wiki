@@ -18,7 +18,7 @@ curl -O http://neologism.googlecode.com/svn/branches/drupal-6/build-release.sh
 
   * (As an alternative to the steps above, if you already have a working copy checked out from SVN, then you can use that; it will have the script in the root directory.)
   * Check the `drush dl drupal-6.xxx` line in the script matches the latest version of Drupal 6 available at http://drupal.org/project/drupal and increase the version number if necessary
-  * Run the `build-release.sh` script
+  * Run the `build-release.sh` script (you might have to do `chmod u+x build-release.sh` first)
   * Rename `neologism.zip` to `neologism-0.x.y.zip`
   * Upload the zip file to Google Code
     * Summary: "Neologism 0.x.y"
