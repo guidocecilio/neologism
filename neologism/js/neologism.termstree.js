@@ -1,8 +1,21 @@
 /**
- * @author guicec
- */
+   @author guicec
 
-//Ext.ns('Neologism');
+ Extending/depending on:  
+~ = modified function (when updating from SVN be sure to check these for changes, especially to Ext.tree.TreeNodeUI.render() )  
++ = added function  
+  
+Ext.tree.TreeNodeUI: ~onClick(), ~onDblClick()
+Ext.tree.TreePanel : ~expandPath(), 
+						+getChecked(), +someChildOrParentIsChecked(), +checkDisjointWidth(),
+						+isSomeChildChecked(), +isSomeChildCheckedOrStatus()
+						
+Ext.tree.TreeNode: +checkDisjointness(), +checkNodeReferences()
+
+Neologism.TermsTree: +addObserver(), +notifyObservers(), +findNodeByText(), +computeInverses(),
+						+findChildInNode(), +traverse(), +getXSDDatatype()
+
+*/   
 
 /**
  * Override TreePanel onClick and onDblClick events
@@ -36,7 +49,6 @@ Ext.override(Ext.tree.TreeNodeUI, {
       }
   
       this.fireEvent("click", this.node, e);
-      //alert('onclick');
     } else {
       e.stopEvent();
     }
@@ -60,13 +72,56 @@ Ext.override(Ext.tree.TreeNodeUI, {
       //this.node.expand();
     }
     this.fireEvent("dblclick", this.node, e);
+  },
+
+  //private
+  onCheckChange : function(){
+	  //alert('onCheckChange');
+      var checked = this.checkbox.checked;
+      // fix for IE6
+      this.checkbox.defaultChecked = checked;
+      this.node.attributes.checked = checked;
+      this.fireEvent('checkchange', this.node, checked);
   }
+});
+
+Ext.override(Ext.tree.TreePanel, {
+	expandPath : function(path, attr, callback){
+	    attr = attr || 'id';
+	    var keys = path.split(this.pathSeparator);
+	    var curNode = this.root;
+	    if(curNode.attributes[attr] != keys[1]){ // invalid root
+	        if(callback){
+	            callback(false, null);
+	        }
+	        return;
+	    }
+	    var index = 1;
+	    var f = function(){
+	        if(++index == keys.length){
+	            if(callback){
+	                callback(true, curNode);
+	            }
+	            return;
+	        }
+	        var c = curNode.findChild(attr, keys[index]);
+	        if(!c){
+	            if(callback){
+	                callback(false, curNode);
+	            }
+	            return;
+	        }
+	        curNode = c;
+	        c.expand(false, false, f);
+	    };
+	    curNode.expand(false, false, f);
+	    return curNode;
+	} 
 });
 
 /*
 Ext.override(Ext.tree.TreeNodeUI, {
     toggleCheck : function(value) {
-	alert('toggleCheck');
 		var cb = this.checkbox;
         if(cb){
             var checkvalue = (value === undefined ? !cb.checked : value);
@@ -78,24 +133,8 @@ Ext.override(Ext.tree.TreeNodeUI, {
 */
 
 
-/* Extending/depending on:  
-~ = modified function (when updating from SVN be sure to check these for changes, especially to Ext.tree.TreeNodeUI.render() )  
-+ = added function  
-  
-TreeSelectionModel.js  
-    Ext.tree.CheckNodeMultiSelectionModel : ~init(), ~onNodeClick(), +extendSelection(), ~onKeyDown()  
-  
-TreeNodeUI.js  
-    Ext.tree.CheckboxNodeUI : ~render(), +checked(), +check(), +toggleCheck()  
-  
-TreePanel.js  
-    Ext.tree.TreePanel : +getChecked()  
-  
-TreeLoader.js  
-    Ext.tree.TreeLoader : ~createNode()  
-  
-*/   
-   
+
+
 /**  
  * Retrieve an array of ids of checked nodes  
  * @return {Array} array of ids of checked nodes  
@@ -119,8 +158,6 @@ Ext.tree.TreePanel.prototype.getChecked = function(node){
 
 //-------------------------------------------------------
 // especifies methods for TermsTree
-
-
 
 /**
  * Note: we are working with node.text becuase the id could be modified or had not the right value
@@ -281,9 +318,75 @@ Ext.tree.TreePanel.prototype.isSomeChildCheckedOrStatus = function(node, status)
 	});
 	
 	return someoneChecked;
-}
+};
 
-;
+Ext.tree.TreeNode.prototype.checkDisjointness = function(/*TreeNode*/node, /*string*/editingNodeValue, /*Mutidimensional array*/parentPaths) {
+	// if some node comes checked is because it is a real disjointwith
+	if (node.getUI().isChecked()) 
+		return;
+	if (Neologism.util.in_array(editingNodeValue, node.attributes.disjointwith)) {
+		node.getUI().toggleCheck(true);
+		node.disable();
+	}
+	else if (node.attributes.inferred_disjointwith != undefined) {
+		for (var i = 0; i < parentPaths.length; i++) {
+			for (var tindex = 1; tindex < parentPaths[i].length; tindex++) {
+				//console.log(parentPaths[i][tindex]);
+				if (Neologism.util.in_array(parentPaths[i][tindex], node.attributes.inferred_disjointwith)) {
+					node.disable();
+					return;
+				}
+			}
+		}
+	}
+},
+
+Ext.tree.TreeNode.prototype.checkInverses = function(/*TreeNode*/node, /*string*/editingNodeValue) {
+	// if some node comes checked is because it is a real disjointwith
+	if (node.getUI().isChecked()) 
+		return;
+	if (Neologism.util.in_array(editingNodeValue, node.attributes.inverses)) {
+		node.getUI().toggleCheck(true);
+		node.disable();
+	}
+//	else if (node.attributes.inferred_inverses != undefined) {
+//		for (var i = 0; i < parentPaths.length; i++) {
+//			for (var tindex = 1; tindex < parentPaths[i].length; tindex++) {
+//				//console.log(parentPaths[i][tindex]);
+//				if (Neologism.util.in_array(parentPaths[i][tindex], node.attributes.inferred_disjointwith)) {
+//					node.disable();
+//					return;
+//				}
+//			}
+//		}
+//	}
+},
+
+/**
+ * Check for possible references to a node. The references are stored in the first node of the tree.
+ * @param node Node to check for possible references.
+ * @return
+ */
+Ext.tree.TreeNode.prototype.checkNodeReferences = function(checked) {
+	var nodeTocheck = this;
+	
+	var tree = nodeTocheck.getOwnerTree();
+  	var rootNode = tree.getRootNode();
+  	if ( rootNode.childNodes[0].attributes.references != undefined ) {
+  		var references = rootNode.childNodes[0].attributes.references;
+  		if (references[nodeTocheck.text] != undefined && references[nodeTocheck.text].references > 0) {
+  			var reference = references[nodeTocheck.text];
+  			for ( var p = 0; p < reference.paths.length; p++ ) {
+  				var rnode = tree.expandPath(reference.paths[p]);
+  				if ( rnode != undefined ) {
+  					if (rnode.attributes.checked != checked) {
+  						rnode.getUI().toggleCheck(checked);
+  					}
+  				}
+  			}
+  		}
+	}
+};
  
 //Ext.extend(Ext.tree.CheckboxNodeUI, Ext.tree.TreeNodeUI, {   
 /*
@@ -429,6 +532,7 @@ Neologism.TermsTree = Ext.extend(Ext.tree.TreePanel, {
   //props (overridable by caller)
   height           : 400,
   width            : '100%',
+  autoWidth		   : true, // to force TreePanel.syncSize(); to sync the inherited width
   disabled         : false,
   rootVisible      : false,
   header           : false,
@@ -436,21 +540,8 @@ Neologism.TermsTree = Ext.extend(Ext.tree.TreePanel, {
 
   initComponent: function() {
     // Called during component initialization
-    var config = {
-      //props (non-overridable)
-      
-      //------------------------------------------- standard TreePanel properties
-      useArrows        : true,  
-      collapsible      : true,
-      animCollapse     : true,
-      border           : true,
-      autoScroll       : true,
-      animate          : true,
-      containerScroll  : true,
-      enableDD         : false,
-      singleClickExpand: true,
-
-      tbar: [
+	var tb = new Ext.Toolbar(
+	  {items: [
         {
           tooltip: 'Refresh the tree',
           iconCls: 'x-tbar-loading',
@@ -476,11 +567,25 @@ Neologism.TermsTree = Ext.extend(Ext.tree.TreePanel, {
           }
         },
         '-'
-      ],
+      ]}
+	);
+	
+    var config = {
+      //props (non-overridable)
       
-      //------------------------------------------- 
-      // standard TreePanel properties
+      //------------------------------------------- standard TreePanel properties
+      useArrows        : true,  
+      collapsible      : true,
+      animCollapse     : true,
+      border           : true,
+      autoScroll       : true,
+      animate          : true,
+      containerScroll  : true,
+      enableDD         : false,
+      singleClickExpand: true,
 
+      tbar: tb,
+      
       //-------------------------------------------
       // custom TermsTree properties 
       hiddenNodes: [],
@@ -531,7 +636,7 @@ Neologism.TermsTree = Ext.extend(Ext.tree.TreePanel, {
     });
     
     // add the text field to the toolbar
-    this.getTopToolbar().push( this.filterField );
+    this.getTopToolbar().addField( this.filterField );
 
     //------------------------------------------- 
     //  event handlers
@@ -790,7 +895,7 @@ Neologism.TermsTree.prototype.computeInverses = function(rootNodeClasses, domain
     },  null);
 	
 	return allowedAsInverseProperties;
-}
+},
 
 /**
  * Finds the first child that has the attribute with the specified value using the children array.
@@ -807,7 +912,43 @@ Neologism.TermsTree.prototype.findChildInNode = function(node, value) {
         }
     }
     return null;
-}
+},
+
+/**
+ * Traverse a term tree
+ * @param rootNode
+ * @param func a function to apply with two parameter. First param the node and second param the path
+ * @param reset
+ * @return
+ */
+Neologism.TermsTree.traverse = function(rootNode, func, reset) {
+	var children = [];
+	
+	if ( typeof Neologism.TermsTree.traverse.path == 'undefined' || reset == true ) {
+        // It has not... perform the initilization
+		Neologism.TermsTree.traverse.path = ['/root'];
+    }
+	
+	// rootNode of type Object
+	if(rootNode.attributes == undefined) {
+		children = rootNode.children;
+	} // rootNode of type Ext.tree.AsyncTreeNode
+	else if(rootNode.attributes.children == undefined) {
+		children = rootNode.childNodes;
+	} // rootNode of type Ext.tree.TreeNode
+	else { 
+		children = rootNode.attributes.children;
+	}
+	
+	if(children != null) {
+		for (var i = 0; i < children.length; i++) {
+			Neologism.TermsTree.traverse.path.push(children[i].text);
+			func.apply(this,[children[i],Neologism.TermsTree.traverse.path]); 
+			Neologism.TermsTree.traverse(children[i],func, false);
+			Neologism.TermsTree.traverse.path.pop();
+	    }
+	}
+},
 
 /**
  * Static method that return the xsd datatype.
@@ -857,5 +998,23 @@ Neologism.TermsTree.getXSDDatatype = function() {
 				];
 };
 
+//Ext.reg('termstree', Neologism.util);
+Ext.ns('Neologism.util');
 
+Neologism.util.in_array = function(element, array_of_elements) { 
+	for(var i = 0, len = array_of_elements.length; i < len; i++) {
+  		if ( element == array_of_elements[i] ) {
+  			return true;
+  		}
+  	}
+    return false;
+},
+
+Neologism.util.remove_element = function(element, array_of_elements) { 
+	for(var i = 0, len = array_of_elements.length; i < len; i++) {
+	    if ( array_of_elements[i] == element ) {
+	    	array_of_elements.splice(i, 1);
+	    }
+	}
+};
 

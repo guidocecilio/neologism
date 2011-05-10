@@ -1,36 +1,30 @@
-
-
 if( Drupal.jsEnabled ) {
-	
-	// declare Neologism namespace
-	var Neologism = {};
-	
 	$(document).ready( function() {
 		// need for the Ext module
 		Ext.QuickTips.init();
 		
 		// we need to check for the form and later ask for the rest
-		if( Neologism.superclassesTreePanel !== undefined ) {
+		if ( Neologism.superclassesTreePanel !== undefined ) {
 			Neologism.superclassesTreePanel.render(Neologism.superclassesTreePanel.objectToRender);
 		}
 		
-		if( Neologism.disjointwithTreePanel !== undefined ) {
+		if ( Neologism.disjointwithTreePanel !== undefined ) {
 			Neologism.disjointwithTreePanel.render(Neologism.disjointwithTreePanel.objectToRender);
 		}
 		
-		if( Neologism.domainTermsTree !== undefined ) {
+		if ( Neologism.domainTermsTree !== undefined ) {
 			Neologism.domainTermsTree.render(Neologism.domainTermsTree.objectToRender);
 		}
 		
-		if( Neologism.rangeTermsTree !== undefined ) {
+		if ( Neologism.rangeTermsTree !== undefined ) {
 			Neologism.rangeTermsTree.render(Neologism.rangeTermsTree.objectToRender);
 		}
 		
-		if( Neologism.superpropertyTermsTree !== undefined ) {
+		if ( Neologism.superpropertyTermsTree !== undefined ) {
 			Neologism.superpropertyTermsTree.render(Neologism.superpropertyTermsTree.objectToRender);
 		}
 		
-		if( Neologism.inverseTermsTree !== undefined ) {
+		if ( Neologism.inverseTermsTree !== undefined ) {
 			// if Neologism.domainsTermsTree is defined we are in the add/edit property form
 			Neologism.domainTermsTree.addObserver(Neologism.inverseTermsTree);
 			Neologism.rangeTermsTree.addObserver(Neologism.inverseTermsTree);
@@ -45,32 +39,42 @@ if( Drupal.jsEnabled ) {
 		//Neologism.checkRangeField();
 		Neologism.checkResourceType();
 		
-		if ( $('#edit-field-custom-namespace-0-value').val() != '' ) {
-		$('#edit-namespace-type-2').attr('checked', true);
-			Neologism.neoVocabularyFormToggleNamespace();
-		}
+        // Prepare custom namespace selection widget
+        // Move custom namespace edit field next to the "Custom" radio button
+        $('#edit-namespace-1-wrapper').append($('#edit-custom-namespace'));
+        $('#edit-custom-namespace-wrapper').remove();
+        // Enable and disable the custom namespace field as required
+        if ($('#edit-namespace-0').attr('checked')) {
+            $('#edit-custom-namespace').attr('disabled', true);
+        }
+        $('#edit-namespace-0').click(function() {
+            $('#edit-custom-namespace').attr('disabled', true);
+        });
+        $('#edit-namespace-1').click(function() {
+            $('#edit-custom-namespace').attr('disabled', false);
+        });
+        // Update the default namespace URI with the vocabulary ID
+        setInterval(function() {
+            var vocabID = $('#edit-prefix').val();
+            if (vocabID) {
+              $('#neologism-default-ns').empty().text(vocabID);
+            } else {
+              $('#neologism-default-ns').empty().html('<em>vocabulary-id</em>');
+            }
+        }, 250);
 		
 		// this is used when all the content type form are shown the title field should take the focus
-		$('#edit-title').focus();
+		$('#edit-prefix').focus();
 	}); // ready
 
-	Neologism.checkRangeField = function() {
-	    var rangeField = $('#range-field');  
-	    var literalAsRangeCheckBox = $('#edit-field-literal-as-range-value');
-	
-		if( literalAsRangeCheckBox.is(':checked') ) { 
-		    rangeField.hide();
-		}
-		else {
-			rangeField.show();
-		}
-	};
-	  
 	Neologism.checkResourceType = function() {
 	    // Another resource
 		if ( $('#edit-resource-type-1').attr('checked') ) {
 			$('#range-group-datatypes').hide();
 			$('#range-treeview').show();
+			// show inverse widget
+			$('#inverse-panel').show();
+			$('#superproperty-panel').removeClass('full-size-panel').addClass('half-size-panel');
 		}
 		// A literal (string, number, date, ...)
 		else if ( $('#edit-resource-type-2').attr('checked') ) {
@@ -78,35 +82,40 @@ if( Drupal.jsEnabled ) {
 			$('#range-group-datatypes').show();
 			// the inverse selection widget should be hidden if the range field also are hidden
 			Neologism.rangeTermsTree.clearValues();
+			$('#inverse-panel').hide();
+			$('#superproperty-panel').removeClass('half-size-panel').addClass('full-size-panel');
 		}
 		// Either
 		else if ( $('#edit-resource-type-3').attr('checked') ) {
 			$('#range-group-datatypes').hide();
 			$('#range-treeview').hide();
 			Neologism.rangeTermsTree.clearValues();
+			$('#inverse-panel').hide();
+			$('#superproperty-panel').removeClass('half-size-panel').addClass('full-size-panel');
 	    }
+		
+		var propertyTreePanel = Ext.getCmp('ext-comp-1001');
+		if (propertyTreePanel) {
+			propertyTreePanel.syncSize();
+		}
 	  };
 	  
-	  Neologism.neoVocabularyFormOnSubmit = function() {
-		  if ( $('#edit-namespace-type-1').attr('checked') ) {
-			  $('#edit-field-custom-namespace-0-value').val('');
-		  } else {
-			  // TODO: handle what happen when the user select custom namespace and the field it is empty
-			  if ( $('#edit-field-custom-namespace-0-value').val() == '' ) {
-				  $('#edit-field-custom-namespace-0-value').val('error_field_required_empty')
-			  }
+	  /**
+	   * 
+	   */
+	  Neologism.checkTreeViewsHeight = function(object) {
+		  if (object.name == 'classesTreeViewPanel') {
+			  Neologism.ctpHeight = object.newHeight;
+		  }
+		  else if (object.name == 'propertiesTreeViewPanel') {
+			  Neologism.ptpHeight = object.newHeight;
+		  }
+		  
+		  if (typeof Neologism.ctpHeight !== 'undefined' && typeof Neologism.ptpHeight !== 'undefined') {
+			  var maxHeight = (Neologism.ctpHeight > Neologism.ptpHeight) ? Neologism.ctpHeight : Neologism.ptpHeight; 
+			  $('#class-tree .x-panel-body').css({height:maxHeight});
+			  $('#object-property-tree .x-panel-body').css({height:maxHeight});
 		  }
 	  };
-	  
-	Neologism.neoVocabularyFormToggleNamespace = function() {
-		// Another resource
-		if ( $('#edit-namespace-type-1').attr('checked') ) {
-		$('#edit-field-custom-namespace-0-value').attr('disabled', true);
-		}
-		// A literal (string, number, date, ...)
-		else if ( $('#edit-namespace-type-2').attr('checked') ) {
-			$('#edit-field-custom-namespace-0-value').removeAttr("disabled").focus();//.val("editable now");
-		}
-	};
-  
 }
+

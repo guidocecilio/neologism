@@ -30,22 +30,15 @@ $section_links = array(
 				'Tutorials' => 'tutorials',
         'Customizing' => 'customizing',
         //'RDFS and OWL' => 'on-vocabularies',
-//        'FAQ' => 'faq',
+        'FAQ' => 'faq',
         'Publications' => 'publications',
     ),
     'support-dev' => array(
         'Mailing list' => 'mailing-list',
-//        'FAQ' => 'faq',
+        'FAQ' => 'faq',
         'Issue tracker' => 'issues',
         'Source code' => 'source',
     ),
-/*
-    'showcase' => array(
-        'Screenshots' => 'showcase#screenshots',
-        'Vocabularies hosted on Neologism' => 'showcase#vocabularies',
-        'Installations' => 'showcase#installations'
-    ),
-*/
 );
 
 $pages = array(
@@ -110,7 +103,7 @@ $pages = array(
     ),
     'gpl' => array('redirect' => 'http://www.gnu.org/licenses/gpl-3.0-standalone.html'),
     'download' => array('redirect' => 'http://code.google.com/p/neologism/downloads/list'),
-    'download-latest' => array('redirect' => 'http://neologism.googlecode.com/files/neologism-0.5.zip'),
+    'download-latest' => array('redirect' => 'http://neologism.googlecode.com/files/neologism-1.0-rc6.zip'),
     'mailing-list' => array('redirect' => 'http://groups.google.com/group/neologism-dev'),
     'issues' => array('redirect' => 'http://code.google.com/p/neologism/issues/list'),
     'source' => array('redirect' => 'http://code.google.com/p/neologism/source/checkout'),
@@ -157,14 +150,12 @@ function content($file) { readfile("content/$file.html"); }
 
 // ============= BEGIN TEMPLATE ==============================================
 
-echo '<?xml version="1.0" encoding="UTF-8"?>
-';
+echo '<?xml version="1.0" encoding="UTF-8"?>';
 ?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML+RDFa 1.0//EN"
     "http://www.w3.org/MarkUp/DTD/xhtml-rdfa-1.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
   <head>
-    <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
     <title><?php e(@$head_title ? $head_title : ($title . ' | Neologism')); ?></title>
     <base href="<?php e($absolute_base); ?>" />
     <link rel="stylesheet" type="text/css" href="style.css" />

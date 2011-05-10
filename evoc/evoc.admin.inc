@@ -15,8 +15,34 @@
  */
 function evoc_manage_vocabularies() {
   
+  if (!variable_get('evoc_builtin_vocabularies_imported', FALSE)) {
+    module_load_include('inc', 'evoc', 'evoc.batch_import');
+    return drupal_get_form('evoc_import_builtin_vocabularies_form');
+  }
+  
+  $evoc_array_builtin_vocabularies = variable_get('evoc_builtin_vocabularies', NULL);
+  if (!$evoc_array_builtin_vocabularies) {
+    drupal_set_message('Error retrieving built-in vocabularies\' information from the database.', 'error');
+    return theme('status_messages');
+  }
+  
+  // These are the namespaces imported during installation
+  $builtins = array();
+  foreach ($evoc_array_builtin_vocabularies as $vocab) {
+    $builtins[] =  $vocab['prefix'];
+  }
+  
+  // Get namespaces managed by evoc. First get all from the {rdf_namespaces}
+  // table, then remove those managed by other modules (neologism). This
+  // is a hack; it will fail if any other modules register namespaces into
+  // that table
   // @todo Make sure that we get only namespaces imported via evoc
-  $namespaces = array_diff_key(rdf_db_rdf_namespaces(), module_invoke('neologism', 'rdf_namespaces'));
+  $result = db_query("SELECT v.prefix, v.uri FROM {rdf_namespaces} v");
+  $namespaces = array();
+  while ($row = db_fetch_object($result)) {
+    $namespaces[$row->prefix] = $row->uri;
+  }
+  $namespaces = array_diff_key($namespaces, module_invoke('neologism', 'rdf_namespaces'));
   
   $header = array(
       t('Prefix'),
@@ -26,10 +52,13 @@ function evoc_manage_vocabularies() {
 
   $rows = array();
   foreach ( $namespaces as $prefix => $uri ) {
+    $remove = in_array($prefix, $builtins)
+        ? t('(builtin)')
+        : l(t('remove'), 'evoc/remove/'.$prefix, array('attributes' => array('title' => 'Remove this external vocabulary')));
     $rows[] = array(
         array('data' => $prefix),
         array('data' => $uri),
-        array('data' => l(t('remove'), 'evoc/remove/'.$prefix, array('attributes' => array('title' => 'Remove this external vocabulary')))),
+        array('data' => $remove),
     );
   }
 
@@ -38,7 +67,18 @@ function evoc_manage_vocabularies() {
   return $output;
 }
 
-function evoc_add_vocabulary($form_state) {
+function evoc_add_vocabulary() {
+  if (!variable_get('evoc_builtin_vocabularies_imported', FALSE)) {
+    drupal_set_message('This action is not available because the evoc module has not yet been initialized. '
+      .l('Visit the evoc module', 'evoc').' to complete the initialization.','error');
+    return theme('status_messages');
+  }
+  else return drupal_get_form('evoc_add_vocabulary_form');
+}
+
+function evoc_add_vocabulary_form($form_state) {
+  $form = array();
+  
   $form['help'] = array(
       '#value' => 'Here you can add external vocabularies. This allows you to use their classes and properties in your own vocabularies, for example, as superclasses. We will attempt to load an RDF/XML file containing an RDFS vocabulary or OWL ontology from the namespace URI.',
   );
@@ -62,7 +102,7 @@ function evoc_add_vocabulary($form_state) {
   return $form;
 }
 
-function evoc_add_vocabulary_validate($form, &$form_state) {
+function evoc_add_vocabulary_form_validate($form, &$form_state) {
   if (!empty($form_state['values']['ns_prefix'])) {
     $ns_prefix = trim($form_state['values']['ns_prefix']);
     if (!rdf_is_valid_qname($ns_prefix . ':x')) {
@@ -129,16 +169,16 @@ function evoc_add_vocabulary_validate($form, &$form_state) {
   $form_state['evoc_processed_vocabulary'] = $vocabulary;
 }
 
-function evoc_add_vocabulary_submit($form, &$form_state) {
+function evoc_add_vocabulary_form_submit($form, &$form_state) {
   // Get the vocabulary array from $form_state, should have been put there by _validate()
   if (!is_array($form_state['evoc_processed_vocabulary'])) {
     drupal_set_message('Internal error: evoc_processed_vocabulary is not present');
     return false;
   }
   $vocabulary = $form_state['evoc_processed_vocabulary'];
-
+  
   evoc_save_vocabulary($vocabulary);
-  drupal_set_message(t('External vocabulary added. Found %classcount classes and %propertycount properties.',
+  drupal_set_message(t('External vocabulary <i>'.$vocabulary['prefix'].'</i> added. Found %classcount classes and %propertycount properties.',
       array('%classcount' => count($vocabulary['classes']), '%propertycount' => count($vocabulary['properties']))));
   $form_state['redirect'] = 'evoc';
 }
@@ -166,7 +206,7 @@ function evoc_remove_confirm_submit($form, &$form_state) {
   if ($form_state['values']['confirm']) {
     $prefix = $form_state['values']['prefix'];
     evoc_remove_vocabulary($prefix);
-    drupal_set_message(t('External vocabulary removed.'));
+    drupal_set_message(t('External vocabulary <i>'.$prefix.'</i> removed.'));
   }
   $form_state['redirect'] = 'evoc'; 
 }
