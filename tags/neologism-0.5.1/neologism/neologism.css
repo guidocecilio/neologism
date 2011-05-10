@@ -1,0 +1,921 @@
+/* $Id:  $ */
+
+/* These are default in browsers, but are overridden by ext-all.css, so we have to restore them. */
+ol {
+  list-style-type: decimal;
+}
+em, i {
+  font-style: italic;
+}
+/* End restoring of default CSS */
+
+h2.neologism {
+  margin-top: 2em;
+  margin-bottom: 1em;
+  font-size: 2em;
+}
+
+#atglance {  
+  border: 1px dotted;
+  
+  padding: 0.8em;
+}
+
+#atglance p {
+  text-align: left;
+}
+
+div#atglance > p {
+  margin: 0;
+  padding: 0;
+}
+
+div.linkontop {
+  float: right; 
+  margin: 0;
+}
+
+img#legend {
+  float: right;
+  margin: 3em 2em 2em auto;
+}
+
+#add_terms_link a {
+  padding-right : 4px;
+}
+
+/* treeview objects and classes */
+#treeview-panel {
+	width:100%;
+	clear: left;
+}
+
+.treepanel-fullwidth {
+	width: 100%;
+}
+
+.treepanel-halfwidth {
+	width: 49%;
+	float:right;
+}
+
+#class-tree {
+	float:left;
+  margin: 10px 0 0 0;
+}
+
+#object-property-tree {
+  margin: 10px 0 0 0;
+}
+
+.class-samevoc {
+    background-image: url(images/icons/class_samevoc.gif) !important;
+}
+
+.class-diffvoc {
+    background-image: url(images/icons/class_diffvoc.gif) !important;
+}
+
+.property-samevoc {
+    background-image: url(images/icons/property_samevoc.gif) !important;
+}
+
+.property-diffvoc {
+    background-image: url(images/icons/property_diffvoc.gif) !important;
+}
+
+.icon-expand-all {
+    background-image: url(images/icons/expand-all.gif) !important;
+}
+.icon-collapse-all {
+    background-image: url(images/icons/collapse-all.gif) !important;
+}
+
+/* this the class used when a class is disabled in the treeview */
+.class-inconsistent .x-tree-node-anchor span {
+  text-decoration: line-through;
+  color: #777;
+}
+
+.class-bloked .x-tree-node-anchor span {
+  text-decoration: none;
+  color: #777;
+}
+
+.locked-for-edition .x-tree-node-anchor span {
+  text-decoration: overline;
+  color: #ff0000; 
+}
+
+.currentvoc .x-tree-node-anchor span {
+  font-weight: bold;
+}
+
+.match-search .x-tree-node-anchor span {
+  font-weight: bold;
+}
+
+
+.vocabulary-view {
+  margin: 0px 0px 0px 0px;
+  padding: 0px;
+}
+
+.vocabulary-view h1 {
+  font-size: 25px;
+  margin-bottom: 10px;
+}
+
+.vocabulary-view h2 {
+  font-size: 20px;
+  /*margin-bottom: 10px;*/
+}
+
+.vocabulary-view h3 {
+  font-size: 17px;
+  font-stretch: normal;
+  font-weight: bold;
+  /*margin-bottom: 10px;*/
+}
+
+.vocabulary-view #abstract {
+  border-top: #000000 solid 1px; 
+  border-bottom: #000000 solid 1px;
+  margin-top: 30px;
+  padding: 10px 0px 10px 0px;
+}
+
+.vocabulary-view #abstract .title {
+  font-size: 18px;
+  margin-bottom: 3px;
+}
+
+.vocabulary-view #description {
+  font-size: 12px;
+  margin: 30px 0px 0px 0px;
+}
+
+.vocabulary-view #last-update {
+  margin: 10px 0px 10px 0px;
+}
+
+.vocabulary-view #last-update #last-update-value{
+  margin: 0px 0px 0px 20px;
+}
+
+.vocabulary-view #authors {
+  margin: 10px 0px 10px 0px;
+}
+
+.vocabulary-view #authors #author-value{
+  margin: 0px 0px 0px 20px;
+}
+
+#namespace {
+  margin: 10px 0px 10px 0px;
+}
+
+#namespace #namespace-value {
+	margin: 0px 0px 0px 20px; 
+}
+
+.block {
+  display: block;
+}
+
+.teaser {
+	border-bottom: #ccc solid 1px;	
+}
+
+.reference h2 {
+  border-bottom: 1px solid rgb(233, 239, 243);
+  margin: 0px -26px 0.5em;
+  padding: 1em 26px;
+}
+
+/* class/property view */
+.term-node.teaser {
+  margin-bottom: 0;
+  margin-top: 0.5em;
+}
+
+.term-node h3 {
+  font-size: 14px;
+  margin: 0px 0px 3px 0px;
+}
+
+.term-node .summary {
+  font-size: 12px;
+  margin: 0px 0px 0px 0px;
+  text-align: justify;
+}
+
+.term-node dl {
+  margin: 10px 0px 0px 0px;
+  /*background-color: #add;*/
+}
+
+.term-node dt {
+  clear: both;
+  float: left;
+  margin: 0;
+  width: 120px;
+}
+
+.term-node dd {
+  margin: 0 0 0 120px;
+}
+
+.term-node .description {
+  font-size: 12px;
+  margin: 10px 0px 15px 0px;
+  text-align: justify;
+}
+
+.term-node .links {
+  margin-top: 5px;
+  font-size: 12px;  
+}
+
+.icon-n3 {
+    background-image: url(images/icons/n3.gif) !important;
+}
+
+.icon-rdf {
+    background-image: url(images/icons/rdf_w3c_icon.48.gif) !important;
+}
+
+#icons img, .icon {
+  float: right; /* LTR */
+  padding: 0px 0px 0px 5px;
+}
+
+.vocabulary-view #diagram-panel {
+  margin: 30px 0px 10px 0px;
+}
+
+
+#superclass-panel {
+	float: left; 
+	width: 49%; 
+	margin: 0px;		
+}
+
+#disjointwith-panel {
+	float: right; 
+	width: 49%; 
+	margin: 0px;
+}
+
+/* widget panels */
+#domain-panel {
+	float: left; 
+	width: 49%; 
+	height: 530px;
+}
+
+#range-panel {
+	float: right; 
+	width: 49%; 
+	height: 530px;
+}
+
+#range-panel fieldset {
+	height: 475px;
+}
+
+#superproperty-panel {
+	float: left; 
+	margin-right: 0px;		
+}
+
+#inverse-panel {
+	float: right; 
+	width: 49%; 
+}
+
+.full-size-panel {
+	width: 100%;
+}
+
+.half-size-panel {
+	width: 49%;
+}
+
+/*********** field_superclass2_id ***********/
+#field_superclass2_id {
+  margin: 0px 0px 0px 0px;
+}
+
+#field_superclass2_id table {
+  margin: 0;
+  width: auto;
+}
+
+#field_superclass2_id tbody {
+	border:none;
+}
+
+#field_superclass2_id thead th {
+  margin: 0;
+  padding: 0;
+  border: none;
+  font-weight: normal;
+}
+
+#field_superclass2_id td, th {
+  margin: 0;
+  padding: 0;
+}
+
+#field_superclass2_id ul {
+  padding: 0;
+  margin: 5px 0 5px 0;
+  overflow:hidden;
+}
+
+#field_superclass2_id ul div ul {
+  padding: 0;
+  margin: 0;
+  overflow:hidden;
+}
+
+#field_superclass2_id ul li {
+  line-height:normal;
+  margin: 2px 0 2px 0;
+  padding: 0;
+  height: auto;
+  list-style-type: none;
+  list-style-image: none;
+  background: none;
+}
+
+#field_superclass2_id ul li div {
+  line-height:normal;
+  margin: 0px 0 0px 0;
+  padding: 2px;
+  height: 15px;
+}
+
+#field_superclass2_id ul li span {
+  line-height:normal;
+  margin: 0px 0 0px 0;
+  padding: 0;
+  position:relative;
+  top: 3px;
+  left: 3px;
+}
+
+#field_superclass2_id input {
+  margin: -2px 0 0 2px;
+}
+
+
+/************* field_disjointwith2_id *************/
+
+#field_disjointwith2_id {
+  margin: 0px 0px 0px 0px;
+}
+
+#field_disjointwith2_id table {
+  margin: 0;
+  width: auto;
+}
+
+#field_disjointwith2_id tbody {
+	border:none;
+}
+
+#field_disjointwith2_id thead th {
+  margin: 0;
+  padding: 0;
+  border: none;
+  font-weight: normal;
+}
+
+#field_disjointwith2_id td, th {
+  margin: 0;
+  padding: 0;
+}
+
+#field_disjointwith2_id ul {
+  padding: 0;
+  margin: 5px 0 5px 0;
+  overflow:hidden;
+}
+
+#field_disjointwith2_id ul div ul {
+  padding: 0;
+  margin: 0;
+  overflow:hidden;
+}
+
+#field_disjointwith2_id ul li {
+  line-height:normal;
+  margin: 2px 0 2px 0;
+  padding: 0;
+  height: auto;
+  list-style-type: none;
+  list-style-image: none;
+  background: none;
+}
+
+#field_disjointwith2_id ul li div {
+  line-height:normal;
+  margin: 0px 0 0px 0;
+  padding: 2px;
+  height: 15px;
+}
+
+#field_disjointwith2_id ul li span {
+  line-height:normal;
+  margin: 0px 0 0px 0;
+  padding: 0;
+  position:relative;
+  top: 3px;
+  left: 3px;
+}
+
+#field_disjointwith2_id input {
+  margin: -2px 0 0 2px;
+}
+
+/*********** field_inverse2_id ***********/
+
+#field_inverse2_id {
+  margin: 0px 0px 0px 0px;
+}
+
+#field_inverse2_id table {
+  margin: 0;
+  width: auto;
+}
+
+#field_inverse2_id tbody {
+	border:none;
+}
+
+#field_inverse2_id thead th {
+  margin: 0;
+  padding: 0;
+  border: none;
+  font-weight: normal;
+}
+
+#field_inverse2_id td, th {
+  margin: 0;
+  padding: 0;
+}
+
+#field_inverse2_id ul {
+  padding: 0;
+  margin: 5px 0 5px 0;
+  overflow:hidden;
+}
+
+#field_inverse2_id ul div ul {
+  padding: 0;
+  margin: 0;
+  overflow:hidden;
+}
+
+#field_inverse2_id ul li {
+  line-height:normal;
+  margin: 2px 0 2px 0;
+  padding: 0;
+  height: auto;
+  list-style-type: none;
+  list-style-image: none;
+  background: none;
+}
+
+#field_inverse2_id ul li div {
+  line-height:normal;
+  margin: 0px 0 0px 0;
+  padding: 2px;
+  height: 15px;
+}
+
+#field_inverse2_id ul li span {
+  line-height:normal;
+  margin: 0px 0 0px 0;
+  padding: 0;
+  position:relative;
+  top: 3px;
+  left: 3px;
+}
+
+#field_inverse2_id input {
+  margin: -2px 0 0 2px;
+}
+
+/*********** field_superproperty2_id ***********/
+#field_superproperty2_id {
+  margin: 0px 0px 0px 0px;
+}
+
+#field_superproperty2_id table {
+  margin: 0;
+  width: auto;
+}
+
+#field_superproperty2_id tbody {
+	border:none;
+}
+
+#field_superproperty2_id thead th {
+  margin: 0;
+  padding: 0;
+  border: none;
+  font-weight: normal;
+}
+
+#field_superproperty2_id td, th {
+  margin: 0;
+  padding: 0;
+}
+
+#field_superproperty2_id ul {
+  padding: 0;
+  margin: 5px 0 5px 0;
+  overflow:hidden;
+}
+
+#field_superproperty2_id ul div ul {
+  padding: 0;
+  margin: 0;
+  overflow:hidden;
+}
+
+#field_superproperty2_id ul li {
+  line-height:normal;
+  margin: 2px 0 2px 0;
+  padding: 0;
+  height: auto;
+  list-style-type: none;
+  list-style-image: none;
+  background: none;
+}
+
+#field_superproperty2_id ul li div {
+  line-height:normal;
+  margin: 0px 0 0px 0;
+  padding: 2px;
+  height: 15px;
+}
+
+#field_superproperty2_id ul li span {
+  line-height:normal;
+  margin: 0px 0 0px 0;
+  padding: 0;
+  position:relative;
+  top: 3px;
+  left: 3px;
+}
+
+#field_superproperty2_id input {
+  margin: -2px 0 0 2px;
+}
+
+/*************** field_range2_id ***************/
+#field_range2_id {
+  margin: 0px 0px 0px 0px;
+}
+
+#field_range2_id table {
+  margin: 0;
+  width: auto;
+}
+
+#field_range2_id tbody {
+	border:none;
+}
+
+#field_range2_id thead th {
+  margin: 0;
+  padding: 0;
+  border: none;
+  font-weight: normal;
+}
+
+#field_range2_id td, th {
+  margin: 0;
+  padding: 0;
+}
+
+#field_range2_id ul {
+  padding: 0;
+  margin: 5px 0 5px 0;
+  overflow:hidden;
+}
+
+#field_range2_id ul div ul {
+  padding: 0;
+  margin: 0;
+  overflow:hidden;
+}
+
+#field_range2_id ul li {
+  line-height:normal;
+  margin: 2px 0 2px 0;
+  padding: 0;
+  height: auto;
+  list-style-type: none;
+  list-style-image: none;
+  background: none;
+}
+
+#field_range2_id ul li div {
+  line-height:normal;
+  margin: 0px 0 0px 0;
+  padding: 2px;
+  height: 15px;
+}
+
+#field_range2_id ul li span {
+  line-height:normal;
+  margin: 0px 0 0px 0;
+  padding: 0;
+  position:relative;
+  top: 3px;
+  left: 3px;
+}
+
+#field_range2_id input {
+  margin: -2px 0 0 2px;
+}
+
+/*************** field_domain2_id ***************/
+#field_domain2_id {
+  margin: 0px 0px 0px 0px;
+}
+
+#field_domain2_id table {
+  margin: 0;
+  width: auto;
+}
+
+#field_domain2_id tbody {
+	border:none;
+}
+
+#field_domain2_id thead th {
+  margin: 0;
+  padding: 0;
+  border: none;
+  font-weight: normal;
+}
+
+#field_domain2_id td, th {
+  margin: 0;
+  padding: 0;
+}
+
+#field_domain2_id ul {
+  padding: 0;
+  margin: 5px 0 5px 0;
+  overflow:hidden;
+}
+
+#field_domain2_id ul div ul {
+  padding: 0;
+  margin: 0;
+  overflow:hidden;
+}
+
+#field_domain2_id ul li {
+  line-height:normal;
+  margin: 2px 0 2px 0;
+  padding: 0;
+  height: auto;
+  list-style-type: none;
+  list-style-image: none;
+  background: none;
+}
+
+#field_domain2_id ul li div {
+  line-height:normal;
+  margin: 0px 0 0px 0;
+  padding: 2px;
+  height: 15px;
+}
+
+#field_domain2_id ul li span {
+  line-height:normal;
+  margin: 0px 0 0px 0;
+  padding: 0;
+  position:relative;
+  top: 3px;
+  left: 3px;
+}
+
+#field_domain2_id input {
+  margin: -2px 0 0 2px;
+}
+
+/***** class tree *****/
+#class-tree {
+  margin-top: 15px;
+  padding: 0;
+}
+
+#class-tree ul {
+  padding: 0;
+  margin: 3px 0 7px 0;
+  overflow:hidden;
+}
+
+#class-tree ul div ul {
+  padding: 0;
+  margin: 0;
+  overflow:hidden;
+}
+
+
+#class-tree ul li {
+  line-height:normal;
+  margin: 0px 0 0px 0;
+  padding: 0;
+  height: auto;
+  list-style-type: none;
+  list-style-image: none;
+  background: none;
+}
+
+#class-tree ul li div {
+  line-height:normal;
+  margin: 0px 0 0px 0;
+  padding: 2px;
+  height: 15px;
+}
+
+#class-tree ul li span {
+  line-height:normal;
+  margin: 0px 0 0px 0;
+  padding: 0;
+  position:relative;
+  top: 2px;
+  left: 3px;
+}
+
+/* object-property-tree */
+#object-property-tree {
+  margin-top: 15px;
+  padding: 0;
+}
+
+#object-property-tree ul {
+  padding: 0;
+  margin: 3px 0 7px 0;
+  overflow:hidden;
+}
+
+#object-property-tree ul div ul {
+  padding: 0;
+  margin: 0;
+  overflow:hidden;
+}
+
+
+#object-property-tree ul li {
+  line-height:normal;
+  margin: 0px 0 0px 0;
+  padding: 0;
+  height: auto;
+  list-style-type: none;
+  list-style-image: none;
+  background: none;
+}
+
+#object-property-tree ul li div {
+  line-height:normal;
+  margin: 0px 0 0px 0;
+  padding: 2px;
+  height: 15px;
+}
+
+#object-property-tree ul li span {
+  line-height:normal;
+  margin: 0px 0 0px 0;
+  padding: 0;
+  position:relative;
+  top: 2px;
+  left: 3px;
+}
+
+/* temporal classes */
+.vocabulary-view .authors {
+  font-size: 12px;
+  margin: 0px 0px 5px 0px;
+	background-color: #ff0000;
+}
+
+.vocabulary-view .authors h3 {
+  display: inline;
+  /*float: left;*/
+}
+
+.vocabulary-view .authors .value {
+  font-size: 12px;
+  margin: 0px 0px 0px 3px;
+}
+
+.vocabulary-view .abstract {
+  display:block;
+  margin: 7px 0 10px 0px;
+  /*padding: 10px 0px 10px 0px;*/
+}
+
+.vocabulary-view .abstract h3 {
+  font-size: 12px;
+  margin: 0px 0px 3px 0px;
+}
+
+.vocabulary-node {
+	margin: 10px 0px 25px 0px;
+  	padding: 0px;
+  	display: block;
+	}
+	
+.vocabulary-node .authors {
+  	font-size: 12px;
+  	margin: 0px 0px 5px 0px;
+}
+
+.vocabulary-node .authors .value {
+  font-size: 12px;
+  margin: 0px 0px 0px 0px;
+}
+
+.vocabulary-node .authors h3 {
+		font-weight:bold;	
+  	display: inline;
+  	font-size: 12px;
+}
+
+.vocabulary-node .abstract {
+		font-size: 12px;
+  	margin: 7px 0 10px 0px;
+  /*padding: 10px 0px 10px 0px;*/
+}
+
+.vocabulary-node .abstract h3 {
+  	margin: 0px 0px 3px 0px;
+  	font-size: 12px;
+}
+
+.vocabulary-node .namespace-uri {
+ 	font-size: 12px; 
+	margin: 0px 0px 0px 0px;
+}
+
+.vocabulary-node .namespace-uri h3 {
+	display: inline;
+ 	font-size: 12px; 
+	font-weight:bold;
+}
+
+.vocabulary-node .terms-overview {
+ 	font-size: 12px; 
+}
+
+.vocabulary-node .terms-overview h3 {
+	font-weight:bold;
+	display: inline;
+ 	font-size: 12px; 
+}
+
+.poweredby-logo {
+	position:relative; 
+	top: 1px; 
+	border: none;
+	vertical-align:text-bottom;
+}
+
+/* ========= Vocabulary form ========================================== */
+
+.node-form #edit-custom-namespace[disabled] {
+    color: #888;
+}
+
+/* webtoolkit.clearfix.css */
+.clearfix:after {
+	content: ".";
+	display: block;
+	clear: both;
+	visibility: hidden;
+	line-height: 0;
+	height: 0;
+}
+ 
+.clearfix {
+	display: inline-block;
+}
+ 
+html[xmlns] .clearfix {
+	display: block;
+}
+ 
+* html .clearfix {
+	height: 1%;
+}

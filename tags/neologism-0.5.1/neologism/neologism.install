@@ -1,0 +1,195 @@
+<?php
+// $Id:  $
+
+function neologism_install() {
+  drupal_install_schema('neologism');
+
+  _neologism_install_node_type('neo_class');
+  _neologism_install_node_type('neo_property');
+  content_clear_type_cache();
+  
+  module_load_include('module', 'profile');
+  module_load_include('inc', 'profile', 'profile.admin');
+  _neologism_install_profile_field('Full name', 'fullname', 'textfield', 0,
+      'Your full name. Will be shown instead of the user name in vocabularies you are authoring.');
+  _neologism_install_profile_field('Personal home page', 'homepage', 'textfield', 1,
+      'Your personal home page. Must be a full URI (i.e., starting with <i>http://</i>).');
+  _neologism_install_profile_field('Show email address', 'show_email', 'checkbox', 2,
+      'Check this if you want your email address to be shown in vocabularies you are authoring.');
+  _neologism_install_profile_field('Organisation name', 'affiliation', 'textfield', 3,
+      'The organisation you\'re affiliated with. Will be shown next to your name on vocabularies that you are authoring.');
+  _neologism_install_profile_field('Organisation homepage', 'affiliation_homepage', 'textfield', 4,
+      'Your organisation\'s homepage. Must be a full URI (i.e., starting with <i>http://</i>).');
+
+  drupal_set_message(t('Neologism successfully installed.'));
+}
+
+function neologism_uninstall() {
+  $q = db_query("SELECT nid FROM {node} WHERE type='neo_vocabulary'");
+  while ($row = db_fetch_object($q)) {
+    $node = node_load($row->nid);
+    node_delete($row->nid);
+    // Clean up. This should be done automatically by node_delete, but it does not
+    // happen here because the module is already disabled, so we call the hook manually
+    module_invoke('neologism', 'nodeapi', $node, 'delete', null, null);
+  }
+
+  _neologism_uninstall_node_type('neo_property');
+  _neologism_uninstall_node_type('neo_class');
+  content_clear_type_cache();
+  
+  module_load_include('module', 'profile');
+  module_load_include('inc', 'profile', 'profile.admin');
+  _neologism_uninstall_profile_field('fullname');
+  _neologism_uninstall_profile_field('homepage');
+  _neologism_uninstall_profile_field('show_email');
+  _neologism_uninstall_profile_field('affiliation');
+  _neologism_uninstall_profile_field('affiliation_homepage');
+
+  drupal_set_message( t('Neologism successfully uninstalled.') );
+}
+
+function neologism_schema() {
+  return array(
+    'neologism_vocabulary' => array(
+      'description' => 'Additional node fields for RDF vocabulary nodes.',
+      'fields' => array(
+        'nid' => array('type' => 'int', 'not null' => TRUE),
+        'prefix' => array('type' => 'varchar', 'length' => 10, 'not null' => TRUE),
+        'custom_namespace' => array('type' => 'varchar', 'length' => '255', 'not null' => TRUE),
+        'abstract' => array('type' => 'text', 'not null' => TRUE),
+        'diagram' => array('type' => 'text', 'not null' => TRUE),
+        'custom_rdf' => array('type' => 'text', 'not null' => TRUE),
+      ),
+      'indexes' => array('neologism_vocabulary_prefix' => array('prefix')),
+      'primary key' => array('nid'),
+    ),
+    'neologism_perm' => array(
+      'description' => 'Association between RDF vocabularies and users.',
+      'fields' => array(
+        'nid' => array('type' => 'int', 'not null' => TRUE),
+        'uid' => array('type' => 'int', 'not null' => TRUE),
+        'delta' => array('type' => 'int', 'size' => 'tiny', 'not null' => TRUE),
+      ),
+      'primary key' => array('nid', 'uid'),
+    ),
+  );
+}
+
+/**
+ * Update for Neologism 0.5.0
+ * @return 
+ */
+function neologism_update_6201() {
+  // Ext JS used to be delivered in modules/ext/ext-3.0.0 but now is
+  // in modules/ext/ext. We abuse the Neologism update function to
+  // change the ext_path config variable to the new location. We can't
+  // really do it anywhere else.
+  variable_set('ext_path', drupal_get_path('module', 'ext') .'/ext');
+
+  $result = array();
+
+  // Add support for .ttl file extension as synonym for .n3
+  // 1. Change URL aliases from /node/123/n3 to /node/123/ttl
+  $result[] = update_sql("UPDATE {url_alias} SET src = CONCAT(SUBSTR(src, 1, LENGTH(src)-3), '/ttl') WHERE src LIKE 'node/%/n3' AND dst LIKE '%.n3'");
+  // 2. Add new URL aliases for vocabname.ttl to /node/123/ttl
+  $result[] = update_sql("INSERT INTO {url_alias} (src, dst, language) SELECT src, CONCAT(SUBSTR(dst, 1, LENGTH(dst)-3), '.ttl') AS dst, language FROM {url_alias} WHERE src LIKE 'node/%/ttl' AND dst LIKE '%.n3'");
+
+  // Vocabulary content type now has its own table and is no
+  // longer managed by CCK.
+  // 1. Create new table
+  $schema = neologism_schema();
+  db_create_table($result, 'neologism_vocabulary', $schema['neologism_vocabulary']);
+  // 2. Populate new table from CCK table
+  $result[] = update_sql("INSERT INTO {neologism_vocabulary} (nid, prefix, custom_namespace, abstract, diagram, custom_rdf) SELECT n.nid, n.title AS prefix, v.field_custom_namespace_value AS custom_namespace, v.field_abstract_value AS abstract, v.field_layout_value AS diagram, v.field_additional_custom_rdf_value AS custom_rdf FROM {node} n JOIN {content_type_neo_vocabulary} v ON n.nid=v.nid");
+  // 3. Replace {node}.title and {node_revisions} title values with the values of the field_title CCK field
+  $result[] = update_sql("UPDATE {node} SET title=(SELECT field_title_value FROM {content_type_neo_vocabulary} WHERE {node}.nid={content_type_neo_vocabulary}.nid) WHERE type='neo_vocabulary'");
+  $result[] = update_sql("UPDATE {node_revisions} SET title=(SELECT title FROM {node} WHERE {node}.vid={node_revisions}.vid) WHERE vid IN (SELECT vid FROM {node} WHERE type='neo_vocabulary')");
+  // 4. Create author permission table
+  db_create_table($result, 'neologism_perm', $schema['neologism_perm']);
+  $result[] = update_sql("INSERT INTO {neologism_perm} (nid, uid, delta) SELECT nid, field_authors_uid AS uid, delta FROM {content_field_authors}");
+  // 5. Remove the CCK content type
+  _neologism_uninstall_node_type('neo_vocabulary');
+  variable_del('content_extra_weights_neo_vocabulary');
+
+  // Reset a variable that makes ordering of elements in
+  // term editing form unpredictable if set
+  variable_del('content_extra_weights_neo_class');
+  variable_del('content_extra_weights_neo_property');
+
+  // Update field weights for class and property content types
+  $result[] = update_sql("UPDATE {content_node_field_instance} SET weight=-4 WHERE field_name='field_label' AND type_name='neo_class'");
+  $result[] = update_sql("UPDATE {content_node_field_instance} SET weight=-3 WHERE field_name='field_comment' AND type_name='neo_class'");
+  $result[] = update_sql("UPDATE {content_node_field_instance} SET weight=-2 WHERE field_name='field_superclass2' AND type_name='neo_class'");
+  $result[] = update_sql("UPDATE {content_node_field_instance} SET weight=-1 WHERE field_name='field_disjointwith2' AND type_name='neo_class'");
+  $result[] = update_sql("UPDATE {content_node_field_instance} SET weight=-3 WHERE field_name='field_label' AND type_name='neo_property'");
+  $result[] = update_sql("UPDATE {content_node_field_instance} SET weight=-2 WHERE field_name='field_comment' AND type_name='neo_property'");
+  $result[] = update_sql("UPDATE {content_node_field_instance} SET weight=1 WHERE field_name='field_fp' AND type_name='neo_property'");
+  $result[] = update_sql("UPDATE {content_node_field_instance} SET weight=2 WHERE field_name='field_ifp' AND type_name='neo_property'");
+  $result[] = update_sql("UPDATE {content_node_field_instance} SET weight=3 WHERE field_name='field_domain2' AND type_name='neo_property'");
+  $result[] = update_sql("UPDATE {content_node_field_instance} SET weight=4 WHERE field_name='field_range2' AND type_name='neo_property'");
+  $result[] = update_sql("UPDATE {content_node_field_instance} SET weight=5 WHERE field_name='field_superproperty2' AND type_name='neo_property'");
+  $result[] = update_sql("UPDATE {content_node_field_instance} SET weight=6 WHERE field_name='field_inverse2' AND type_name='neo_property'");
+
+  content_clear_type_cache();
+
+  return $result;
+}
+
+/**
+ * Definitions of the CCK content types for Neologism which get created via hook_install()
+ * when the module is enabled.
+ */
+function _neologism_install_node_type($type) {
+  if(!module_exists("content_copy")){
+    drupal_set_message('Programmatically creating CCK fields requires the Content Copy module. Exiting.', 'error');
+    return;
+  }
+
+  // remove content type if it already exists
+  $ct = content_types();
+  if (isset($ct[$type])) {
+    node_type_delete($type);      
+  }
+
+  $cck_definition_file = drupal_get_path('module', 'neologism')."/cck_definitions/$type.cck";
+  if(!file_exists($cck_definition_file)) {
+    drupal_set_message("Unable to read input file <em>$cck_definition_file</em> for import.", 'error');
+    return;
+  }
+
+  $form = array();
+  $form['values']['type_name'] = '<create>';
+  $form['values']['macro'] = file_get_contents($cck_definition_file);
+  drupal_execute("content_copy_import_form", $form);
+}
+
+function _neologism_uninstall_node_type($type) {
+  node_type_delete($type);
+  drupal_set_message(t('Node type %type deleted.', array('%type' => $type)));
+}
+
+function _neologism_install_profile_field($title, $name, $type, $weight, $explanation) {
+  $form = array();
+  $form['values']['title'] = $title;
+  $form['values']['name'] = 'profile_neologism_' . $name;
+  $form['values']['explanation'] = $explanation;
+  $form['values']['category'] = 'Vocabulary author information';
+  $form['values']['weight'] = $weight;
+  $form['values']['register'] = 1;
+  $form['values']['visibility'] = 2;
+  $form['values']['page'] = '';
+  drupal_execute('profile_field_form', $form, $type);
+}
+
+function _neologism_uninstall_profile_field($name) {
+  $field = 'profile_neologism_' . $name;
+  $fid = db_result(db_query("SELECT fid FROM {profile_fields} WHERE name='%s'", $field));
+  if (!$fid) {
+    drupal_set_message(t('Failed to delete profile field %field.', array('%field' => $field)), 'warning');
+    return;
+  }
+  $form = array();
+  $form['values']['confirm'] = 1;
+  drupal_execute('profile_field_delete', $form, $fid);
+}
