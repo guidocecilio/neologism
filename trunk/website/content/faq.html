@@ -1,9 +1,20 @@
-<p><big>This section contain commonly asked questions regarding Neologism.</big></p>
+<p><big>If your question is not answered here, then please
+  ask on <a href="mailing-list">the neologism-dev mailing list</a>!</big></p>
 
-<p>At the moment we do not have collected enough questions yet. For now, please ask your question on <a href="mailing-list">the neologism-dev mailing list</a>!</p>
-	
-	
-<p>Q. <a href="faq#q1">Why Neologism does not support Instances?</a></p>
+<h2>Why can't I use longer or more structured vocabulary IDs?</h2>
 
-<p>A. <a id="q1"></a>Neologism does not support Instances, but it will does in the future.</p>
-	
+<p>The ID is used as your vocabulary's namespace prefix.
+RDF only allows certain characters in prefixes,
+and long prefixes are impractical.</p>
+
+<p>You are probably looking for some way to structure the vocabularies
+on your site into groups? You can use <strong>URL path settings</strong>
+for that. On the form for creating or editing
+a vocabulary, scroll down until you find the setting. You can enter a
+custom path such as <code>teams/lidrc/2011/myvocab</code>. This will change
+the location and namespace URI of the vocabulary, while retaining the
+vocabulary ID and prefix.</p>
+
+<p>By default, only the administrator has access to this setting. To enable
+it for all users, go to <em>Administer » Permissions</em>, and enable the
+<em>path module</em> permissions for <em>authenticated users</em>.</p>
