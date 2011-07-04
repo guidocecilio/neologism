@@ -1,60 +1,64 @@
-<?php
-
-?>
 <div id="node-<?php print $node->nid; ?>" class="vocabulary-node node">
 
 <?php print $picture ?>
 
 <?php if ($page == 0): ?>
-  <h2><a href="<?php print $title ?>" title="<?php print $node->field_title[0]['value']; ?> vocabulary"><?php print $node->field_title[0]['value']; ?></a></h2>
+  <h2><?php print l($node->title, $node->path); ?></h2>
 <?php endif; ?>
 
-  <?php if ($submitted && !$teaser): ?>
-    <span class="submitted"><?php print $submitted; ?></span>
-  <?php endif; ?>
+<?php if ($submitted && !$teaser): ?>
+  <span class="submitted"><?php print $submitted; ?></span>
+<?php endif; ?>
 
-    <div class="content clear-block">
-    <?php if( isset($node->authors) ) { ?>
-	  <div class="authors">
-        <h3><?php print ((count($node->authors) > 1) ? 'Authors' : 'Author'); ?>:</h3>
-<?php
-        $authors = 0;
-      	foreach ( $node->authors as $author ) {
-          print '<span class="value">'.($authors++ > 0 ? ', ' : '').$author.'</span>';
+<div class="content clear-block">
+  <?php if (count($author_list)): ?>
+    <div class="authors">
+      <h3>Author<?php if (count($author_list) > 1) print 's'; ?>:</h3>
+      <?php
+        $count = 0;
+        foreach ( $author_list as $author ) {
+          print '<span class="value">'.($count++ > 0 ? ', ' : '').$author.'</span>';
         }
-?>
-      </div>
-    <?php } ?>
-    <?php if( !empty($node->field_abstract[0]['value']) ) { ?>
-      <div class="abstract">
-        <?php print $node->field_abstract[0]['value']; ?>
-      </div>
-    <?php } ?>
-    
-    <div class="namespace-uri">
-        <h3>Namespace URI:</h3>
-				<span class="value"><a href="<?php print( $node->namespace_uri ); ?>"><?php print( $node->namespace_uri ); ?></a></span>
+      ?>
     </div>
-    
-    <div class="terms-overview">
-        <h3>Terms overview:</h3>
-				<span class="value"><?php print( ($node->count_classes).' '.(($node->count_classes == 1) ? 'Class' : 'Classes').', '.($node->count_properties).' '.(($node->count_properties == 1) ? 'Property' : 'Properties').'.'); ?></span>
+  <?php endif; ?>
+  <?php if( !empty($node->abstract) ): ?>
+    <div class="abstract">
+      <?php print $node->abstract; ?>
     </div>
+  <?php endif; ?>
     
-    <!--<?php print $content ?>-->
+  <div class="namespace-uri">
+    <h3>Namespace URI:</h3>
+    <span class="value"><a href="<?php print( $node->namespace_uri ); ?>"><?php print( $node->namespace_uri ); ?></a></span>
   </div>
+    
+  <div class="terms-overview">
+    <h3>Terms:</h3>
+    <?php if ($count_classes || $count_properties) { ?>
+      <span class="value">
+        <?php if ($count_classes): ?>
+          <?php print( ($count_classes).' '.(($count_classes == 1) ? 'Class' : 'Classes')); if ($count_properties) print ','; ?>
+        <?php endif; ?>
+        <?php if ($count_properties): ?>
+          <?php print( ($count_properties).' '.(($count_properties == 1) ? 'Property' : 'Properties')); ?>
+        <?php endif; ?>
+      </span>
+    <?php } else { ?>
+      No classes or properties defined yet.
+    <?php } ?>
+  </div>
+</div>
 
-  <div class="clear-block neologism_terms_links">
-    <div class="meta">
-    <?php if ($taxonomy): ?>
-      <div class="terms"><?php print $terms ?></div>
-    <?php endif;?>
-    </div>
-<?php /* TODO Commented to suppress the “Read more” link on some vocabularies. Should be done by not generating the link in the first place.
-    <?php if ($links): ?>
-      <div class="links"><?php print $links; ?></div>
-    <?php endif; ?>
-*/ ?>
+<div class="clear-block neologism_terms_links">
+  <div class="meta">
+  <?php if ($taxonomy): ?>
+    <div class="terms"><?php print $terms ?></div>
+  <?php endif;?>
   </div>
+  <?php if ($links): ?>
+    <div class="links"><?php print $links; ?></div>
+  <?php endif; ?>
+</div>
 
 </div>

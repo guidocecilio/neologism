@@ -14,7 +14,7 @@ function evoc_schema() {
       'label' => array('type' => 'varchar', 'length' => '255', 'not null' => TRUE),
       'comment' => array('type' => 'text', 'not null' => TRUE),
       'superclasses' => array('type' => 'int', 'size' => 'tiny', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0),
-  		'ndisjointwith' => array('type' => 'int', 'size' => 'tiny', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0)
+      'ndisjointwith' => array('type' => 'int', 'size' => 'tiny', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0)
     ),
     'primary key' => array(
       'prefix',
@@ -31,7 +31,7 @@ function evoc_schema() {
       'superproperties' => array('type' => 'int', 'size' => 'tiny', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0),
       'domains' => array('type' => 'int', 'size' => 'tiny', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0),
       'ranges' => array('type' => 'int', 'size' => 'tiny', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0),
-  		'inverses' => array('type' => 'int', 'size' => 'tiny', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0),
+      'inverses' => array('type' => 'int', 'size' => 'tiny', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0),
     ),
     'primary key' => array(
       'prefix',
@@ -120,12 +120,12 @@ function evoc_install() {
     }
   }
 
-  module_load_include('module', 'evoc', 'evoc');
-  evoc_import_vocabulary('http://www.w3.org/1999/02/22-rdf-syntax-ns#', 'rdf', FALSE);
-  evoc_import_vocabulary('http://www.w3.org/2000/01/rdf-schema#', 'rdfs', FALSE);
-  evoc_import_vocabulary('http://purl.org/dc/elements/1.1/', 'dc', FALSE);
-  evoc_import_vocabulary('http://xmlns.com/foaf/0.1/','foaf', FALSE);
-  evoc_import_vocabulary('http://www.w3.org/2002/07/owl#','owl', FALSE);
+  // Evoc built-in vocabularies (core vocabularies)
+  module_load_include('module', 'evoc');
+  variable_set('evoc_builtin_vocabularies', _evoc_get_builtin_vocabularies_array());
+  
+//  module_load_include('inc', 'evoc', 'evoc.batch_import');
+//  evoc_import_builtin_vocabularies();
   
   drupal_set_message( t('Evoc successfully installed.') );
 }
@@ -135,11 +135,16 @@ function evoc_install() {
  */
 function evoc_uninstall() {
   // remove the imported vocabularies
-  evoc_remove_vocabulary('rdf');
-  evoc_remove_vocabulary('rdfs');
-  evoc_remove_vocabulary('dc');
-  evoc_remove_vocabulary('foaf');
-  evoc_remove_vocabulary('owl');
+  $evoc_array_builtin_vocabularies = variable_get('evoc_builtin_vocabularies', NULL);
+  if ($evoc_array_builtin_vocabularies) {
+    foreach ($evoc_array_builtin_vocabularies as $vocab) {
+      evoc_remove_vocabulary($vocab['prefix']);  
+    }
+    variable_del('evoc_builtin_vocabularies');
+  }
+  
+  // destroy the persistent variable that is used to know when the built-in vocabularies have been imported 
+  variable_del('builtin_vocabularies_imported');
   
   drupal_uninstall_schema('evoc');
   drupal_set_message( t('Evoc successfully uninstalled.') );
@@ -216,12 +221,13 @@ function evoc_update_6100() {
   while ($class = db_fetch_object($classes)) {
     $has_superclass = FALSE;
     if( !empty($class->superclass) ) {
-      $query = 'insert into {evoc_rdf_superclasses} (prefix, reference, superclass) values ("'.$class->prefix.'", "'.$class->id.'", "'.$class->superclass.'")';  
+      $query = "insert into {evoc_rdf_superclasses} (prefix, reference, superclass) values ('".$class->prefix."', '".$class->id."', '".$class->superclass."')";  
       $ret[] = update_sql($query);
       $has_superclass = TRUE;
     }
    
-    $ret[] = update_sql('update {evoc_rdf_classes} set superclasses = "'.$has_superclass.'" where prefix = "'.$class->prefix.'" and  id = "'.$class->id.'"');
+    $query = "update {evoc_rdf_classes} set superclasses = '".$has_superclass."' where prefix='".$class->prefix."' and id='".$class->id."'";
+    $ret[] = update_sql($query);
     $sandbox['progress']++;
   }
   
@@ -231,19 +237,20 @@ function evoc_update_6100() {
     
     // check for property domains
     if( !empty($property->rdf_domain) ) {
-      $query = 'insert into {evoc_rdf_propertiesdomains} (prefix, reference, rdf_domain) values ("'.$property->prefix.'", "'.$property->id.'", "'.$property->rdf_domain.'")';  
+      $query = "insert into {evoc_rdf_propertiesdomains} (prefix, reference, rdf_domain) values ('".$property->prefix."', '".$property->id."', '".$property->rdf_domain."')";  
       $ret[] = update_sql($query);
       $has_domain = TRUE;
     }
         
     // check for property range
     if( !empty($property->rdf_range) ) {
-      $query = 'insert into {evoc_rdf_propertiesranges} (prefix, reference, rdf_range) values ("'.$property->prefix.'", "'.$property->id.'", "'.$property->rdf_range.'")';  
+      $query = "insert into {evoc_rdf_propertiesranges} (prefix, reference, rdf_range) values ('".$property->prefix."', '".$property->id."', '".$property->rdf_range."')";  
       $ret[] = update_sql($query);
       $has_range = TRUE;
     }
    
-    $ret[] = update_sql('update {evoc_rdf_properties} set domains = "'.$has_domain.'", ranges = "'.$has_range.'" where prefix = "'.$property->prefix.'" and  id = "'.$property->id.'"');
+    $query = "update {evoc_rdf_properties} set domains='".$has_domain."', ranges='".$has_range."' where prefix='".$property->prefix."' and id='".$property->id."'";
+    $ret[] = update_sql($query);
     $sandbox['progress']++;
   }
   
@@ -286,19 +293,20 @@ function evoc_update_6102() {
 
   if (!isset($sandbox['progress'])) {
     $sandbox['progress'] = 0;
-    $sandbox['max'] = db_result(db_query('SELECT COUNT(*) FROM {evoc_rdf_properties}'));
+    $sandbox['max'] = db_result(db_query("SELECT COUNT(*) FROM {evoc_rdf_properties}"));
   }
   
   $properties = db_query("SELECT prefix, id, inverseof FROM {evoc_rdf_properties}");
   while ($property = db_fetch_object($properties)) {
     $has_inverse = FALSE;
     if( !empty($property->inverseof) ) {
-      $query = 'INSERT INTO {evoc_rdf_inversesproperties} (prefix, reference, inverseof) VALUES ("'.$property->prefix.'", "'.$property->id.'", "'.$property->inverseof.'")';  
+      $query = "INSERT INTO {evoc_rdf_inversesproperties} (prefix, reference, inverseof) VALUES ('".$property->prefix."', '".$property->id."', '".$property->inverseof."')";  
       $ret[] = update_sql($query);
       $has_inverse = TRUE;
     }
    
-    $ret[] = update_sql('UPDATE {evoc_rdf_properties} SET inverses = "'.$has_inverse.'" WHERE prefix = "'.$property->prefix.'" AND  id = "'.$property->id.'"');
+    $query = "UPDATE {evoc_rdf_properties} SET inverses='".$has_inverse."' WHERE prefix='".$property->prefix."' AND  id='".$property->id."'";
+    $ret[] = update_sql($query);
     $sandbox['progress']++;
   }
   
@@ -309,4 +317,28 @@ function evoc_update_6102() {
   return $ret;
 }
 
+/*
+ * This update is required for Neologism version 0.5.2
+ */
+function evoc_update_6103() {
+  $ret = array('#finished' => 0);
+  
+  variable_set('evoc_builtin_vocabularies', _evoc_get_builtin_vocabularies_array());
 
+  module_load_include('module', 'evoc');
+  $result = evoc_check_builtin_vocabularies_consistency();
+  if ($result['status'] == EVOC_BUILTIN_VOCABULARIES_INCONSISTENCY) {
+    // some of the built-in vocabularies is missing, so let's past the missing list to the batch import
+    // through a persistent variable that will be destroyed once the process has started.
+    variable_set('evoc_missing_builtin_vocabularies', $result['missing_vocabularies']);  
+    module_load_include('inc', 'evoc', 'evoc.batch_import');
+    evoc_import_builtin_vocabularies();
+  }
+  else if ($result['status'] == EVOC_BUILTIN_VOCABULARIES_UPDATE_NEEDED) {
+    // all built-in vocabularies seem to be installed, then just create the persistent variable
+    variable_set('evoc_builtin_vocabularies_imported', TRUE);  
+  }
+  
+  $ret['#finished'] = 1;
+  return $ret;
+}

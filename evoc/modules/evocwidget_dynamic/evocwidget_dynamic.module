@@ -25,8 +25,10 @@ function evocwidget_dynamic_help($path, $arg) {
 }
 
 function evocwidget_dynamic_init() {
-  ext_load_library();
-  drupal_add_js(drupal_get_path('module', 'evocwidget_dynamic') . '/evocwidget_dynamic.js');
+  // this function invocation has been moved to places were the widgets are shown to
+  // avoid the drag and drop jquery bug provided by the ExtJS module.
+  //ext_load_library();
+  //drupal_add_js(drupal_get_path('module', 'evocwidget_dynamic') . '/evocwidget_dynamic.js');
 }
 
 function evocwidget_dynamic_menu() {
@@ -40,7 +42,6 @@ function evocwidget_dynamic_menu() {
   );
 
   return $items;
-
 }
 
 /**
@@ -205,17 +206,6 @@ function evocwidget_dynamic_process($element, $edit, $form_state, $form) {
   
   // extra_values is an optional parameter for #mxcbs_behaviour attribute that contain extra default values for the widget tree.
   // At this point we append the extra values to the selected_values list
-  $extra_values = NULL;
-  if ( !empty($element['#mxcbs_behaviour']['extra_values']) ) {
-  	$extra_values = array();
-  	$extra_values = $element['#mxcbs_behaviour']['extra_values'];
-  	//$selected_values = array_merge($selected_values, $element['#mxcbs_behaviour']['extra_values']);
-  }
-  
-  /*
-  if ( isset($element['#mxcbs_behaviour']['preprocess_values']) ) {
-  	$selected_values = $element['#mxcbs_behaviour']['preprocess_values']($selected_values);
-  }*/
   if ( isset($element['#mxcbs_behaviour'][FIELDATTR_EXECUTE_PREPROCESS]) && $element['#mxcbs_behaviour'][FIELDATTR_EXECUTE_PREPROCESS] ) {
 	  // extra_values is an optional parameter for #mxcbs_behaviour attribute that contain extra default values for the widget tree.
 	  // At this point we append the extra values to the selected_values list

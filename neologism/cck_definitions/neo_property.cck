@@ -1,7 +1,7 @@
 $content['type']  = array (
   'name' => 'Property',
   'type' => 'neo_property',
-  'description' => 'Only letters, numbers, dashes, and underscores.',
+  'description' => 'Should start with a lowercase letter and use CamelCase capitalization.',
   'title_label' => 'URI',
   'body_label' => 'A full description of the property. Include as much detail as you like. Limited HTML is allowed.',
   'min_word_count' => '0',
@@ -53,6 +53,7 @@ $content['fields']  = array (
       'sparql' => 0,
       'page' => false,
       'story' => false,
+      'vocabulary_documentation' => false,
     ),
     'op' => 'Save field settings',
     'module' => 'nodereference',
@@ -91,10 +92,10 @@ $content['fields']  = array (
     'type' => 'text',
     'widget_type' => 'text_textfield',
     'change' => 'Change basic information',
-    'weight' => '-7',
+    'weight' => '-3',
     'rows' => '1',
     'size' => 60,
-    'description' => 'A human readable name to the property.',
+    'description' => 'This should be a Title Case capitalized version of the Property URI field.',
     'default_value' => 
     array (
     ),
@@ -155,7 +156,7 @@ $content['fields']  = array (
     'type' => 'text',
     'widget_type' => 'text_textarea',
     'change' => 'Change basic information',
-    'weight' => '-6',
+    'weight' => '-2',
     'rows' => '2',
     'size' => '255',
     'description' => 'A plain text description of the property.',
@@ -219,144 +220,12 @@ $content['fields']  = array (
   ),
   3 => 
   array (
-    'label' => 'Domain',
-    'field_name' => 'field_domain2',
-    'type' => 'evocreference',
-    'widget_type' => 'evocwidget_dynamic',
-    'change' => 'Change basic information',
-    'weight' => '-5',
-    'description' => 'If having this property makes something belong to a certain class, then the class should be selected here.',
-    'default_value' => 
-    array (
-    ),
-    'default_value_php' => '',
-    'default_value_widget' => 
-    array (
-      'field_domain2' => 
-      array (
-        'evoc_term' => '',
-      ),
-    ),
-    'group' => false,
-    'required' => 0,
-    'multiple' => '1',
-    'referenceable_term_types' => 
-    array (
-      'classes' => 'classes',
-      'properties' => 0,
-    ),
-    'op' => 'Save field settings',
-    'module' => 'evocreference',
-    'widget_module' => 'evocwidget_dynamic',
-    'columns' => 
-    array (
-      'evoc_term' => 
-      array (
-        'type' => 'varchar',
-        'length' => 64,
-        'not null' => false,
-        'sortable' => true,
-      ),
-    ),
-    'rdf_property' => '',
-    'display_settings' => 
-    array (
-      'label' => 
-      array (
-        'format' => 'above',
-        'exclude' => 0,
-      ),
-      'teaser' => 
-      array (
-        'format' => 'default',
-        'exclude' => 0,
-      ),
-      'full' => 
-      array (
-        'format' => 'default',
-        'exclude' => 0,
-      ),
-      4 => 
-      array (
-        'format' => 'default',
-        'exclude' => 0,
-      ),
-    ),
-  ),
-  4 => 
-  array (
-    'label' => 'Inverse',
-    'field_name' => 'field_inverse2',
-    'type' => 'evocreference',
-    'widget_type' => 'evocwidget_dynamic',
-    'change' => 'Change basic information',
-    'weight' => '-2',
-    'description' => '',
-    'default_value' => 
-    array (
-    ),
-    'default_value_php' => '',
-    'default_value_widget' => 
-    array (
-      'field_inverse2' => 
-      array (
-        'evoc_term' => '',
-      ),
-    ),
-    'group' => false,
-    'required' => 0,
-    'multiple' => '1',
-    'referenceable_term_types' => 
-    array (
-      'properties' => 'properties',
-      'classes' => 0,
-    ),
-    'op' => 'Save field settings',
-    'module' => 'evocreference',
-    'widget_module' => 'evocwidget_dynamic',
-    'columns' => 
-    array (
-      'evoc_term' => 
-      array (
-        'type' => 'varchar',
-        'length' => 64,
-        'not null' => false,
-        'sortable' => true,
-      ),
-    ),
-    'rdf_property' => '',
-    'display_settings' => 
-    array (
-      'label' => 
-      array (
-        'format' => 'above',
-        'exclude' => 0,
-      ),
-      'teaser' => 
-      array (
-        'format' => 'default',
-        'exclude' => 0,
-      ),
-      'full' => 
-      array (
-        'format' => 'default',
-        'exclude' => 0,
-      ),
-      4 => 
-      array (
-        'format' => 'default',
-        'exclude' => 0,
-      ),
-    ),
-  ),
-  5 => 
-  array (
     'label' => 'Functional Property',
     'field_name' => 'field_fp',
     'type' => 'text',
     'widget_type' => 'optionwidgets_onoff',
     'change' => 'Change basic information',
-    'weight' => '-1',
+    'weight' => '1',
     'description' => 'Check this box, if your property is an FP, i.e. when you use this property in a statement, then the subject of the statement uniquely determines its object.',
     'default_value' => 
     array (
@@ -416,14 +285,14 @@ $content['fields']  = array (
       ),
     ),
   ),
-  6 => 
+  4 => 
   array (
     'label' => 'Inverse Functional Property',
     'field_name' => 'field_ifp',
     'type' => 'text',
     'widget_type' => 'optionwidgets_onoff',
     'change' => 'Change basic information',
-    'weight' => 0,
+    'weight' => '2',
     'description' => 'Check this box, if your property is an IFP, i.e. the object of a statment that uses your property uniquely determines its subject.',
     'default_value' => 
     array (
@@ -483,22 +352,22 @@ $content['fields']  = array (
       ),
     ),
   ),
-  7 => 
+  5 => 
   array (
-    'label' => 'Superproperty',
-    'field_name' => 'field_superproperty2',
+    'label' => 'Domain',
+    'field_name' => 'field_domain2',
     'type' => 'evocreference',
     'widget_type' => 'evocwidget_dynamic',
     'change' => 'Change basic information',
-    'weight' => '1',
-    'description' => '',
+    'weight' => '3',
+    'description' => 'If having this property makes something belong to a certain class, then the class should be selected here.',
     'default_value' => 
     array (
     ),
     'default_value_php' => '',
     'default_value_widget' => 
     array (
-      'field_superproperty2' => 
+      'field_domain2' => 
       array (
         'evoc_term' => '',
       ),
@@ -508,8 +377,8 @@ $content['fields']  = array (
     'multiple' => '1',
     'referenceable_term_types' => 
     array (
-      'properties' => 'properties',
-      'classes' => 0,
+      'classes' => 'classes',
+      'properties' => 0,
     ),
     'op' => 'Save field settings',
     'module' => 'evocreference',
@@ -549,7 +418,7 @@ $content['fields']  = array (
       ),
     ),
   ),
-  8 => 
+  6 => 
   array (
     'label' => 'Range',
     'field_name' => 'field_range2',
@@ -615,11 +484,136 @@ $content['fields']  = array (
       ),
     ),
   ),
-);
-$content['extra']  = array (
-  'title' => '-9',
-  'body_field' => '0',
-  'revision_information' => '2',
-  'menu' => '-8',
-  'path' => '3',
+  7 => 
+  array (
+    'label' => 'Superproperty',
+    'field_name' => 'field_superproperty2',
+    'type' => 'evocreference',
+    'widget_type' => 'evocwidget_dynamic',
+    'change' => 'Change basic information',
+    'weight' => '5',
+    'description' => '',
+    'default_value' => 
+    array (
+    ),
+    'default_value_php' => '',
+    'default_value_widget' => 
+    array (
+      'field_superproperty2' => 
+      array (
+        'evoc_term' => '',
+      ),
+    ),
+    'group' => false,
+    'required' => 0,
+    'multiple' => '1',
+    'referenceable_term_types' => 
+    array (
+      'properties' => 'properties',
+      'classes' => 0,
+    ),
+    'op' => 'Save field settings',
+    'module' => 'evocreference',
+    'widget_module' => 'evocwidget_dynamic',
+    'columns' => 
+    array (
+      'evoc_term' => 
+      array (
+        'type' => 'varchar',
+        'length' => 64,
+        'not null' => false,
+        'sortable' => true,
+      ),
+    ),
+    'rdf_property' => '',
+    'display_settings' => 
+    array (
+      'label' => 
+      array (
+        'format' => 'above',
+        'exclude' => 0,
+      ),
+      'teaser' => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      'full' => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      4 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+    ),
+  ),
+  8 => 
+  array (
+    'label' => 'Inverse',
+    'field_name' => 'field_inverse2',
+    'type' => 'evocreference',
+    'widget_type' => 'evocwidget_dynamic',
+    'change' => 'Change basic information',
+    'weight' => '6',
+    'description' => '',
+    'default_value' => 
+    array (
+    ),
+    'default_value_php' => '',
+    'default_value_widget' => 
+    array (
+      'field_inverse2' => 
+      array (
+        'evoc_term' => '',
+      ),
+    ),
+    'group' => false,
+    'required' => 0,
+    'multiple' => '1',
+    'referenceable_term_types' => 
+    array (
+      'properties' => 'properties',
+      'classes' => 0,
+    ),
+    'op' => 'Save field settings',
+    'module' => 'evocreference',
+    'widget_module' => 'evocwidget_dynamic',
+    'columns' => 
+    array (
+      'evoc_term' => 
+      array (
+        'type' => 'varchar',
+        'length' => 64,
+        'not null' => false,
+        'sortable' => true,
+      ),
+    ),
+    'rdf_property' => '',
+    'display_settings' => 
+    array (
+      'label' => 
+      array (
+        'format' => 'above',
+        'exclude' => 0,
+      ),
+      'teaser' => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      'full' => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      4 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+    ),
+  ),
 );
