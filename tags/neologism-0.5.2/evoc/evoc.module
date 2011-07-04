@@ -1,0 +1,803 @@
+<?php
+// $Id: evoc.module, v2.0.0.0 2009/09/17 16:16:51 guidocecilio Exp $
+
+define("EVOC_DISJOINTS", "disjoints");
+define("EVOC_SUPERCLASSES", "superclasses");
+define("EVOC_DOMAINS", "domains");
+define("EVOC_RANGES", "ranges");
+define("EVOC_SUPERPROPERTIES", "superproperties");
+define("EVOC_INVERSES", "inverses");    // new form -- multiple inverses
+define("EVOC_INVERSE", "inverse");      // old form -- one inverse
+
+// field name definitions
+define("EVOC_FIELDNAME_SUPERCLASSES","field_superclass2");
+define("EVOC_FIELDNAME_DISJOINTWITH","field_disjointwith2");
+define("EVOC_FIELDNAME_DOMAINS","field_domain2");
+define("EVOC_FIELDNAME_RANGES","field_range2");
+define("EVOC_FIELDNAME_SUPERPROPERTIES","field_superproperty2");
+define("EVOC_FIELDNAME_INVERSES","field_inverse2");
+
+define("EVOC_RELATIONSHIP_TYPE_DOMAIN", 1); 
+define("EVOC_RELATIONSHIP_TYPE_RANGE", 2);
+define("EVOC_RELATIONSHIP_TYPE_SUPERPROPERTY", 3);
+define("EVOC_RELATIONSHIP_TYPE_INVERSE", 4);
+define("EVOC_RELATIONSHIP_TYPE_SUPERCLASS", 5);
+define("EVOC_RELATIONSHIP_TYPE_DISJOINTWITH", 6);
+
+// these constants describe the status of built-in vocabularies
+define("EVOC_BUILTIN_VOCABULARIES_OK", 1);
+define("EVOC_BUILTIN_VOCABULARIES_NOT_INSTALLED", 2);
+define("EVOC_BUILTIN_VOCABULARIES_INCONSISTENCY", 3);
+define("EVOC_BUILTIN_VOCABULARIES_UPDATE_NEEDED", 4);
+
+/**
+ * Implementation of hook_perm().
+ */
+function evoc_perm() {
+  return array('manage external vocabularies');
+}
+
+/**
+ * Implementation of hook_menu().
+ */
+function evoc_menu() {
+  $items = array();
+  $items['evoc'] = array(
+    'title' => 'External vocabularies',
+    'description' => 'Add and remove references to external RDF vocabularies.',
+    'page callback' => 'evoc_manage_vocabularies',
+    'access arguments' => array('manage external vocabularies'),
+    'file' => 'evoc.admin.inc',
+    'weight' => 6,
+  );
+  $items['evoc/manage'] = array(
+    'title' => 'Manage',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'file' => 'evoc.admin.inc',
+    'weight' => 1,
+  );
+  $items['evoc/add'] = array(
+    'title' => 'Add new',
+    'page callback' => 'evoc_add_vocabulary',
+    'access arguments' => array('manage external vocabularies'),
+    'type' => MENU_LOCAL_TASK,
+    'file' => 'evoc.admin.inc',
+    'weight' => 2,
+  );
+  $items['evoc/remove/%'] = array(
+    'title' => 'Remove external vocabulary',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('evoc_remove_confirm', 2),
+    'access arguments' => array('manage external vocabularies'),
+    'type' => MENU_CALLBACK,
+    'file' => 'evoc.admin.inc',
+  );
+  return $items;
+}
+
+/**
+ * Import a vocabularie from the Web specified by its uri with prefix = $prefix. If 
+ * $filename is equal a filename in the system the vocabularie will be load from file.
+ * 
+ * @param $uri
+ * @param $prefix
+ * @param $filename
+ * @param $showdetails
+ * @return unknown_type
+ */
+function evoc_import_vocabulary($uri, $prefix, $filename = NULL, $showdetails = false) {
+  module_load_include('inc', 'evoc', 'evoc.load_vocab');
+  try {
+  	if ( is_null($filename) ) {
+    	$vocabulary = evoc_get_from_web(NULL, $uri, $prefix);
+  	}
+  	else {
+  		$vocabulary = evoc_get_from_file($filename, $uri, $prefix);	
+  	}
+    evoc_save_vocabulary($vocabulary, $showdetails);
+  } catch (Exception $ex) {
+    drupal_set_message($ex->getMessage(), 'error');
+    exit();
+  }
+  drupal_set_message(t('External vocabulary %prefix (%uri) added.', array('%prefix' => $prefix, '%uri' => $uri)));
+}
+
+/**
+ * This fucntion remove a namespace from the system
+ * @param object $prefix namespace prefix
+ * @return 
+ */
+function evoc_remove_vocabulary($prefix, $showdetails = false) {
+  
+  $result = db_query(db_rewrite_sql("delete from {evoc_rdf_superclasses} where prefix='%s'"), $prefix);
+  $classes = db_query(db_rewrite_sql("select * from {evoc_rdf_superclasses} where superclass like '%s%'"), $prefix);
+  // remove superclasses references
+  while ( $class = db_fetch_object($classes) ) {
+    $qname_parts = explode(':', $class->superclass);
+    $p = $qname_parts[0];
+    if( $p == $prefix ) {
+      $c = db_fetch_object(db_query(db_rewrite_sql("select superclasses from {evoc_rdf_classes} where prefix='%s' and id='%s'"), $class->prefix, $class->reference));
+      $result = db_query(db_rewrite_sql("update {evoc_rdf_classes} set superclasses = %d where prefix = '%s' and id = '%s'"), --$c->superclasses, $class->prefix, $class->reference);
+      $result = db_query(db_rewrite_sql("delete from {evoc_rdf_superclasses} where prefix='%s' and reference='%s' and superclass='%s'"), $class->prefix, $class->reference, $class->superclass);        
+    }
+  }
+  
+	// remove disjointwith dependencies
+  $result = db_query(db_rewrite_sql("delete from {evoc_rdf_disjointwith} where prefix='%s'"), $prefix);
+  $classes = db_query(db_rewrite_sql("select * from {evoc_rdf_disjointwith} where disjointwith like '%s%'"), $prefix);
+  // remove superclasses references
+  while ( $class = db_fetch_object($classes) ) {
+    $qname_parts = explode(':', $class->disjointwith);
+    $p = $qname_parts[0];
+    if( $p == $prefix ) {
+      $c = db_fetch_object(db_query(db_rewrite_sql("select ndisjointwith from {evoc_rdf_classes} where prefix='%s' and id='%s'"), $class->prefix, $class->reference));
+      $result = db_query(db_rewrite_sql("update {evoc_rdf_classes} set ndisjointwith = '%d' where prefix='%s' and id='%s'"), --$c->ndisjointwith, $class->prefix, $class->reference);
+      $result = db_query(db_rewrite_sql("delete from {evoc_rdf_disjointwith} where prefix='%s' and reference='%s' and disjointwith='%s'"), $class->prefix, $class->reference, $class->disjointwith);        
+    }
+  }
+  
+  $result = db_query(db_rewrite_sql("delete from {evoc_rdf_propertiesdomains} where prefix='%s'"), $prefix);
+  $domains = db_query(db_rewrite_sql("select * from {evoc_rdf_propertiesdomains} where rdf_domain like '%s%'"), $prefix);
+  // remove superclasses references
+  while ( $object = db_fetch_object($domains) ) {
+    $qname_parts = explode(':', $object->rdf_domain);
+    $p = $qname_parts[0];
+    if( $p == $prefix ) {
+      $cp = db_fetch_object(db_query(db_rewrite_sql("select domains from {evoc_rdf_properties} where prefix='%s' and id='%s'"), $object->prefix, $object->reference));
+      $result = db_query(db_rewrite_sql("update {evoc_rdf_properties} set domains = %d where prefix='%s' and id='%s'"), --$cp->domains, $object->prefix, $object->reference);
+      $result = db_query(db_rewrite_sql("delete from {evoc_rdf_propertiesdomains} where prefix='%s' and reference='%s' and rdf_domain='%s'"), $object->prefix, $object->reference, $object->rdf_domain);        
+    }
+  }
+  
+  $result = db_query(db_rewrite_sql("delete from {evoc_rdf_propertiesranges} where prefix='%s'"), $prefix);
+  $ranges = db_query(db_rewrite_sql("select * from {evoc_rdf_propertiesranges} where rdf_range like '%s%'"), $prefix);
+  // remove superclasses references
+  while ( $object = db_fetch_object($ranges) ) {
+    $qname_parts = explode(':', $object->rdf_range);
+    $p = $qname_parts[0];
+    if( $p == $prefix ) {
+      $cp = db_fetch_object(db_query(db_rewrite_sql("select ranges from {evoc_rdf_properties} where prefix='%s' and id='%s'"), $object->prefix, $object->reference));
+      $result = db_query(db_rewrite_sql("update {evoc_rdf_properties} set ranges = %d where prefix='%s' and id='%s'"), --$cp->ranges, $object->prefix, $object->reference);
+      $result = db_query(db_rewrite_sql("delete from {evoc_rdf_propertiesranges} where prefix='%s' and reference='%s' and rdf_range='%s'"), $object->prefix, $object->reference, $object->rdf_range);        
+    }
+  }
+  
+  // removing all the classes
+  $result = db_query(db_rewrite_sql("delete from {evoc_rdf_classes} where prefix='%s'"), $prefix);
+  
+  // remove properties
+  // removing all the references that could has a property
+  $result = db_query(db_rewrite_sql("delete from {evoc_rdf_superproperties} where prefix='%s'"), $prefix);
+  $properties = db_query(db_rewrite_sql("select * from {evoc_rdf_superproperties} where superproperty like '%s%'"), $prefix);
+  // remove superclasses references
+  while ( $property = db_fetch_object($properties) ) {
+    $qname_parts = explode(':', $property->superproperty);
+    $p = $qname_parts[0];
+    if( $p == $prefix ) {
+      $cp = db_fetch_object(db_query(db_rewrite_sql("select superproperties from {evoc_rdf_properties} where prefix='%s' and id='%s'"), $property->prefix, $property->reference));
+      $result = db_query(db_rewrite_sql("update {evoc_rdf_properties} set superproperties=%d where prefix='%s' and id='%s'"), --$c->superproperty, $property->prefix, $property->reference);
+      $result = db_query(db_rewrite_sql("delete from {evoc_rdf_superproperties} where prefix='%s' and reference='%s' and superproperty='%s'"), $property->prefix, $property->reference, $property->superproperty);        
+    }
+  } 
+  
+  $result = db_query(db_rewrite_sql("delete from {evoc_rdf_properties} where prefix='%s'"), $prefix);
+  
+  // check in the database for the namespace
+  $exists_namespace = db_result(db_query(db_rewrite_sql("select count(*) from {rdf_namespaces} where prefix = '%s'"), $prefix)) > 0; 
+  if ( $exists_namespace ) {
+    // we need to remove the namespaces from rdf_namespaces table
+    $result = db_query("delete from {rdf_namespaces} where prefix = '%s'", $prefix);
+    if( $result ) {
+      if ($showdetails) {
+        drupal_set_message( t('The namespace '.$prefix.' has been successfully removed from the system.') );
+      }
+    }
+    else {
+      if ($showdetails) {
+        drupal_set_message( t('There is some problem removing the namespace '.$prefix.'.') );
+      }
+    }  
+  }
+  
+  module_invoke_all('removed_external_vocabulary', $prefix);
+}
+
+
+/**
+ * Saves a vocabulary array into the evoc database.
+ * 
+ * @param array $vocabulary
+ * @param boolean $showdetails
+ * @return 
+ */
+function evoc_save_vocabulary($vocabulary, $showdetails = false) {
+  $prefix = $vocabulary['prefix'];
+  $ns = $vocabulary['uri'];
+
+  // Namespace management.
+  $result = db_query("INSERT INTO {rdf_namespaces} (prefix, uri) VALUES ('%s', '%s')", $prefix, $ns);
+  if (!$result) {
+    throw new Exception(t('Error executing query to insert namespace %prefix:%ns.', array('%prefix' => $prefix, '%ns' => $ns)));
+  }
+
+  // RDF terms management.
+  foreach ($vocabulary['classes'] as $class) {
+    $result = evoc_write_class($class, $showdetails);
+    if (!$result) {
+      throw new Exception(t('Error inserting the class "%class" into the database.', array('%class' => $class)));
+    }
+  }
+  foreach ($vocabulary['properties'] as $property) {
+    $result = evoc_write_property($property, $showdetails);
+    if (!$result) {
+      throw new Exception(t('Error inserting the property "%property" into the database.', array('%property' => $property)));
+    }
+  }
+}
+
+/**
+ * Insert into the database the relationship between the term and a list of terms
+ * @param $relationship_type Relationship type between the term and the list of term.
+ * @param $array_terms Array of terms
+ * @param $prefix Prefix of the term
+ * @param $id Id of the term
+ * @return the number of terms in the list of terms or 0 if there is not term(s) to insert
+ */
+function _evoc_insert_relationship_terms($relationship_type, array &$array_terms, $prefix, $id) {
+  $count = 0;
+  if (is_array($array_terms)) {
+    $table_name = '';
+    $column_name = '';
+    
+    if ($relationship_type == EVOC_RELATIONSHIP_TYPE_DOMAIN) { 
+      $table_name = 'evoc_rdf_propertiesdomains';
+      $column_name = 'rdf_domain';   
+    } else if ($relationship_type == EVOC_RELATIONSHIP_TYPE_RANGE) {
+      $table_name = 'evoc_rdf_propertiesranges';
+      $column_name = 'rdf_range';   
+    } else if ($relationship_type == EVOC_RELATIONSHIP_TYPE_SUPERPROPERTY) {
+      $table_name = 'evoc_rdf_superproperties';
+      $column_name = 'superproperty';  
+    } else if ($relationship_type == EVOC_RELATIONSHIP_TYPE_INVERSE) {
+      $table_name = 'evoc_rdf_inversesproperties';
+      $column_name = 'inverseof';
+    }else if ($relationship_type == EVOC_RELATIONSHIP_TYPE_SUPERCLASS) { 
+      $table_name = 'evoc_rdf_superclasses';
+      $column_name = 'superclass';   
+    } else if ($relationship_type == EVOC_RELATIONSHIP_TYPE_DISJOINTWITH) {
+      $table_name = 'evoc_rdf_disjointwith';
+      $column_name = 'disjointwith';   
+    } 
+    
+    $count = count($array_terms);
+    foreach ($array_terms as $term) {
+        $sql = "insert into {".$table_name."} (prefix, reference, ".$column_name.") values ('%s', '%s', '%s')";
+        db_query(db_rewrite_sql($sql), $prefix, $id, $term);
+    }
+  }
+  return $count;
+}
+
+/**
+ * Store an external RDF class in the database.
+ * 
+ * @param object $class it's a keyed array containing the class information to be added. 
+ *               e.g: class = array('id' => 'someid', 'type' => 'class', 'label' => 'class label', 
+ *                       'comment' => 'some comment', 'superclasses' => array('rdfs:Resource', 'sioc:Container'));  
+ *          
+ * @return 
+ */
+function evoc_write_class($class, $showdetails = false) {
+  $result = FALSE;
+  // Check whether this class is already in the system.
+  $count = db_result(db_query(db_rewrite_sql("SELECT count(*) FROM {evoc_rdf_classes} WHERE prefix='%s' AND id='%s'"), $class['prefix'], $class['id'])) > 0;
+  if ($count) {
+    drupal_set_message('Importing Class '.$class['prefix']." : ".$class['id']." already exists in the system.", 'status', FALSE);
+  }
+  else {
+    $count_superclasses = _evoc_insert_relationship_terms(EVOC_RELATIONSHIP_TYPE_SUPERCLASS, $class[EVOC_SUPERCLASSES], $class['prefix'], $class['id']);
+  	$count_disjointwith = _evoc_insert_relationship_terms(EVOC_RELATIONSHIP_TYPE_DISJOINTWITH, $class[EVOC_DISJOINTS], $class['prefix'], $class['id']);
+  	
+  	$result = db_query(db_rewrite_sql("insert into {evoc_rdf_classes} (prefix, id, label, comment, superclasses, ndisjointwith)
+      values ('%s', '%s', '%s', '%s', '%d', '%d')"), $class['prefix'], $class['id'], $class['label'], $class['comment'], $count_superclasses, $count_disjointwith );
+  	if ($result) {
+      if( $showdetails ) {
+        drupal_set_message('Importing Class. Class <b>'.$class['prefix']." : ".$class['id']."</b> successfully imported.");
+      }
+    }
+    else {
+      drupal_set_message('Importing Class. Class <b>'.$class['prefix'].' : '.$class['id'].'</b> could not be saved.', 'warning');
+    }
+  }
+  return $result;
+}
+
+/**
+ * Update an external RDF class in the database.
+ * 
+ * @param object $class it's a keyed array containing the class information to be added. 
+ *               e.g: class = array(
+ *                 'id' => 'someid', 
+ *                 'type' => 'class', 
+ *                 'label' => 'class label', 
+ *                 'comment' => 'some comment', 
+ *                 'superclasses' => array('rdfs:Resource', 'sioc:Container'),
+ *                 'disjointwith' => array('rdfs:Resource', 'sioc:Container'),
+ *                 'previous_id' => 'some_valid_previous_id'
+ *                 );  
+ *          
+ * @return 
+ */
+function evoc_update_class($class, $cascade_update = TRUE) {
+  if (!$class['previous_prefix']) $class['previous_prefix'] = $class['prefix'];
+  if (!$class['previous_id']) $class['previous_id'] = $class['id'];
+  
+  $currentclass = db_fetch_object(db_query(db_rewrite_sql("select * from {evoc_rdf_classes} where prefix='%s' and id='%s'"), $class['previous_prefix'], $class['previous_id']));
+  
+  if( $currentclass ) {
+    $previous_qname = $class['previous_prefix'].':'.$class['previous_id'];
+    $new_qname = $class['prefix'].':'.$class['id'];
+    
+    if( $previous_qname != $new_qname && $cascade_update ) {
+      $result = db_query(db_rewrite_sql("select * from {evoc_rdf_superclasses} where superclass='%s'"), $previous_qname);    
+      // update all the subclassesof $previous_qname
+      while ( $subclassof = db_fetch_object($result) ) {
+        db_query(db_rewrite_sql("update {evoc_rdf_superclasses} set superclass='%s' where prefix='%s' and reference='%s'"), $new_qname, $subclassof->prefix, $subclassof->reference);  
+      }
+      
+      //update disjointwith table with the new classname
+    	$result = db_query(db_rewrite_sql("select * from {evoc_rdf_disjointwith} where disjointwith='%s'"), $previous_qname);    
+      // update all the subclassesof $previous_qname
+      while ( $disjointwith = db_fetch_object($result) ) {
+        db_query(db_rewrite_sql("update {evoc_rdf_disjointwith} set disjointwith='%s' where prefix='%s' and reference='%s'"), $new_qname, $disjointwith->prefix, $disjointwith->reference);  
+      }
+      
+      // let's go to the properties
+      $result = db_query(db_rewrite_sql("select * from {evoc_rdf_propertiesdomains} where rdf_domain='%s'"), $previous_qname);    
+      while ( $domainof = db_fetch_object($result) ) {
+        db_query(db_rewrite_sql("update {evoc_rdf_propertiesdomains} set rdf_domain='%s' where prefix='%s' and reference='%s'"), $new_qname, $domainof->prefix, $domainof->reference);  
+      }
+      
+      $result = db_query(db_rewrite_sql("select * from {evoc_rdf_propertiesranges} where rdf_range='%s'"), $previous_qname);    
+      while ( $rangeof = db_fetch_object($result) ) {
+        db_query(db_rewrite_sql("update {evoc_rdf_propertiesranges} set rdf_range='%s' where prefix='%s' and reference='%s'"), $new_qname, $rangeof->prefix, $rangeof->reference);  
+      }
+    }
+    
+    // now it's time to update the class
+    // check for superclasses
+    // if has superclasses then remove them
+    if( $currentclass->superclasses > 0 ) {
+      db_query(db_rewrite_sql("delete from {evoc_rdf_superclasses} where prefix='%s' and reference='%s'"), $currentclass->prefix, $currentclass->id);
+    }
+    $count_superclasses = _evoc_insert_relationship_terms(EVOC_RELATIONSHIP_TYPE_SUPERCLASS, $class[EVOC_SUPERCLASSES], $class['prefix'], $class['id']);
+  	
+    // update disjointwith table
+    if( $currentclass->ndisjointwith > 0 ) {
+      db_query(db_rewrite_sql("delete from {evoc_rdf_disjointwith} where prefix='%s' and reference='%s'"), $currentclass->prefix, $currentclass->id);
+    }
+    $count_disjointwith = _evoc_insert_relationship_terms(EVOC_RELATIONSHIP_TYPE_DISJOINTWITH, $class[EVOC_DISJOINTS], $class['prefix'], $class['id']);
+  	    
+    $result = db_query(db_rewrite_sql("update {evoc_rdf_classes} set prefix='%s', id='%s', label='%s', comment='%s', superclasses=%d, ndisjointwith=%d where prefix='%s' and id='%s'"), 
+      $class['prefix'], $class['id'], $class['label'], $class['comment'], $count_superclasses, $count_disjointwith, $currentclass->prefix, $currentclass->id);
+      
+    if( !$result ) {  
+    	drupal_set_message('Updating Class. The class '.$previous_qname.' could not be updated.', 'warning');
+    }
+  }
+  else {
+    drupal_set_message("Updating Class. Class ".$class['prefix']." : ".$class['previous_id']." not found.", 'warning');
+  }
+  
+}
+
+
+/**
+ * Remove class term form evoc's repository
+ * @param object $class it's a keyed array containing the class information to be removed.
+ * @return 
+ */
+function evoc_remove_class($class) {
+  if( empty($class['prefix']) || empty($class['id']) )
+  {
+    drupal_set_message("Removing Class. Impossible remove a class without prefix and id.", 'warning');  
+  }
+  else {
+    $current_class = db_fetch_object(db_query(db_rewrite_sql("select superclasses, ndisjointwith from {evoc_rdf_classes} where prefix='%s' and id='%s'"), $class['prefix'], $class['id']));  
+    
+    if( $current_class ) {
+    	if( $current_class->superclasses > 0 ) {
+        $result = db_query(db_rewrite_sql("delete from {evoc_rdf_superclasses} where prefix='%s' and reference='%s'"), $class['prefix'], $class['id']);
+        if( $result ) {
+          drupal_set_message('Removing Class. Superclasses dependences for '.$class['prefix'].':'.$class['id'].' has been successfully removed.');
+        }
+        else {
+          drupal_set_message('Removing Class. There is some error when trying to remove superclasses dependences for '.$class['prefix'].':'.$class['id'].'.', 'warning');
+        }
+      }
+    	  
+    	if( $current_class->ndisjointwith > 0 ) {
+        $result = db_query(db_rewrite_sql("delete from {evoc_rdf_disjointwith} where prefix='%s' and reference='%s'"), $class['prefix'], $class['id']);
+        if( $result ) {
+          drupal_set_message('Removing Class. Disjointwith dependences for '.$class['prefix'].':'.$class['id'].' has been successfully removed.');
+        }
+        else {
+          drupal_set_message('Removing Class. There is some error when trying to remove disjointwith dependences for '.$class['prefix'].':'.$class['id'].'.', 'warning');
+        }
+      }
+      
+      $result = db_query(db_rewrite_sql("delete from {evoc_rdf_classes} where prefix='%s' and id='%s'"), $class['prefix'], $class['id']);
+      if( $result ) {
+        drupal_set_message('Removing Class. Class '.$class['prefix'].':'.$class['id']." has been successfully removed from the system.");
+      }
+      else {
+        drupal_set_message('Removing Class. Class '.$class['prefix'].':'.$class['id'].' not found in the system.', 'warning');
+      }
+      
+      $qname = $class['prefix'].':'.$class['id']; 
+        
+      // remove subclass dependence
+      $result = db_query(db_rewrite_sql("select prefix, reference from {evoc_rdf_superclasses} where superclass='%s'"), $qname);
+      while ( $subclass = db_fetch_object($result) ) {
+        $result2 = db_query(db_rewrite_sql("delete from {evoc_rdf_superclasses} where prefix='%s' and reference='%s'"), $subclass->prefix, $subclass->reference);
+        if ( $result2 ) {
+          db_query(db_rewrite_sql("update {evoc_rdf_classes} set superclasses=superclasses-1 where prefix='%s' and id='%s'"), $subclass->prefix, $subclass->reference);
+        }
+      }
+        
+      // removing domains references for properties
+      $result = db_query(db_rewrite_sql("SELECT prefix, reference FROM {evoc_rdf_propertiesdomains} WHERE rdf_domain='%s'"), $qname);
+      while ( $property = db_fetch_object($result) ) {
+        $result2 = db_query(db_rewrite_sql("DELETE from {evoc_rdf_propertiesdomains} WHERE prefix='%s' AND reference='%s'"), $property->prefix, $property->reference);
+        if ( $result2 ) {
+          db_query(db_rewrite_sql("UPDATE {evoc_rdf_properties} SET domains=domains-1 WHERE prefix='%s' AND id='%s'"), $property->prefix, $property->reference);
+        }
+      }
+        
+      // removing ranges references for properties
+      $result = db_query(db_rewrite_sql("SELECT prefix, reference FROM {evoc_rdf_propertiesranges} WHERE rdf_range='%s'"), $qname);
+      while ( $property = db_fetch_object($result) ) {
+        $resulti2 = db_query(db_rewrite_sql("DELETE FROM {evoc_rdf_propertiesranges} WHERE prefix='%s' AND reference='%s'"), $property->prefix, $property->reference);
+        if ( $result2 ) {
+          db_query(db_rewrite_sql("UPDATE {evoc_rdf_properties} SET ranges=ranges-1 WHERE prefix='%s' AND id='%s'"), $property->prefix, $property->reference);
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Store an external RDF property in the database.
+ * @param object $property / $term = array();
+ *         $term['id'] = string
+ *         $term['label'] = string
+ *         $term['comment'] = string
+ *         $term['domains'] = array();
+ *         $term['ranges'] = array();
+ *         $term['superproperties'] = array();
+ *         $term['prefix'] = string
+ *         $term['inverse'] = string/qname
+ * 				 $term['inverses'] = array() of qname
+ * 
+ * @return 
+ *   FALSE is case of failure and the resulting query result in case of success 
+ */
+function evoc_write_property($property, $showdetails = false) {
+  $result = FALSE;
+  $count = db_result(db_query(db_rewrite_sql("SELECT count(*) FROM {evoc_rdf_properties} WHERE prefix='%s' AND id = '%s'"), $property['prefix'], $property['id'])) > 0;
+  if ($count) {
+    drupal_set_message('Importing Property. Property '.$property['prefix']." : ".$property['id']." already exists in the system.", 'status', FALSE);
+  }
+  else {
+    $count_domains = _evoc_insert_relationship_terms(EVOC_RELATIONSHIP_TYPE_DOMAIN, $property[EVOC_DOMAINS], $property['prefix'], $property['id']);
+    $count_ranges = _evoc_insert_relationship_terms(EVOC_RELATIONSHIP_TYPE_RANGE, $property[EVOC_RANGES], $property['prefix'], $property['id']);
+    $count_superproperties = _evoc_insert_relationship_terms(EVOC_RELATIONSHIP_TYPE_SUPERPROPERTY, $property[EVOC_SUPERPROPERTIES], $property['prefix'], $property['id']);
+    $count_inverses = _evoc_insert_relationship_terms(EVOC_RELATIONSHIP_TYPE_INVERSE, $property[EVOC_INVERSES], $property['prefix'], $property['id']);
+    
+    $result = db_query(db_rewrite_sql("INSERT INTO {evoc_rdf_properties} (prefix, id, label, comment, superproperties, domains, ranges, inverses) 
+      VALUES ('%s', '%s', '%s', '%s', %d, %d, %d, %d)"), 
+      $property['prefix'], $property['id'], $property['label'], $property['comment'], $count_superproperties, $count_domains, $count_ranges, $count_inverses);
+    if ($result) {
+      if( $showdetails ) {
+        drupal_set_message('Importing Property. Property <b>'.$property['prefix'].' : '.$property['id'].'</b> successfully imported.');
+      }
+    }
+    else {
+      drupal_set_message('Importing Property. Property <b>'.$property['prefix'].' : '.$property['id'].'</b> could not be saved.', 'warning');
+    }
+  }
+  return $result;
+}
+
+/**
+ * Update an external RDF class in the database.
+ * 
+ * @param object $property / $term it's a keyed array containing the class information to be added. 
+ *                 $property['id'] = string
+ *                 $property['type'] = string
+ *                 $property['label'] = string
+ *         $property['comment'] = string
+ *         $property['rdf_domain'] = array();
+ *         $property['rdf_range'] = array();
+ *         $property['subpropertyof'] = array();
+ *         $property['inverses'] = array()
+ *         $property['prefix'] = string 
+ *         $property['previous_id'] = 'some_valid_previous_id'
+ *                   
+ *          
+ * @return 
+ */
+function evoc_update_property($property, $cascade_update = TRUE) {
+  if (!$property['previous_prefix']) $property['previous_prefix'] = $property['prefix'];
+  if (!$property['previous_id']) $property['previous_id'] = $property['id'];
+  
+  $currentproperty = db_fetch_object(db_query(db_rewrite_sql("select * from {evoc_rdf_properties} where prefix='%s' and id='%s'"), 
+  	$property['previous_prefix'], $property['previous_id']));
+  
+  if( $currentproperty ) {
+    $previous_qname = $property['previous_prefix'].':'.$property['previous_id'];
+    $new_qname = $property['prefix'].':'.$property['id'];
+    
+    if( $previous_qname != $new_qname && $cascade_update ) {
+      $result = db_query(db_rewrite_sql("select * from {evoc_rdf_superproperties} where superproperty='%s'"), $previous_qname);    
+      while ( $subpropertyof = db_fetch_object($result) ) {
+        db_query(db_rewrite_sql("update {evoc_rdf_superproperties} set superproperty='%s' where prefix='%s' and reference='%s'"), 
+        	$new_qname, $subpropertyof->prefix, $subpropertyof->reference);  
+      }
+      
+    	// update inverses
+      $result = db_query(db_rewrite_sql("SELECT * FROM {evoc_rdf_inversesproperties} WHERE inverseof='%s'"), $previous_qname);    
+      while ( $inverseof = db_fetch_object($result) ) {
+        db_query(db_rewrite_sql("UPDATE {evoc_rdf_inversesproperties} SET inverseof='%s' where prefix='%s' and reference='%s'"), 
+        	$new_qname, $inverseof->prefix, $inverseof->reference);  
+      }
+    }
+    
+    // now it's time to update the property
+    // check for rdf_domains, if has domains then remove them
+    if( $currentproperty->domains > 0 ) {
+      $result = db_query(db_rewrite_sql("delete from {evoc_rdf_propertiesdomains} where prefix='%s' and reference='%s'"), 
+      	$currentproperty->prefix, $currentproperty->id);
+    }
+    $count_domains = _evoc_insert_relationship_terms(EVOC_RELATIONSHIP_TYPE_DOMAIN, $property[EVOC_DOMAINS], $property['prefix'], $property['id']);
+    
+    // check for rdf_ranges, if has domains then remove them
+    if( $currentproperty->ranges > 0 ) {
+      $result = db_query(db_rewrite_sql("delete from {evoc_rdf_propertiesranges} where prefix='%s' and reference='%s'"), 
+      	$currentproperty->prefix, $currentproperty->id);
+    }
+    $count_ranges = _evoc_insert_relationship_terms(EVOC_RELATIONSHIP_TYPE_RANGE, $property[EVOC_RANGES], $property['prefix'], $property['id']);
+    
+    if( $currentproperty->superproperties > 0 ) {
+      $result = db_query(db_rewrite_sql("delete from {evoc_rdf_superproperties} where prefix='%s' and reference='%s'"), 
+      	$currentproperty->prefix, $currentproperty->id);
+    }
+    $count_superproperties = _evoc_insert_relationship_terms(EVOC_RELATIONSHIP_TYPE_SUPERPROPERTY, $property[EVOC_SUPERPROPERTIES], $property['prefix'], $property['id']);
+    
+  	if( $currentproperty->inverses > 0 ) {
+      $result = db_query(db_rewrite_sql("delete from {evoc_rdf_inversesproperties} where prefix='%s' and reference='%s'"), 
+      	$currentproperty->prefix, $currentproperty->id);
+    }
+    $count_inverses = _evoc_insert_relationship_terms(EVOC_RELATIONSHIP_TYPE_INVERSE, $property[EVOC_INVERSES], $property['prefix'], $property['id']);
+        
+    // update the property
+    $result = db_query(db_rewrite_sql("UPDATE {evoc_rdf_properties} SET prefix='%s', id='%s', label='%s', comment='%s', superproperties=%d, domains=%d, ranges=%d, inverses=%d WHERE prefix='%s' AND id='%s'"), 
+      $property['prefix'], $property['id'], $property['label'], $property['comment'], $count_superproperties, $count_domains, $count_ranges, $count_inverses, $currentproperty->prefix, $currentproperty->id);
+      
+    if( !$result ) {  
+    	drupal_set_message($previous_qname." could not be updated.", 'warning');
+    }
+  }
+  else {
+    drupal_set_message("Updating Property. Property ".$property['prefix']." : ".$property['previous_id']." not found.", 'warning');
+  }
+  
+}
+
+/**
+ * Remove property term form evoc's repository
+ * @param object $property
+ * @return 
+ */
+function evoc_remove_property($property) {
+  if( empty($property['prefix']) || empty($property['id']) )
+  {
+    drupal_set_message("Impossible remove a class without prefix and id.", 'warning');  
+  }
+  else {
+    $currentproperty = db_fetch_object(db_query(db_rewrite_sql("select * from {evoc_rdf_properties} 
+      where prefix='%s' and id='%s'"), $property['prefix'], $property['id']));  
+    
+    if( $currentproperty ) {
+    	$qname = $currentproperty->prefix.':'.$currentproperty->id;
+    	
+    	// update dependencies
+    	$result = db_query(db_rewrite_sql("SELECT * FROM {evoc_rdf_inversesproperties} WHERE inverseof='%s'"), $qname);
+    	while ( $p = db_fetch_object($result) ) {
+    		db_query(db_rewrite_sql("DELETE FROM {evoc_rdf_inversesproperties} WHERE prefix='%s' AND reference='%s'"), $p->prefix, $p->reference);
+        db_query(db_rewrite_sql("UPDATE {evoc_rdf_properties} SET inverses=inverses-1 WHERE prefix='%s' AND id='%s'"), $p->prefix, $p->reference);  
+      }
+    	
+    	if( $currentproperty->inverses > 0 ) {
+        $result = db_query(db_rewrite_sql("DELETE FROM {evoc_rdf_inversesproperties} WHERE prefix='%s' AND reference='%s'"), $currentproperty->prefix, $currentproperty->id);
+        if( !$result ) {
+          drupal_set_message("There is some error when trying to remove superproperties dependences.", 'warning');
+        }
+      }
+      
+    	// update dependencies
+      $result = db_query(db_rewrite_sql("SELECT * FROM {evoc_rdf_superproperties} WHERE superproperty='%s'"), $qname);
+    	while ( $p = db_fetch_object($result) ) {
+    		db_query(db_rewrite_sql("DELETE FROM {evoc_rdf_superproperties} WHERE prefix='%s' AND reference='%s'"), $p->prefix, $p->reference);
+        db_query(db_rewrite_sql("UPDATE {evoc_rdf_properties} SET superproperties=superproperties-1 WHERE prefix='%s' AND id='%s'"), $p->prefix, $p->reference);  
+      }
+      
+      // remove myself from evoc_rdf_superproperties table
+      if( $currentproperty->superproperties > 0 ) {
+        $result = db_query(db_rewrite_sql("delete from {evoc_rdf_superproperties} where prefix='%s' and reference='%s'"), $currentproperty->prefix, $currentproperty->id);
+        if( !$result ) {
+          drupal_set_message("There is some error when trying to remove superproperties dependences.", 'warning');
+        }
+      }
+      
+      if( $currentproperty->domains > 0 ) {
+        $result = db_query(db_rewrite_sql("delete from {evoc_rdf_propertiesdomains} where prefix='%s' and reference='%s'"), $currentproperty->prefix, $currentproperty->id);
+        if( !$result ) {
+          drupal_set_message("There is some error when trying to remove domain dependences.", 'warning');
+        }
+      }
+      
+      if( $currentproperty->ranges > 0 ) {
+        $result = db_query(db_rewrite_sql("delete from {evoc_rdf_propertiesranges} where prefix='%s' and reference='%s'"), $currentproperty->prefix, $currentproperty->id);
+        if( !$result ) {
+          drupal_set_message("There is some error when trying to remove range dependences.", 'warning');
+        }
+      }
+    }
+    
+  	// update all posibles properties that are related with this property as inverseof
+  	$qname = $property['prefix'].':'.$property['id'];
+  	// guidocecilio, 22 December, 2010
+  	// note: this query must be analyzed, I really do not remember why this table has a column called inverseof
+    //$result = db_query(db_rewrite_sql('update {evoc_rdf_properties} set inverseof = NULL where inverseof = "%s"'), $qname);
+    
+    $result = db_query(db_rewrite_sql("delete from {evoc_rdf_properties} where prefix='%s' and id='%s'"), $currentproperty->prefix, $currentproperty->id);
+    if( $result ) {
+      drupal_set_message($qname." has been successfully removed from the system.");
+    }
+    else {
+      drupal_set_message($qname." not found in the system.", 'warning');
+    }
+  }
+}
+
+
+/**
+ * Search for an existing term in the database
+ * 
+ * @param object $term a keyed array containing the pair prefix and id.
+ * @param object $string_term [optional] if $term is NULL then the full string term goes in $string_term.
+ * @param object $class_term [optional] if TRUE the search take place in the classes repository 
+ * otherwise the search take place in the properties repository. 
+ * @return TRUE whether the term exists and FALSE in otherwise 
+ */
+function evoc_term_exists($term, $string_term, $class_term = TRUE) {
+  $table = $class_term ? "evoc_rdf_classes" : "evoc_rdf_properties";
+  
+  if( !$term ) {
+    if( ($pos = strpos($string_term, ":")) > 0 ) {
+      $prefix = substr($string_term, 0, $pos);
+      $id = substr($string_term, $pos + 1, strlen($string_term) );
+      $term = array('prefix' => $prefix, 'id' => $id);
+    }
+    else {
+      $term = array('prefix' => NULL, 'id' => $string_term);
+    }
+  }
+
+  $count = db_result( db_query( db_rewrite_sql("SELECT count(*) FROM {%s} WHERE prefix='%s' AND id='%s'"), $table, $term['prefix'], $term['id'] ));
+  return $count > 0;  
+}
+
+/**
+ * Transform an evoc array of terms into a flat array.
+ * @param $evoc_array
+ * @return flat array containing the array of terms.
+ */
+function evoc_evocarray_to_flatarray(&$evoc_array) {
+  if (!is_array($evoc_array) || !isset($evoc_array[0]['evoc_term']))
+    return NULL;
+   
+  $array_flat = array();
+  foreach ($evoc_array as $term) {
+    $array_flat[] = $term['evoc_term'];
+  }  
+  return $array_flat;
+}
+
+/**
+ * Return the number of classes and properties that matches the 
+ * prefix specified in the parameter $prefix.
+ * @param $prefix
+ *   The vocabulary prefix to lookup in the classes and properties
+ *   repository.
+ * @return array/NULL
+ *   NULL value if there are not classes or properties that match the prefix. 
+ *   If some result is found, the first element of the array is the number of 
+ *   class terms that match the prefix and the second element is the number 
+ *   of properties that match the prefix.
+ */
+function evoc_terms_count($prefix) {
+  if (empty($prefix)) {
+    return NULL;
+  }
+  
+  $class_count = db_result( db_query( db_rewrite_sql("SELECT count(*) FROM {evoc_rdf_classes} WHERE prefix='%s'"), $prefix));
+  $property_count = db_result( db_query( db_rewrite_sql("SELECT count(*) FROM {evoc_rdf_properties} WHERE prefix='%s'"), $prefix));
+  
+  if (!$class_count && !$property_count) {
+    return NULL;
+  }
+  
+  return array($class_count, $property_count);
+}
+
+/**
+ * Check for the current built-in vocabularies consistency.
+ * @return array containing three elements:
+ *   - status: the current state of the installation
+ *     - EVOC_BUILTIN_VOCABULARIES_UPDATE_NEEDED the current installation needs
+ *       create the persistent variables.
+ *     - EVOC_BUILTIN_VOCABULARIES_NOT_INSTALLED there is not a vocabulary 
+ *       installed.
+ *     - EVOC_BUILTIN_VOCABULARIES_INCONSISTENCY some built-in vocabulary is 
+ *       missing.
+ *   - missing_vocabularies: in case there is some missing built-in vocabulary, 
+ *   this array will hold it. 
+ *   - prefixes: an array that store the list of missing built-in vocabulary
+ *   prefixes.
+ */
+function evoc_check_builtin_vocabularies_consistency() {
+  $array_builtin_vocabularies = _evoc_get_builtin_vocabularies_array();
+    
+  $missing_builtin_vocabularies = array();
+  foreach ($array_builtin_vocabularies as $voc) {
+    // check if at least there is one terms that match the prefix
+    if (evoc_terms_count($voc['prefix']) == NULL) {
+      $missing_builtin_vocabularies[] = $voc;
+      $prefixes[] = $voc['prefix'];
+    }
+  } 
+  
+  if (empty($missing_builtin_vocabularies)) {
+    // just an update to create the persistent variables.
+    return array('status' => EVOC_BUILTIN_VOCABULARIES_UPDATE_NEEDED);  
+  }
+  else if ( count($missing_builtin_vocabularies) == count($array_builtin_vocabularies)) {
+    // the missing vocabularies is equal to the builtin vocabularies. A full installation is needed.
+    return array('status' => EVOC_BUILTIN_VOCABULARIES_NOT_INSTALLED);
+  }
+  else {  
+    // inconsistency, need update + installation of missing vocabluaries
+    return array(
+    	'status' => EVOC_BUILTIN_VOCABULARIES_INCONSISTENCY, 
+    	'missing_vocabularies' => $missing_builtin_vocabularies, 
+    	'prefixes' => $prefixes
+    );
+  }
+}
+
+/*
+ * Return the array of built-in vocabularies
+ */
+function _evoc_get_builtin_vocabularies_array() {
+  // Evoc built-in vocabularies (core vocabularies)
+  return array(
+    array('uri' => 'http://www.w3.org/1999/02/22-rdf-syntax-ns#', 'prefix' => 'rdf', 'filename' => 'rdf.rdf'),
+    array('uri' => 'http://www.w3.org/2000/01/rdf-schema#', 'prefix' => 'rdfs', 'filename' => 'rdf-schema.rdf'),
+    array('uri' => 'http://purl.org/dc/elements/1.1/', 'prefix' => 'dc', 'filename' => 'dcelements.rdf'),
+    array('uri' => 'http://xmlns.com/foaf/0.1/', 'prefix' => 'foaf', 'filename' => 'foaf.rdf'),
+    array('uri' => 'http://www.w3.org/2002/07/owl#', 'prefix' => 'owl', 'filename' => 'owl.rdf')
+  );
+}
+
